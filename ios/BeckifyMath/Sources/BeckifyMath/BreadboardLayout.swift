@@ -84,6 +84,8 @@ public enum BBPart: Equatable, Sendable {
     case pmos(name: String)
     /// Leads are pins 1…8. Pin 1 is the notch end on the top strip.
     case dip8(name: String, pins: [String])
+    /// Leads are pins 1…14, pin 1 at the notch end, counting along row e and back along row f.
+    case dip14(name: String, pins: [String])
     /// Leads are pins 1…10 of a common-cathode 5161AS-style digit. `mask` bits are a…g.
     case display(name: String, digit: Int, mask: Int, pins: [String])
     /// Lead 0 positive, lead 1 negative.
@@ -379,6 +381,9 @@ public enum BreadboardNetlist {
         case .dip8:
             guard leads.count == 8 else { return ["\(component.id) is not an 8-pin DIP"] }
             return dipSpanFaults(component.id, leads, pins: 4)
+        case .dip14:
+            guard leads.count == 14 else { return ["\(component.id) is not a 14-pin DIP"] }
+            return dipSpanFaults(component.id, leads, pins: 7)
         case .display:
             guard leads.count == 10 else { return ["\(component.id) is not a 10-pin display"] }
             return dipSpanFaults(component.id, leads, pins: 5)
@@ -473,12 +478,17 @@ public enum BreadboardLayouts {
 
 // MARK: - Builder
 
-private struct BreadboardBuilder {
+struct BreadboardBuilder {
     var solution: LabSolution
     var components: [BBComponent] = []
     var jumpers: [BBJumper] = []
     var supplies: [BBSupply] = []
     var railLabels: [BBRailLabel] = []
+    /// Holes under a placed part or wire body, so a later part does not lie across them.
+    var bodyHoles = Set<BBHole>()
+    /// Set when a placement ran out of room. The board is then dropped instead of drawn wrong.
+    var failed = false
+    var failure = ""
 
     init(_ solution: LabSolution) {
         self.solution = solution
@@ -581,23 +591,30 @@ private struct BreadboardBuilder {
     }
 
     mutating func dip8(_ id: String, _ name: String, origin: Int, pins: [(String, String)]) -> [BBLead] {
+        dip(id, name, origin: origin, pins: pins)
+    }
+
+    /// 8 or 14 pins. Pins 1…n/2 run along row e from `origin`, the rest come back along row f.
+    mutating func dip(_ id: String, _ name: String, origin: Int, pins: [(String, String)]) -> [BBLead] {
+        let half = pins.count / 2
         var leads: [BBLead] = []
-        for index in 0..<4 {
+        for index in 0..<half {
             leads.append(hole(origin + index, .e, pins[index].1))
         }
-        for index in 0..<4 {
-            leads.append(hole(origin + 3 - index, .f, pins[4 + index].1))
+        for index in 0..<half {
+            leads.append(hole(origin + half - 1 - index, .f, pins[half + index].1))
         }
+        let labels = pins.map(\.0)
         components.append(BBComponent(
             id: id,
-            part: .dip8(name: name, pins: pins.map(\.0)),
+            part: pins.count == 14 ? .dip14(name: name, pins: labels) : .dip8(name: name, pins: labels),
             leads: leads
         ))
         return leads
     }
 }
 
-private enum BreadboardFormat {
+enum BreadboardFormat {
     static func ohms(_ value: Double) -> String { trim(value) + "Ω" }
     static func farads(_ value: Double) -> String { trim(value) + "F" }
     static func henries(_ value: Double) -> String { trim(value) + "H" }
@@ -628,7 +645,7 @@ extension BreadboardBuilder {
         jumper("probe", "V1", 14, .d, 22, .d, .yellow)
         jumper("gnd", "GND", 24, .e, 24, .topMinus, .black)
         jumper("gndb", "GND", 24, .b, 24, .botMinus, .black)
-        return finish(caption("Series string across the top strip. Vs is the red rail, ground is the blue rail, and the yellow jumpers mark V1 between R1 and R2."))
+        return finish(caption("Series string along rows a–e. Vs is the red rail, ground is the blue rail, and the yellow jumpers mark V1 between R1 and R2."))
     }
 
     mutating func parallel() -> BreadboardLayout? {
@@ -657,7 +674,7 @@ extension BreadboardBuilder {
         jumper("gndb", "GND", 24, .b, 24, .botMinus, .black)
         jumper("out", "Vout", 14, .b, 22, .b, .yellow)
         jumper("tap", "Vout", 22, .e, 22, .f, .yellow)
-        return finish(caption("R1 is the top resistor and R2 returns to the blue rail. The yellow jumpers are the unloaded tap brought across the gutter."))
+        return finish(caption("R1 feeds the tap and R2 returns to the blue rail. The yellow jumpers are the unloaded tap brought across the gutter."))
     }
 
     mutating func kirchhoff() -> BreadboardLayout? {
@@ -751,7 +768,7 @@ extension BreadboardBuilder {
         jumper("v2", "Vcc", 24, .j, 24, .botPlus, .red)
         jumper("g1", "GND", 22, .g, 22, .botMinus, .black)
         jumper("g2", "GND", 12, .h, 12, .botMinus, .black)
-        return finish(caption("2N3904, flat face toward the top of the board, leads E B C left to right. R1 and R2 set the base. Rc and Re are the collector and emitter resistors."))
+        return finish(caption("2N3904 with its flat face toward you, leads E B C left to right. R1 and R2 set the base. Rc and Re are the collector and emitter resistors."))
     }
 
     mutating func bjtSwitch() -> BreadboardLayout? {
@@ -784,7 +801,7 @@ extension BreadboardBuilder {
         jumper("src", "GND", 16, .j, 16, .botMinus, .black)
         jumper("srcg", "GND", 6, .j, 6, .botMinus, .black)
         jumper("vdd", "Vdd", 24, .g, 24, .botPlus, .red)
-        return finish(caption("2N7000, flat face toward the top of the board, leads S G D left to right. Rd is the load. Rds(on) is inside the MOSFET, not a second part."))
+        return finish(caption("2N7000 with its flat face toward you, leads S G D left to right. Rd is the load. Rds(on) is inside the MOSFET, not a second part."))
     }
 
     mutating func transistor(npn: Bool, emitterNet: String? = nil) {
@@ -818,7 +835,7 @@ extension BreadboardBuilder {
         jumper("plus", "GND", 14, .c, 14, .topMinus, .black)
         jumper("cross", "Vout", 9, .e, 9, .f, .green)
         jumper("fb", "Vout", 9, .j, 14, .i, .green)
-        return finish(caption("741 pinout across the gutter. Rin and Rf meet at pin 2. Pin 3 is the blue ground rail. Pin 7 is +V and pin 4 is −V. The ideal model does not solve supply current."))
+        return finish(caption("741 in the DIP-8 straddling the gutter, notch to the left, pin 1 at the lower left. Rin and Rf meet at pin 2. Pin 3 is the blue ground rail. Pin 7 is +V and pin 4 is −V. The ideal model does not solve supply current."))
     }
 
     mutating func nonInverting() -> BreadboardLayout? {
@@ -887,7 +904,7 @@ extension BreadboardBuilder {
         let extra = withLED
             ? "The LED and Rled hang on pin 3 and return to the blue rail, so the LED is on while the output is high."
             : "Pin 3 is brought out on the green jumper. No load is added."
-        return finish(caption("NE555, notch at pin 1. Reset is held on the red rail. R1 feeds discharge, R2 feeds the timing node, and pins 2 and 6 share the capacitor. Pin 5 is open. " + extra))
+        return finish(caption("NE555, notch to the left and pin 1 at the lower left, counting counter-clockwise like the real package. Reset is held on the red rail. R1 feeds discharge, R2 feeds the timing node, and pins 2 and 6 share the capacitor. Pin 5 is open. " + extra))
     }
 
     mutating func monostable() -> BreadboardLayout? {
@@ -993,7 +1010,7 @@ extension BreadboardBuilder {
         jumper("mid", "VL", 14, .b, 14, .e, .yellow)
         jumper("gnd", "GND", 24, .e, 24, .topMinus, .black)
         jumper("gndb", "GND", 24, .b, 24, .botMinus, .black)
-        return finish(caption("Series RL on the top strip. Yellow marks the inductor node. Ideal L — no core model."))
+        return finish(caption("Series RL along rows a–e. Yellow marks the inductor node. Ideal L — no core model."))
     }
 
     mutating func halfWave() -> BreadboardLayout? {
@@ -1339,7 +1356,7 @@ extension BreadboardBuilder {
         jumper("srcg", "GND", 6, .j, 6, .botMinus, .black)
         jumper("probe", "Vout", 16, .b, 24, .b, .green)
         jumper("pgnd", "GND", 24, .j, 24, .botMinus, .black)
-        return finish(caption("CMOS inverter sketch: discrete PMOS (top strip) and NMOS (bottom strip) sharing Vin and Vout across the gutter. Ideal rail-to-rail logic — static current is zero in the solve. Not a matched IC process or a SPICE deck."))
+        return finish(caption("CMOS inverter sketch: discrete PMOS (rows a–e) and NMOS (rows f–j) sharing Vin and Vout across the gutter. Ideal rail-to-rail logic — static current is zero in the solve. Not a matched IC process or a SPICE deck."))
     }
 }
 
@@ -1448,7 +1465,7 @@ extension BreadboardBuilder {
     /// The class-A teaching stage uses the same divider-biased 2N3904 as the BJT bias board.
     mutating func discretePowerStage() -> BreadboardLayout? {
         guard var board = bjtBias() else { return nil }
-        board.caption = caption("Class-A common-emitter stage on a 2N3904, flat face toward the top of the board, leads E B C left to right. R1 and R2 set the base, Rc is the collector load, and Re sets the emitter. Quiescent power in the transistor is Ic × Vce. Add a heatsink and check the bias before you rely on it for real power.")
+        board.caption = caption("Class-A common-emitter stage on a 2N3904 with its flat face toward you, leads E B C left to right. R1 and R2 set the base, Rc is the collector load, and Re sets the emitter. Quiescent power in the transistor is Ic × Vce. Add a heatsink and check the bias before you rely on it for real power.")
         return board
     }
 

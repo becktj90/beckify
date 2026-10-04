@@ -55,8 +55,6 @@ struct ToolScaffold<Content: View>: View {
     var copyText: String? = nil
     var disclaimer: ToolDisclaimer = .designAid
     var showsIdentityHeader: Bool = true
-    /// When false, the How It Works card is hidden until the toolbar `i` expands it.
-    var showsAboutWhenCollapsed: Bool = true
     var showsRelatedTools: Bool = true
     /// Play-surface tools (legacy immersive flag): skip scroll chrome, sticky answer, and disclaimer.
     /// Toolbar favorite + How-it-works `i` stay so honesty copy is one tap away.
@@ -68,6 +66,9 @@ struct ToolScaffold<Content: View>: View {
 
     @EnvironmentObject private var favorites: FavoritesStore
     @StateObject private var chrome = ToolChromeController()
+    /// The info pop-up (how it works, formula, your numbers). Nothing of it takes room in the scroll.
+    @State private var showsInfo = false
+    @State private var showWork: [ShowWorkPayload] = []
     @AppStorage(ToolboxPreferenceKey.electricalCode) private var codeRaw = ElectricalCode.nec.rawValue
     private var tool: ToolDefinition { ToolboxCatalog.tool(toolID) }
     private var codeNotice: ElectricalCodeNotice? {
@@ -88,8 +89,6 @@ struct ToolScaffold<Content: View>: View {
         Group {
             if immersivePlay {
                 VStack(alignment: .leading, spacing: Theme.Space.sm) {
-                    // How-it-works only after toolbar `i` — no on-open essay.
-                    AboutToolCard(toolID: toolID, showsWhenCollapsed: false)
                     content
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
@@ -103,7 +102,6 @@ struct ToolScaffold<Content: View>: View {
                         if showsIdentityHeader {
                             ToolIdentityHeader(toolID: toolID)
                         }
-                        AboutToolCard(toolID: toolID, showsWhenCollapsed: showsAboutWhenCollapsed)
                         if let codeNotice {
                             ElectricalCodeBannerView(notice: codeNotice)
                         }
@@ -121,6 +119,10 @@ struct ToolScaffold<Content: View>: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
+        }
+        .onPreferenceChange(ShowWorkPreferenceKey.self) { showWork = $0 }
+        .sheet(isPresented: $showsInfo) {
+            ToolInfoSheet(toolID: toolID, showWork: showWork)
         }
         // Native back history needs a title even when the identity header is visible.
         // Hide the duplicate visually in the principal toolbar item below.
@@ -147,7 +149,7 @@ struct ToolScaffold<Content: View>: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                HowItWorksToolbarButton(toolID: toolID)
+                HowItWorksToolbarButton(toolID: toolID) { showsInfo = true }
             }
             if let copyText, !copyText.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -338,134 +340,23 @@ struct TryExampleButton: View {
     }
 }
 
-/// Shared AppStorage key so the toolbar About control and `AboutToolCard` stay in sync.
-enum HowItWorksExpansion {
-    static func storageKey(for id: ToolID) -> String {
-        "com.beckify.toolbox.howItWorks.v2.\(id.rawValue)"
-    }
-
-    static func defaultExpanded(for id: ToolID) -> Bool {
-        ToolHowItWorksCatalog.defaultExpanded(forToolID: id.rawValue)
-    }
-}
-
-/// Compact toolbar affordance. Field stays inputs-first; this opens the same disclosure.
+/// Toolbar info button. It opens the pop-up with how the tool works and its math, so neither takes room in the scroll.
 struct HowItWorksToolbarButton: View {
     let toolID: ToolID
-    @AppStorage private var expanded: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    init(toolID: ToolID) {
-        self.toolID = toolID
-        _expanded = AppStorage(
-            wrappedValue: HowItWorksExpansion.defaultExpanded(for: toolID),
-            HowItWorksExpansion.storageKey(for: toolID)
-        )
-    }
+    var action: () -> Void
 
     var body: some View {
-        Button {
-            BeckifyMotion.withOptionalAnimation(BeckifyMotion.staleReveal, reduceMotion: reduceMotion) {
-                expanded.toggle()
-            }
-        } label: {
-            Image(systemName: expanded ? "info.circle.fill" : "info.circle")
+        Button(action: action) {
+            Image(systemName: "info.circle")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Theme.accent)
                 .frame(width: Theme.touchTarget, height: Theme.touchTarget)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(expanded ? "Hide how \(ToolboxCatalog.tool(toolID).title) works" : "How \(ToolboxCatalog.tool(toolID).title) works")
-        .accessibilityHint("Opens a short explanation. The tool stays the focus.")
+        .accessibilityLabel("How \(ToolboxCatalog.tool(toolID).title) works, and the math")
+        .accessibilityHint("Opens a pop-up with the explanation, the formula, and your numbers.")
         .accessibilityIdentifier("howItWorksToolbar.\(toolID.rawValue)")
-        .accessibilityAddTraits(expanded ? [.isSelected] : [])
-    }
-}
-
-/// Collapsed-by-default explanation card. The tool stays the focus in every area.
-struct AboutToolCard: View {
-    let toolID: ToolID
-    var showsWhenCollapsed: Bool = true
-    @AppStorage private var expanded: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    init(toolID: ToolID, showsWhenCollapsed: Bool = true) {
-        self.toolID = toolID
-        self.showsWhenCollapsed = showsWhenCollapsed
-        _expanded = AppStorage(
-            wrappedValue: HowItWorksExpansion.defaultExpanded(for: toolID),
-            HowItWorksExpansion.storageKey(for: toolID)
-        )
-    }
-
-    var body: some View {
-        if let copy = ToolboxCatalog.tool(toolID).howItWorks, showsWhenCollapsed || expanded {
-            VStack(alignment: .leading, spacing: Theme.Space.xs) {
-                Button {
-                    BeckifyMotion.withOptionalAnimation(BeckifyMotion.staleReveal, reduceMotion: reduceMotion) {
-                        expanded.toggle()
-                    }
-                } label: {
-                    HStack {
-                        Text("HOW IT WORKS")
-                            .font(Theme.TypeRole.sectionLabel)
-                            .tracking(0.8)
-                            .foregroundStyle(Theme.muted)
-                        Spacer()
-                        Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.muted)
-                    }
-                    .frame(minHeight: Theme.touchTarget)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("How \(ToolboxCatalog.tool(toolID).title) works")
-                .accessibilityValue(expanded ? "Expanded" : "Collapsed")
-                .accessibilityHint("Short note on what this tool computes and its limits.")
-                .accessibilityIdentifier("howItWorksToggle.\(toolID.rawValue)")
-
-                if expanded {
-                    ExplanationSectionTitle(title: "WHAT IT DOES")
-                    Text(copy.summary)
-                        .font(Theme.TypeRole.body)
-                        .foregroundStyle(Theme.foreground)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    ExplanationSectionTitle(title: "WHEN TO USE IT")
-                    Text(copy.context)
-                        .font(Theme.TypeRole.help)
-                        .foregroundStyle(Theme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if !copy.bullets.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            ExplanationSectionTitle(title: "DETAILS & LIMITS")
-                            ForEach(Array(copy.bullets.enumerated()), id: \.offset) { _, bullet in
-                                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                    Text("·")
-                                        .font(.caption.weight(.bold))
-                                        .foregroundStyle(Theme.accent)
-                                        .accessibilityHidden(true)
-                                    Text(bullet)
-                                        .font(Theme.TypeRole.help)
-                                        .foregroundStyle(Theme.muted)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                        }
-                        .padding(.top, 2)
-                    }
-                }
-            }
-            .padding(.horizontal, Theme.Space.md)
-            .padding(.bottom, expanded ? Theme.Space.md : 0)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .instrumentPanel(corner: Theme.Radius.card)
-            .accessibilityIdentifier("howItWorksCard.\(toolID.rawValue)")
-            .accessibilityElement(children: .contain)
-        }
     }
 }
 
@@ -481,7 +372,26 @@ private struct ExplanationSectionTitle: View {
     }
 }
 
-/// Formula with the user’s numbers substituted. Collapsed until requested.
+/// The formula block a calculator reports for the info pop-up.
+struct ShowWorkPayload: Equatable {
+    var symbolic: String
+    var substituted: String?
+    var meaning: String?
+    var citation: String?
+    var referenceTool: ToolID?
+}
+
+struct ShowWorkPreferenceKey: PreferenceKey {
+    static var defaultValue: [ShowWorkPayload] = []
+
+    static func reduce(value: inout [ShowWorkPayload], nextValue: () -> [ShowWorkPayload]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+/// Used to be an inline, collapsible "Show work" card. It now only reports its formula, your numbers,
+/// and the plain-language note to the scaffold, and the info button's pop-up shows them. That keeps
+/// every calculator's inputs and results higher on the screen.
 struct ShowWorkCard: View {
     let toolID: ToolID
     var symbolic: String
@@ -490,113 +400,168 @@ struct ShowWorkCard: View {
     var citation: String? = nil
     var referenceTool: ToolID? = nil
 
-    @AppStorage private var expanded: Bool
-    @State private var meaningOpen = false
-    @Environment(\.openRelatedTool) private var openRelated
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    init(
-        toolID: ToolID,
-        symbolic: String,
-        substituted: String? = nil,
-        meaning: String? = nil,
-        citation: String? = nil,
-        referenceTool: ToolID? = nil
-    ) {
-        self.toolID = toolID
-        self.symbolic = symbolic
-        self.substituted = substituted
-        self.meaning = meaning
-        self.citation = citation
-        self.referenceTool = referenceTool
-        _expanded = AppStorage(
-            wrappedValue: false,
-            "com.beckify.toolbox.showWork.v2.\(toolID.rawValue)"
-        )
+    var body: some View {
+        // Zero size. The negative top padding cancels the stack spacing this child would otherwise add.
+        Color.clear
+            .frame(width: 0, height: 0)
+            .padding(.top, -Theme.Space.md)
+            .preference(
+                key: ShowWorkPreferenceKey.self,
+                value: [ShowWorkPayload(
+                    symbolic: symbolic,
+                    substituted: substituted,
+                    meaning: meaning,
+                    citation: citation,
+                    referenceTool: referenceTool
+                )]
+            )
+            .accessibilityHidden(true)
     }
+}
+
+/// The pop-up behind the toolbar info button: what the tool does, when to use it, its limits,
+/// then the formula with the user's numbers.
+struct ToolInfoSheet: View {
+    let toolID: ToolID
+    let showWork: [ShowWorkPayload]
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openRelatedTool) private var openRelated
+
+    private var tool: ToolDefinition { ToolboxCatalog.tool(toolID) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Button {
-                if reduceMotion {
-                    expanded.toggle()
-                } else {
-                    withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
-                }
-            } label: {
-                HStack {
-                    Text("SHOW WORK")
-                        .font(.caption.weight(.semibold))
-                        .tracking(0.8)
-                        .foregroundStyle(Theme.muted)
-                    Spacer()
-                    Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.muted)
-                }
-                .frame(minHeight: Theme.touchTarget)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Show formula and explanation")
-            .accessibilityValue(expanded ? "Expanded" : "Collapsed")
-            .accessibilityHint("Shows the formula, your values, and what they mean.")
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Space.md) {
+                    HStack(alignment: .top, spacing: Theme.Space.sm) {
+                        IconWell(toolID: toolID, size: 44)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(tool.title)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(Theme.foreground)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityAddTraits(.isHeader)
+                            Text(tool.subtitle)
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
 
-            if expanded {
-                ExplanationSectionTitle(title: "FORMULA")
-                Text(symbolic)
+                    if let copy = tool.howItWorks {
+                        section("WHAT IT DOES") {
+                            Text(copy.summary)
+                                .font(Theme.TypeRole.body)
+                                .foregroundStyle(Theme.foreground)
+                        }
+                        section("WHEN TO USE IT") {
+                            Text(copy.context)
+                                .font(Theme.TypeRole.help)
+                                .foregroundStyle(Theme.muted)
+                        }
+                        if !copy.bullets.isEmpty {
+                            section("DETAILS & LIMITS") {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    ForEach(Array(copy.bullets.enumerated()), id: \.offset) { _, bullet in
+                                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                            Text("·")
+                                                .font(.caption.weight(.bold))
+                                                .foregroundStyle(Theme.accent)
+                                                .accessibilityHidden(true)
+                                            Text(bullet)
+                                                .font(Theme.TypeRole.help)
+                                                .foregroundStyle(Theme.muted)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ForEach(Array(showWork.enumerated()), id: \.offset) { _, item in
+                        mathBlock(item)
+                    }
+                }
+                .padding(Theme.Space.lg)
+            }
+            .background(Theme.background.ignoresSafeArea())
+            .navigationTitle("How it works")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .accessibilityIdentifier("toolInfoDone")
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .accessibilityIdentifier("toolInfoSheet.\(toolID.rawValue)")
+    }
+
+    private func section<Body: View>(_ title: String, @ViewBuilder _ content: () -> Body) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ExplanationSectionTitle(title: title)
+            content()
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func mathBlock(_ item: ShowWorkPayload) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            section("FORMULA") {
+                Text(item.symbolic)
                     .font(.body.monospaced())
                     .foregroundStyle(Theme.accent)
                     .textSelection(.enabled)
-
-                if let substituted, !substituted.isEmpty {
-                    ExplanationSectionTitle(title: "WITH YOUR VALUES")
+            }
+            section("WITH YOUR VALUES") {
+                if let substituted = item.substituted, !substituted.isEmpty {
                     Text(substituted)
                         .font(.body.monospacedDigit().weight(.medium))
                         .foregroundStyle(Theme.foreground)
                         .textSelection(.enabled)
                         .accessibilityLabel("With your numbers, \(substituted)")
                 } else {
-                    Text("Enter numbers to see this formula with your values plugged in.")
+                    Text("Enter numbers and calculate to see this formula with your values plugged in.")
                         .font(.caption)
                         .foregroundStyle(Theme.muted)
                 }
-
-                if let citation, !citation.isEmpty {
-                    ExplanationSectionTitle(title: "REFERENCE")
+            }
+            if let meaning = item.meaning, !meaning.isEmpty {
+                section("IN PLAIN LANGUAGE") {
+                    Text(meaning)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+            if let citation = item.citation, !citation.isEmpty {
+                section("REFERENCE") {
                     Text(citation)
                         .font(.caption)
                         .foregroundStyle(Theme.muted)
                 }
-
-                if let referenceTool {
-                    let tool = ToolboxCatalog.tool(referenceTool)
-                    Button {
-                        openRelated(referenceTool)
-                    } label: {
-                        Label("Open \(tool.title)", systemImage: tool.symbol)
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.accent)
-                    .accessibilityLabel("Open \(tool.title) for the table this math uses")
+            }
+            if let referenceTool = item.referenceTool {
+                let reference = ToolboxCatalog.tool(referenceTool)
+                Button {
+                    dismiss()
+                    DispatchQueue.main.async { openRelated(referenceTool) }
+                } label: {
+                    Label("Open \(reference.title)", systemImage: reference.symbol)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
                 }
-
-                if let meaning, !meaning.isEmpty {
-                    DisclosureGroup("Plain-language meaning", isExpanded: $meaningOpen) {
-                        Text(meaning)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.muted)
-                            .padding(.top, 6)
-                    }
-                    .tint(Theme.accent)
-                    .font(.subheadline.weight(.semibold))
-                }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+                .accessibilityLabel("Open \(reference.title) for the table this math uses")
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, expanded ? 16 : 0)
+        .padding(Theme.Space.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
@@ -610,7 +575,6 @@ struct ShowWorkCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Theme.accent.opacity(0.25), lineWidth: 1)
         )
-        .brandGlow()
     }
 }
 

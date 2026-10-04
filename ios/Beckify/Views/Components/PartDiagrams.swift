@@ -1,6 +1,26 @@
 import SwiftUI
 import BeckifyMath
 
+/// Real pin numbers for an op-amp symbol: the signal pins, the supply pins and the part name.
+struct OpAmpPinNumbers {
+    var minus: Int
+    var plus: Int
+    var out: Int
+    var vPlus: Int
+    var vMinus: Int
+    var name: String
+
+    init(part: WorkbenchOpAmpPart) {
+        let amp = part.primary
+        minus = amp.inMinus
+        plus = amp.inPlus
+        out = amp.out
+        vPlus = part.vPlus
+        vMinus = part.vMinus
+        name = part.name
+    }
+}
+
 // MARK: - Schematic pen
 
 /// Tiny schematic vocabulary in a fixed drawing space. Callers draw at base size and the view scales it.
@@ -100,8 +120,16 @@ private enum Sch {
     }
 
     /// Triangle pointing right. `flipped` puts + on top and − on the bottom.
+    /// With `pins`, each terminal carries its package pin number and the supply stubs show V+ and V−.
     @discardableResult
-    static func opAmp(_ context: GraphicsContext, center: CGPoint, width: CGFloat = 56, height: CGFloat = 56, flipped: Bool = false) -> OpAmpPins {
+    static func opAmp(
+        _ context: GraphicsContext,
+        center: CGPoint,
+        width: CGFloat = 56,
+        height: CGFloat = 56,
+        flipped: Bool = false,
+        pins: OpAmpPinNumbers? = nil
+    ) -> OpAmpPins {
         var body = Path()
         body.move(to: CGPoint(x: center.x - width / 2, y: center.y - height / 2))
         body.addLine(to: CGPoint(x: center.x - width / 2, y: center.y + height / 2))
@@ -115,7 +143,23 @@ private enum Sch {
         let plus = flipped ? top : bottom
         text(context, "−", CGPoint(x: minus.x + 7, y: minus.y), size: 13, color: Theme.foreground)
         text(context, "+", CGPoint(x: plus.x + 7, y: plus.y), size: 13, color: Theme.foreground)
-        return OpAmpPins(minus: minus, plus: plus, out: CGPoint(x: center.x + width / 2, y: center.y))
+        let out = CGPoint(x: center.x + width / 2, y: center.y)
+        if let pins {
+            let tint = Theme.accent
+            // Pin number badges sit just outside the terminals.
+            text(context, "\(pins.minus)", CGPoint(x: minus.x - 9, y: minus.y + (flipped ? 10 : -10)), size: 9.5, weight: .bold, color: tint)
+            text(context, "\(pins.plus)", CGPoint(x: plus.x - 9, y: plus.y + (flipped ? -10 : 10)), size: 9.5, weight: .bold, color: tint)
+            text(context, "\(pins.out)", CGPoint(x: out.x + 11, y: out.y - 10), size: 9.5, weight: .bold, color: tint)
+            // Supply stubs leave the slanted edges to the right of the inputs.
+            let stubX = center.x + width / 6
+            let edge = height / 6
+            wire(context, [CGPoint(x: stubX, y: center.y - edge), CGPoint(x: stubX, y: center.y - edge - 12)], color: Theme.bad)
+            text(context, "V+ \(pins.vPlus)", CGPoint(x: stubX, y: center.y - edge - 21), size: 9, weight: .bold, color: Theme.bad)
+            wire(context, [CGPoint(x: stubX, y: center.y + edge), CGPoint(x: stubX, y: center.y + edge + 12)], color: Theme.muted)
+            text(context, "V− \(pins.vMinus)", CGPoint(x: stubX, y: center.y + edge + 21), size: 9, weight: .bold, color: Theme.muted)
+            text(context, pins.name, CGPoint(x: center.x - width / 6, y: center.y), size: 8.5, weight: .bold, color: Theme.muted)
+        }
+        return OpAmpPins(minus: minus, plus: plus, out: out)
     }
 
     /// Scales a base-size drawing into the available canvas, centered.
@@ -374,13 +418,18 @@ struct OpAmpStageSchematic: View {
     let topology: OpAmpTopology
     /// Component labels such as `["rin": "Rin 10 kΩ"]`. Missing keys fall back to the plain name.
     var labels: [String: String] = [:]
+    /// Real package pin numbers for the part picked above the diagram. Nil draws the bare symbol.
+    var pins: OpAmpPinNumbers?
 
     private func text(_ key: String, _ fallback: String) -> String {
         labels[key] ?? fallback
     }
 
     private var summary: String {
-        "\(topology.displayName) op-amp stage schematic."
+        if let pins {
+            return "\(topology.displayName) op-amp stage schematic on a \(pins.name). IN− pin \(pins.minus), IN+ pin \(pins.plus), OUT pin \(pins.out), V+ pin \(pins.vPlus), V− pin \(pins.vMinus)."
+        }
+        return "\(topology.displayName) op-amp stage schematic."
     }
 
     var body: some View {
@@ -397,7 +446,7 @@ struct OpAmpStageSchematic: View {
     }
 
     private func draw(_ c: GraphicsContext) {
-        let amp = Sch.opAmp(c, center: CGPoint(x: 180, y: 100), width: 64, height: 64)
+        let amp = Sch.opAmp(c, center: CGPoint(x: 180, y: 100), width: 64, height: 64, pins: pins)
         // Output and its terminal.
         let outNode = CGPoint(x: 240, y: 100)
         Sch.wire(c, [amp.out, CGPoint(x: 296, y: 100)])
@@ -723,5 +772,220 @@ struct RegulatorSchematic: View {
         Sch.ground(c, at: CGPoint(x: adjNode.x, y: 168))
         Sch.text(c, "R1 \(r1)", CGPoint(x: 234, y: 92), anchor: .leading, size: 10.5, color: Theme.good)
         Sch.text(c, "R2 \(r2)", CGPoint(x: adjNode.x + 8, y: 146), anchor: .leading, size: 10.5, color: Theme.good)
+    }
+}
+
+// MARK: - Filter schematic
+
+/// Schematic for each Analog Workbench filter family, drawn with the same part values as the board.
+struct FilterSchematic: View {
+    let family: AnalogFilterFamily
+    var rText = ""
+    var cText = ""
+    /// Sallen–Key gain network, for example "Rb 5.86 kΩ / Ra 10 kΩ". Empty when K = 1.
+    var gainText = ""
+    var pins: OpAmpPinNumbers?
+
+    private var r: String { rText.isEmpty ? "R" : "R \(rText)" }
+    private var c: String { cText.isEmpty ? "C" : "C \(cText)" }
+
+    private var summary: String {
+        var base = "\(family.displayName) schematic."
+        if let pins, WorkbenchBoards.filterUsesOpAmp(family) {
+            base += " Op-amp \(pins.name): IN− pin \(pins.minus), IN+ pin \(pins.plus), OUT pin \(pins.out)."
+        }
+        return base
+    }
+
+    var body: some View {
+        DiagramCard(title: "\(family.displayName) schematic", accessibilitySummary: summary, exportName: "filter-\(family.rawValue)") {
+            Canvas { context, size in
+                draw(Sch.fit(context, size: size, base: CGSize(width: 320, height: 200)))
+            }
+            .aspectRatio(320.0 / 200.0, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(summary)
+        }
+        .accessibilityIdentifier("filter.schematic")
+    }
+
+    private func label(_ c: GraphicsContext, _ string: String, _ point: CGPoint, anchor: UnitPoint = .center) {
+        Sch.text(c, string, point, anchor: anchor, size: 10.5, color: Theme.good)
+    }
+
+    private func draw(_ c: GraphicsContext) {
+        switch family {
+        case .rcLowpass, .rcHighpass: drawRC(c, lowpass: family == .rcLowpass)
+        case .sallenKeyLowpass, .sallenKeyHighpass: drawSallenKey(c, lowpass: family == .sallenKeyLowpass)
+        case .twinTNotch: drawTwinT(c)
+        case .firstOrderAllpass: drawAllpass(c)
+        }
+    }
+
+    private func vin(_ c: GraphicsContext, _ point: CGPoint) {
+        Sch.terminal(c, point)
+        Sch.text(c, "Vin", CGPoint(x: point.x, y: point.y - 14), size: 11)
+    }
+
+    private func vout(_ c: GraphicsContext, _ point: CGPoint) {
+        Sch.terminal(c, point)
+        Sch.text(c, "Vout", CGPoint(x: point.x, y: point.y - 14), size: 11)
+    }
+
+    private func drawRC(_ ctx: GraphicsContext, lowpass: Bool) {
+        let y: CGFloat = 80
+        vin(ctx, CGPoint(x: 20, y: y))
+        Sch.wire(ctx, [CGPoint(x: 20, y: y), CGPoint(x: 46, y: y)])
+        let node = CGPoint(x: 190, y: y)
+        if lowpass {
+            Sch.resistor(ctx, from: CGPoint(x: 46, y: y), to: CGPoint(x: 150, y: y))
+            label(ctx, r, CGPoint(x: 98, y: y - 16))
+            Sch.wire(ctx, [CGPoint(x: 150, y: y), node])
+            Sch.capacitor(ctx, from: node, to: CGPoint(x: node.x, y: 138))
+            label(ctx, c, CGPoint(x: node.x + 10, y: 112), anchor: .leading)
+        } else {
+            Sch.capacitor(ctx, from: CGPoint(x: 46, y: y), to: CGPoint(x: 150, y: y))
+            label(ctx, c, CGPoint(x: 98, y: y - 16))
+            Sch.wire(ctx, [CGPoint(x: 150, y: y), node])
+            Sch.resistor(ctx, from: node, to: CGPoint(x: node.x, y: 138))
+            label(ctx, r, CGPoint(x: node.x + 10, y: 112), anchor: .leading)
+        }
+        Sch.ground(ctx, at: CGPoint(x: node.x, y: 138))
+        Sch.dot(ctx, node)
+        Sch.wire(ctx, [node, CGPoint(x: 296, y: y)])
+        vout(ctx, CGPoint(x: 296, y: y))
+    }
+
+    private func drawTwinT(_ ctx: GraphicsContext) {
+        let mid: CGFloat = 100
+        vin(ctx, CGPoint(x: 18, y: mid))
+        let node = CGPoint(x: 30, y: mid)
+        Sch.wire(ctx, [CGPoint(x: 18, y: mid), node])
+        Sch.dot(ctx, node)
+        let out = CGPoint(x: 196, y: mid)
+        // Top T: R, R and 2C to ground.
+        Sch.wire(ctx, [node, CGPoint(x: 30, y: 45), CGPoint(x: 46, y: 45)])
+        Sch.resistor(ctx, from: CGPoint(x: 46, y: 45), to: CGPoint(x: 98, y: 45))
+        Sch.dot(ctx, CGPoint(x: 110, y: 45))
+        Sch.wire(ctx, [CGPoint(x: 98, y: 45), CGPoint(x: 122, y: 45)])
+        Sch.resistor(ctx, from: CGPoint(x: 122, y: 45), to: CGPoint(x: 172, y: 45))
+        Sch.wire(ctx, [CGPoint(x: 172, y: 45), CGPoint(x: out.x, y: 45), out])
+        Sch.capacitor(ctx, from: CGPoint(x: 110, y: 45), to: CGPoint(x: 110, y: 78))
+        Sch.ground(ctx, at: CGPoint(x: 110, y: 78))
+        label(ctx, r, CGPoint(x: 72, y: 31), anchor: .center)
+        label(ctx, r, CGPoint(x: 147, y: 31), anchor: .center)
+        label(ctx, "2C", CGPoint(x: 120, y: 66), anchor: .leading)
+        // Bottom T: C, C and R/2 to ground.
+        Sch.wire(ctx, [node, CGPoint(x: 30, y: 150), CGPoint(x: 46, y: 150)])
+        Sch.capacitor(ctx, from: CGPoint(x: 46, y: 150), to: CGPoint(x: 98, y: 150))
+        Sch.dot(ctx, CGPoint(x: 110, y: 150))
+        Sch.wire(ctx, [CGPoint(x: 98, y: 150), CGPoint(x: 122, y: 150)])
+        Sch.capacitor(ctx, from: CGPoint(x: 122, y: 150), to: CGPoint(x: 172, y: 150))
+        Sch.wire(ctx, [CGPoint(x: 172, y: 150), CGPoint(x: out.x, y: 150), out])
+        Sch.resistor(ctx, from: CGPoint(x: 110, y: 150), to: CGPoint(x: 110, y: 182))
+        Sch.ground(ctx, at: CGPoint(x: 110, y: 182))
+        label(ctx, c, CGPoint(x: 72, y: 136))
+        label(ctx, c, CGPoint(x: 147, y: 136))
+        label(ctx, "R/2", CGPoint(x: 120, y: 168), anchor: .leading)
+        Sch.dot(ctx, out)
+        Sch.wire(ctx, [out, CGPoint(x: 296, y: mid)])
+        vout(ctx, CGPoint(x: 296, y: mid))
+    }
+
+    private func drawAllpass(_ ctx: GraphicsContext) {
+        let amp = Sch.opAmp(ctx, center: CGPoint(x: 210, y: 95), width: 60, height: 60, pins: pins)
+        vin(ctx, CGPoint(x: 18, y: 95))
+        let node = CGPoint(x: 30, y: 95)
+        Sch.wire(ctx, [CGPoint(x: 18, y: 95), node])
+        Sch.dot(ctx, node)
+        // Inverting side: Ra in, Rb feedback.
+        Sch.wire(ctx, [node, CGPoint(x: 30, y: 80), CGPoint(x: 44, y: 80)])
+        Sch.resistor(ctx, from: CGPoint(x: 44, y: 80), to: CGPoint(x: 110, y: 80))
+        Sch.wire(ctx, [CGPoint(x: 110, y: 80), CGPoint(x: 150, y: 80), amp.minus])
+        Sch.dot(ctx, CGPoint(x: 150, y: 80))
+        label(ctx, "Ra \(rText)", CGPoint(x: 77, y: 66))
+        let outNode = CGPoint(x: 262, y: 95)
+        Sch.wire(ctx, [amp.out, CGPoint(x: 296, y: 95)])
+        Sch.dot(ctx, outNode)
+        Sch.wire(ctx, [CGPoint(x: 150, y: 80), CGPoint(x: 150, y: 36), CGPoint(x: 176, y: 36)])
+        Sch.resistor(ctx, from: CGPoint(x: 176, y: 36), to: CGPoint(x: 236, y: 36))
+        Sch.wire(ctx, [CGPoint(x: 236, y: 36), CGPoint(x: 262, y: 36), outNode])
+        label(ctx, "Rb \(rText)", CGPoint(x: 206, y: 22))
+        // Non-inverting side: R in, C to ground.
+        Sch.wire(ctx, [node, CGPoint(x: 30, y: 110), CGPoint(x: 44, y: 110)])
+        Sch.resistor(ctx, from: CGPoint(x: 44, y: 110), to: CGPoint(x: 120, y: 110))
+        Sch.wire(ctx, [CGPoint(x: 120, y: 110), CGPoint(x: 150, y: 110), amp.plus])
+        Sch.dot(ctx, CGPoint(x: 132, y: 110))
+        Sch.capacitor(ctx, from: CGPoint(x: 132, y: 110), to: CGPoint(x: 132, y: 156))
+        Sch.ground(ctx, at: CGPoint(x: 132, y: 156))
+        label(ctx, r, CGPoint(x: 82, y: 126))
+        label(ctx, c, CGPoint(x: 142, y: 138), anchor: .leading)
+        vout(ctx, CGPoint(x: 296, y: 95))
+    }
+
+    /// Vin → R1 → A → R2 → IN+. The feedback part runs from A to Vout. The shunt part runs from IN+ to ground.
+    /// Ra and Rb set the gain K from the − input.
+    private func drawSallenKey(_ ctx: GraphicsContext, lowpass: Bool) {
+        let amp = Sch.opAmp(ctx, center: CGPoint(x: 196, y: 74), width: 60, height: 60, flipped: true, pins: pins)
+        let y = amp.plus.y
+        vin(ctx, CGPoint(x: 16, y: y))
+        Sch.wire(ctx, [CGPoint(x: 16, y: y), CGPoint(x: 26, y: y)])
+        let junction = CGPoint(x: 92, y: y)
+        let plusNode = CGPoint(x: 150, y: y)
+        let outNode = CGPoint(x: 252, y: amp.out.y)
+        func series(_ from: CGPoint, _ to: CGPoint, resistor: Bool, text: String) {
+            if resistor { Sch.resistor(ctx, from: from, to: to) } else { Sch.capacitor(ctx, from: from, to: to) }
+            label(ctx, text, CGPoint(x: (from.x + to.x) / 2, y: from.y - 15))
+        }
+        // Each part carries its value so the schematic is enough to build from.
+        let rv = rText.isEmpty ? "" : " \(rText)"
+        let cv = cText.isEmpty ? "" : " \(cText)"
+        // Series arm, then the junction.
+        series(CGPoint(x: 26, y: y), CGPoint(x: 80, y: y), resistor: lowpass, text: lowpass ? "R1\(rv)" : "C1\(cv)")
+        Sch.wire(ctx, [CGPoint(x: 80, y: y), junction, CGPoint(x: 104, y: y)])
+        Sch.dot(ctx, junction)
+        series(CGPoint(x: 104, y: y), CGPoint(x: 142, y: y), resistor: lowpass, text: lowpass ? "R2\(rv)" : "C2\(cv)")
+        Sch.wire(ctx, [CGPoint(x: 142, y: y), plusNode, amp.plus])
+        Sch.dot(ctx, plusNode)
+        // Shunt from IN+ to ground.
+        let groundY: CGFloat = 150
+        if lowpass {
+            Sch.capacitor(ctx, from: plusNode, to: CGPoint(x: plusNode.x, y: groundY))
+            label(ctx, "C2\(cv)", CGPoint(x: plusNode.x - 8, y: 104), anchor: .trailing)
+        } else {
+            Sch.resistor(ctx, from: plusNode, to: CGPoint(x: plusNode.x, y: groundY))
+            label(ctx, "R2\(rv)", CGPoint(x: plusNode.x - 8, y: 104), anchor: .trailing)
+        }
+        Sch.ground(ctx, at: CGPoint(x: plusNode.x, y: groundY))
+        // Feedback from the junction over the top to Vout.
+        Sch.wire(ctx, [junction, CGPoint(x: junction.x, y: 22), CGPoint(x: 130, y: 22)])
+        if lowpass {
+            Sch.capacitor(ctx, from: CGPoint(x: 130, y: 22), to: CGPoint(x: 176, y: 22))
+            label(ctx, "C1\(cv)", CGPoint(x: 153, y: 9))
+        } else {
+            Sch.resistor(ctx, from: CGPoint(x: 130, y: 22), to: CGPoint(x: 176, y: 22))
+            label(ctx, "R1\(rv)", CGPoint(x: 153, y: 9))
+        }
+        Sch.wire(ctx, [CGPoint(x: 176, y: 22), CGPoint(x: outNode.x, y: 22), outNode])
+        Sch.wire(ctx, [amp.out, CGPoint(x: 296, y: amp.out.y)])
+        Sch.dot(ctx, outNode)
+        vout(ctx, CGPoint(x: 296, y: amp.out.y))
+        // Gain network from the − input.
+        if gainText.isEmpty {
+            Sch.wire(ctx, [amp.minus, CGPoint(x: 166, y: amp.minus.y), CGPoint(x: 166, y: 126), CGPoint(x: outNode.x, y: 126), outNode])
+            Sch.text(ctx, "K = 1", CGPoint(x: 210, y: 140), size: 10.5, color: Theme.good)
+        } else {
+            let tap = CGPoint(x: 166, y: 126)
+            Sch.wire(ctx, [amp.minus, CGPoint(x: 166, y: amp.minus.y), tap])
+            Sch.dot(ctx, tap)
+            Sch.resistor(ctx, from: tap, to: CGPoint(x: 232, y: 126))
+            Sch.wire(ctx, [CGPoint(x: 232, y: 126), CGPoint(x: outNode.x, y: 126), outNode])
+            Sch.resistor(ctx, from: tap, to: CGPoint(x: tap.x, y: 186))
+            Sch.ground(ctx, at: CGPoint(x: tap.x, y: 186))
+            Sch.text(ctx, "Rb", CGPoint(x: 199, y: 140), size: 10.5, color: Theme.good)
+            Sch.text(ctx, "Ra", CGPoint(x: tap.x + 8, y: 158), anchor: .leading, size: 10.5, color: Theme.good)
+            Sch.text(ctx, gainText, CGPoint(x: 296, y: 176), anchor: .trailing, size: 9.5, weight: .semibold, color: Theme.muted)
+        }
     }
 }

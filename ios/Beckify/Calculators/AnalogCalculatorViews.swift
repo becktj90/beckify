@@ -97,9 +97,18 @@ struct AnalogDesignWorkbenchView: View {
     @StoredInput(.analogWorkbench, "filterGain", default: "1") private var filterGain
     @StoredInput(.analogWorkbench, "filterQ", default: "0.707") private var filterQ
     @StoredInput(.analogWorkbench, "jobName", default: "Analog workbench") private var jobName
+    @AppStorage("analogWorkbench.part") private var partID = WorkbenchBoards.defaultPartID
+    @State private var picture: WorkbenchPicture = .schematic
     @State private var session = ExplicitCalculationState<Output>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private enum WorkbenchPicture: String, CaseIterable, Identifiable {
+        case schematic = "Schematic"
+        case breadboard = "Breadboard"
+        case pinout = "Pinout"
+        var id: String { rawValue }
+    }
 
     private var capFarads: Double { (capNF.parsedDouble ?? .nan) * 1e-9 }
     private var filterFarads: Double { (filterCNF.parsedDouble ?? .nan) * 1e-9 }
@@ -130,11 +139,10 @@ struct AnalogDesignWorkbenchView: View {
 
             if panel == .stages {
                 stagesFields
-                OpAmpStageSchematic(topology: topology, labels: stageLabels)
-                PartPinoutCard(family: .opAmp, title: "Op-amp pinout")
             } else {
                 filterFields
             }
+            workbenchVisual
 
             CalculatorActionBar(
                 onCalculate: calculate,
@@ -241,6 +249,142 @@ struct AnalogDesignWorkbenchView: View {
         NumberField(title: "Passband gain", unit: "V/V", text: $filterGain, fieldID: "gain", onSubmit: calculate)
         if filter == .sallenKeyLowpass || filter == .sallenKeyHighpass || filter == .twinTNotch {
             NumberField(title: "Q", unit: "", text: $filterQ, helpText: "0.707 is Butterworth for Sallen–Key. Twin-T passive notch is much shallower unless you raise Q.", fieldID: "q", onSubmit: calculate)
+        }
+    }
+
+    // MARK: Schematic, breadboard, pinout
+
+    private var seatedPart: WorkbenchOpAmpPart {
+        WorkbenchBoards.opAmpPart(id: partID) ?? WorkbenchBoards.opAmpParts[0]
+    }
+
+    private var visualUsesPart: Bool {
+        panel == .stages || WorkbenchBoards.filterUsesOpAmp(filter)
+    }
+
+    private var stageValues: WorkbenchStageValues {
+        var output: Double?
+        if case .stage(let result)? = session.displayedResult, !session.isStale, result.outputVolts.isFinite {
+            output = result.outputVolts
+        }
+        return WorkbenchStageValues(
+            vin: vin.parsedDouble, v1: v1.parsedDouble, v2: v2.parsedDouble,
+            rin: rin.parsedDouble, rf: rf.parsedDouble, rg: rg.parsedDouble,
+            r1: r1.parsedDouble, r2: r2.parsedDouble,
+            capacitance: capFarads.isFinite ? capFarads : nil, outputVolts: output
+        )
+    }
+
+    /// Live filter numbers for the schematic and board, whether or not Calculate has run.
+    private var filterBoardValues: WorkbenchFilterValues? {
+        guard let resistance = filterR.parsedDouble, let reference = filterFarads.isFinite ? filterFarads : nil,
+              let result = try? AnalogFilter.solve(
+                family: filter,
+                designFrequency: frequency.parsedDouble ?? .nan,
+                resistance: resistance,
+                capacitance: reference,
+                passbandGain: filterGain.parsedDouble ?? .nan,
+                quality: filterQ.parsedDouble ?? .nan
+              ) else { return nil }
+        return WorkbenchBoards.filterValues(family: filter, result: result, resistance: resistance, referenceCapacitance: reference)
+    }
+
+    @ViewBuilder
+    private var workbenchVisual: some View {
+        let usesPart = visualUsesPart
+        VStack(alignment: .leading, spacing: 10) {
+            if usesPart {
+                MenuField(title: "Op-amp part", selection: $partID, options: WorkbenchBoards.opAmpParts.map(\.id)) { id in
+                    guard let part = WorkbenchBoards.opAmpPart(id: id) else { return id }
+                    return "\(part.name) · \(part.kindLabel) · \(part.packageLabel)"
+                }
+            }
+            // A passive filter has no op-amp, so Pinout is not offered. Fall back to the schematic if it was selected.
+            let shown: WorkbenchPicture = (picture == .pinout && !usesPart) ? .schematic : picture
+            Picker("View", selection: Binding(get: { shown }, set: { picture = $0 })) {
+                ForEach(WorkbenchPicture.allCases.filter { usesPart || $0 != .pinout }) { Text($0.rawValue).tag($0) }
+            }
+            .segmentedControlStyle()
+            .accessibilityIdentifier("analogWorkbench.viewMode")
+            if panel == .filters, let values = filterBoardValues {
+                if let limit = WorkbenchBoards.filterLimitation(filter, values: values) {
+                    Text(limit)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.warn)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if let note = WorkbenchBoards.filterGainNote(filter, values: values, requestedGain: filterGain.parsedDouble ?? .nan) {
+                    Text(note)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.warn)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            switch shown {
+            case .schematic: schematicView
+            case .breadboard: breadboardView
+            case .pinout: pinoutView
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var schematicView: some View {
+        if panel == .stages {
+            OpAmpStageSchematic(topology: topology, labels: stageLabels, pins: OpAmpPinNumbers(part: seatedPart))
+        } else {
+            let values = filterBoardValues
+            let k = values?.sallenKeyK ?? 1
+            let gain = (values != nil && k > 1.0001)
+                ? "Rb \(AnalogFormat.ohms((k - 1) * (values?.resistance ?? 0))) · Ra \(AnalogFormat.ohms(values?.resistance ?? 0))"
+                : ""
+            FilterSchematic(
+                family: filter,
+                rText: values.map { AnalogFormat.ohms($0.resistance) } ?? "",
+                cText: values.map { AnalogFormat.farads($0.capacitance) } ?? "",
+                gainText: gain,
+                pins: WorkbenchBoards.filterUsesOpAmp(filter) ? OpAmpPinNumbers(part: seatedPart) : nil
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var breadboardView: some View {
+        let layout: BreadboardLayout? = {
+            if panel == .stages {
+                return WorkbenchBoards.stage(topology, values: stageValues, part: seatedPart)
+            }
+            guard let values = filterBoardValues else { return nil }
+            return WorkbenchBoards.filter(filter, values: values, part: seatedPart)
+        }()
+        if let layout {
+            BreadboardCard(layout: layout)
+        } else {
+            Text(panel == .filters && filterBoardValues.map { WorkbenchBoards.filterLimitation(filter, values: $0) != nil } == true
+                ? "No board for these numbers. See the note above."
+                : "Enter every value for this circuit and the breadboard appears here.")
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private var pinoutView: some View {
+        let part = seatedPart
+        if let catalog = PartPinouts.part(id: part.id) {
+            DiagramCard(title: "\(part.name) pinout", accessibilitySummary: "\(part.name) pinout. \(catalog.summary)", exportName: "pinout-\(part.id)") {
+                VStack(alignment: .leading, spacing: 8) {
+                    PartPinoutDiagram(part: catalog)
+                    Text(catalog.summary)
+                        .font(.caption)
+                        .foregroundStyle(Theme.foreground)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Standard pinout for the common package. Check the data sheet for your exact suffix before you wire it.")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 
