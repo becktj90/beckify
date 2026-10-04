@@ -22,6 +22,9 @@ struct SpanishTranslatorView: View {
     @State private var lastTestPhrase = ""
     @State private var lastAttentionPhrase = ""
     @FocusState private var composerFocused: Bool
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Height of this destination above the tab bar. Only used to decide when the header goes compact.
+    @State private var layoutHeight: CGFloat = 900
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -126,6 +129,21 @@ struct SpanishTranslatorView: View {
         .onDisappear {
             engine.invalidateOutdatedWork(markCancelled: true)
         }
+        .background {
+            GeometryReader { proxy in
+                Color.clear.preference(key: CrewTalkLayoutHeightKey.self, value: proxy.size.height)
+            }
+        }
+        .onPreferenceChange(CrewTalkLayoutHeightKey.self) { newValue in
+            guard newValue > 1, abs(layoutHeight - newValue) > 0.5 else { return }
+            layoutHeight = newValue
+        }
+    }
+
+    /// The pinned header shrinks when the keyboard is up, at accessibility text sizes, and on short screens,
+    /// so it never squeezes the answer and Quick Lines out of view.
+    private var crewIsCompact: Bool {
+        composerFocused || dynamicTypeSize.isAccessibilitySize || layoutHeight < 640
     }
 
     /// D1: the picker and stored helper stay on this direction's roster.
@@ -489,9 +507,9 @@ struct SpanishTranslatorView: View {
         }
         .padding(.horizontal, Theme.Space.lg)
         .padding(.vertical, 10)
-        .background {
-            Theme.surfaceRaised.ignoresSafeArea(edges: .bottom)
-        }
+        // Not `ignoresSafeArea`: that painted the plate through the tab bar band (WP-0B root cause).
+        // The plate stops at the top of the floating tab bar.
+        .background(Theme.surfaceRaised, ignoresSafeAreaEdges: [])
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Theme.border)
@@ -533,15 +551,15 @@ struct SpanishTranslatorView: View {
                 CrewTalkSprite(
                     crew: crew,
                     isTalking: engine.phase == .playing,
-                    height: composerFocused ? 56 : 84
+                    height: crewIsCompact ? 56 : 84
                 )
-                .frame(width: composerFocused ? 100 : 150, height: composerFocused ? 56 : 84)
+                .frame(width: crewIsCompact ? 100 : 150, height: crewIsCompact ? 56 : 84)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(crew.firstName)
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.foreground)
-                    if !composerFocused {
+                    if !crewIsCompact {
                         Text(crew.blurb)
                             .font(Theme.TypeRole.help)
                             .foregroundStyle(Theme.muted)
@@ -624,6 +642,13 @@ struct SpanishTranslatorView: View {
             return "Custom translate URL is set."
         }
         return "Uses https://api.beckify.com/api/translate and /api/speak when the custom URL is blank. On-device Apple Translation + Apple TTS are fallbacks."
+    }
+}
+
+private struct CrewTalkLayoutHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
