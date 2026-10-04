@@ -8,6 +8,7 @@ import reviewCalculationRouter from "./review-calculation.js";
 import translateRouter from "./translate.js";
 import shareRouter from "./share.js";
 import speakRouter from "./speak.js";
+import roomsRouter from "./rooms.js";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(reviewCalculationRouter);
 router.use(translateRouter);
 router.use(shareRouter);
 router.use(speakRouter);
+router.use(roomsRouter);
 
 export default router;

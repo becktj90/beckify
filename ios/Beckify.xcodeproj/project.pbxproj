@@ -70,6 +70,8 @@
 		BECF00000000000000000076 /* CalculateChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000075 /* CalculateChrome.swift */; };
 		BECF000000000000000000E2 /* PlotChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000E1 /* PlotChrome.swift */; };
 		BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000077 /* EngineeringDiagrams.swift */; };
+		BECFD7000000000000000002 /* BenchDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFD7000000000000000001 /* BenchDiagrams.swift */; };
+		BECFD7000000000000000004 /* PartDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFD7000000000000000003 /* PartDiagrams.swift */; };
 		BECF0000000000000000007C /* RecentToolsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007B /* RecentToolsStore.swift */; };
 		BECF0000000000000000007E /* ConductorHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007D /* ConductorHandoff.swift */; };
 		BECF00000000000000000080 /* FacilityCalculatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007F /* FacilityCalculatorViews.swift */; };
@@ -202,6 +204,8 @@
 		BECF00000000000000000075 /* CalculateChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculateChrome.swift; sourceTree = "<group>"; };
 		BECF000000000000000000E1 /* PlotChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlotChrome.swift; sourceTree = "<group>"; };
 		BECF00000000000000000077 /* EngineeringDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineeringDiagrams.swift; sourceTree = "<group>"; };
+		BECFD7000000000000000001 /* BenchDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchDiagrams.swift; sourceTree = "<group>"; };
+		BECFD7000000000000000003 /* PartDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartDiagrams.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007B /* RecentToolsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentToolsStore.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007D /* ConductorHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorHandoff.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007F /* FacilityCalculatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacilityCalculatorViews.swift; sourceTree = "<group>"; };
@@ -435,6 +439,8 @@
 				BECF00000000000000000075 /* CalculateChrome.swift */,
 				BECF000000000000000000E1 /* PlotChrome.swift */,
 				BECF00000000000000000077 /* EngineeringDiagrams.swift */,
+				BECFD7000000000000000001 /* BenchDiagrams.swift */,
+				BECFD7000000000000000003 /* PartDiagrams.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -791,6 +797,8 @@
 				BECF000000000000000000B2 /* ResilientOCREngine.swift in Sources */,
 				BECF00000000000000000076 /* CalculateChrome.swift in Sources */,
 				BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */,
+				BECFD7000000000000000002 /* BenchDiagrams.swift in Sources */,
+				BECFD7000000000000000004 /* PartDiagrams.swift in Sources */,
 				BECF000000000000000000E2 /* PlotChrome.swift in Sources */,
 				BECF0000000000000000007C /* RecentToolsStore.swift in Sources */,
 				BECF0000000000000000007E /* ConductorHandoff.swift in Sources */,
@@ -978,8 +986,8 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition. Nameplate and panel photos stay on this device until you tap Analyze.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. In Crew Talk Conversation with two phones, the text you say or type is relayed to the other person through api.beckify.com and is not saved. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate, and in a two-phone Conversation it is relayed to the other person without being saved.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1022,8 +1030,8 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Beckify uses location in the Position tool, Wi-Fi Path (SSID, Apple 0–1 signalStrength, optional GPS coverage sketch), and optionally in the Solar Design Wizard for latitude. Location is not used at launch and is not uploaded.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Beckify measures TCP round-trip time from the Wi-Fi Path or Cellular Path tool to a host you choose, including a LAN address. This is latency, not RF signal strength. Nothing is uploaded.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Beckify uses the camera to take a picture of a motor nameplate or a panel schedule for on-device text recognition. Nameplate and panel photos stay on this device until you tap Analyze.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. This is not a calibrated sound level meter.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Beckify uses the microphone for relative sound level (Noise Meter, Acoustic Imager, RigScope, Stillness) and for on-device speech recognition in Crew Talk. Microphone input is processed on this device and is not saved or uploaded. Generated speech can be copied or shared as a temporary audio file. Recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate. In Crew Talk Conversation with two phones, the text you say or type is relayed to the other person through api.beckify.com and is not saved. This is not a calibrated sound level meter.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Beckify converts English or Spanish speech to text in Crew Talk on this device. Audio is not kept as a recording. The recognized text may be sent to the Beckify translate API only when you stop recording or tap Translate, and in a two-phone Conversation it is relayed to the other person without being saved.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

@@ -178,14 +178,12 @@ struct ToolGridView: View {
             Text(homeArea.headline)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             Text(homeArea.blurb)
                 .font(.caption2)
                 .foregroundStyle(Color.white.opacity(0.72))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.trailing)
         }
         .padding(.horizontal, Theme.Space.sm)
@@ -390,11 +388,8 @@ enum ToolShelfGridLayout {
         return [GridItem(.adaptive(minimum: minimum), spacing: 10)]
     }
 
-    /// Fixed tile height so LazyVGrid rows do not reflow as cells appear.
-    /// 160, not 148: the title moved from `.caption` to `.subheadline` (15–16pt
-    /// at default size, matching the rest of this screen's titles) and no
-    /// longer shrinks to fit, so a 2-line title needs the extra room to avoid
-    /// clipping the subtitle below it.
+    /// Smallest tile height. Tiles grow past this so a wrapped title and the whole subtitle always
+    /// show, and a row stretches every tile to its tallest neighbor so edges stay even.
     static let tileHeight: CGFloat = 160
 }
 
@@ -495,12 +490,10 @@ private struct ShelfCard: View {
                 Text(shelf.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(shelfHomeHint)
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)
-                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -567,11 +560,13 @@ struct ToolTile: View {
             }
 
             VStack(spacing: 3) {
+                // No line limit and a vertical fixedSize: the text takes the lines it needs, so a long
+                // name like "Heater Design Wizard" wraps instead of ending in an ellipsis.
                 Text(tool.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 if showArea {
                     HomeAreaBadge(area: area)
                 }
@@ -579,7 +574,7 @@ struct ToolTile: View {
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 4)
@@ -589,7 +584,7 @@ struct ToolTile: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity)
-        .frame(height: ToolShelfGridLayout.tileHeight, alignment: .top)
+        .frame(minHeight: ToolShelfGridLayout.tileHeight, maxHeight: .infinity, alignment: .top)
         .glassCard(corner: Theme.Radius.tile, tint: borderTint)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .combine)

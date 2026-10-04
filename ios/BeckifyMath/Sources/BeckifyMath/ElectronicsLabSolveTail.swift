@@ -334,6 +334,9 @@ extension LabSolve {
                 q("vb", "Vb", bias.vb, "V"),
                 q("vcc", "Vcc", vcc, "V"),
                 q("rc", "Rc", rc, "Ω"),
+                q("r1", "R1", r1, "Ω"),
+                q("r2", "R2", r2, "Ω"),
+                q("re", "Re", re, "Ω"),
             ],
             steps: [
                 "Same divider-bias point as the BJT screen.",

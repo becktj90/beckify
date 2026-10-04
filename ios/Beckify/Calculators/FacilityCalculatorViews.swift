@@ -576,13 +576,38 @@ struct HeaterDesignView: View {
     @StoredInput(.heaterDesign, "conn", default: "wye") private var conn
     @StoredInput(.heaterDesign, "awg", default: "18") private var awg
     @StoredInput(.heaterDesign, "rho", default: "1.09") private var rho
+    @StoredInput(.heaterDesign, "material", default: "nichrome80") private var material
+    @StoredInput(.heaterDesign, "coilDia", default: "8") private var coilDia
+    @StoredInput(.heaterDesign, "coilGap", default: "1") private var coilGap
     @StoredInput(.heaterDesign, "jobName", default: "Heater design") private var jobName
     @State private var session = ExplicitCalculationState<HeaterElectricalResult>()
     @State private var elementSession = ExplicitCalculationState<HeaterElementResult>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var inputFingerprint: String { "\(watts)|\(volts)|\(phase)|\(conn)|\(awg)|\(rho)" }
+    private var inputFingerprint: String { "\(watts)|\(volts)|\(phase)|\(conn)|\(awg)|\(rho)|\(coilDia)|\(coilGap)" }
+
+    private var selectedMaterial: HeaterMaterial {
+        HeaterMaterials.material(id: material) ?? HeaterMaterials.material(matching: rho.parsedDouble)
+    }
+
+    private static func rhoText(_ value: Double) -> String { String(format: "%g", value) }
+
+    /// Coil built from the calculated wire length and the helix inputs. Nil until the element is calculated.
+    private var coil: (geometry: HeaterCoilGeometry?, message: String?)? {
+        guard let e = elementSession.displayedResult else { return nil }
+        do {
+            let geometry = try HeaterCoil.design(
+                wireLengthMeters: e.lengthMeters,
+                wireDiameterMM: e.diameterMm,
+                meanDiameterMM: coilDia.parsedDouble ?? .nan,
+                gapMM: coilGap.parsedDouble ?? .nan
+            )
+            return (geometry, nil)
+        } catch {
+            return (nil, (error as? CalcError)?.message ?? error.localizedDescription)
+        }
+    }
 
     var body: some View {
         ToolScaffold(
@@ -604,16 +629,46 @@ struct HeaterDesignView: View {
             MenuField(title: "Phase", selection: $phase, options: HeaterPhase.allCases.map(\.rawValue)) { HeaterPhase(rawValue: $0)?.label ?? $0 }
             MenuField(title: "Connection", selection: $conn, options: HeaterConnection.allCases.map(\.rawValue)) { HeaterConnection(rawValue: $0)?.label ?? $0 }
             NumberField(title: "Element AWG", unit: "", text: $awg, fieldID: "awg", onSubmit: calculate)
-            NumberField(title: "Resistivity", unit: "Ω·mm²/m", text: $rho, fieldID: "rho", onSubmit: calculate)
+            MenuField(title: "Element material", selection: $material, options: HeaterMaterials.all.map(\.id)) { id in
+                HeaterMaterials.material(id: id)?.label ?? id
+            }
+            NumberField(
+                title: "Resistivity",
+                unit: "Ω·mm²/m",
+                text: $rho,
+                helpText: selectedMaterial.id == HeaterMaterials.customID
+                    ? selectedMaterial.note
+                    : "Filled in from \(selectedMaterial.label). Edit it to use your own alloy. \(selectedMaterial.note)",
+                fieldID: "rho",
+                onSubmit: calculate
+            )
+            NumberField(
+                title: "Coil diameter (mean)",
+                unit: "mm",
+                text: $coilDia,
+                helpText: "Measured to the center of the wire. Wind the element on a mandrel this size, less the wire thickness.",
+                fieldID: "coilDia",
+                onSubmit: calculate
+            )
+            NumberField(
+                title: "Gap between turns",
+                unit: "mm",
+                text: $coilGap,
+                helpText: "Clear space from one turn to the next. 0 is close-wound. Open coils run cooler.",
+                fieldID: "coilGap",
+                onSubmit: calculate
+            )
 
             CalculatorActionBar(
                 onCalculate: calculate,
                 onReset: {
                     watts = ""; volts = ""; phase = "3ph"; conn = "wye"; awg = "18"; rho = "1.09"
+                    material = "nichrome80"; coilDia = "8"; coilGap = "1"
                     session.reset(); elementSession.reset()
                 },
                 onExample: {
                     watts = "9000"; volts = "480"; phase = "3ph"; conn = "wye"; awg = "18"; rho = "1.09"
+                    material = "nichrome80"; coilDia = "8"; coilGap = "1"
                     session.prepareForNewInputs(); elementSession.prepareForNewInputs()
                 },
                 exampleTitle: "9 kW, 480 V 3Ø wye, Nichrome 18 AWG"
@@ -656,8 +711,27 @@ struct HeaterDesignView: View {
                     ResultRow(label: "Diameter", value: "\(Format.number(e.diameterMm, digits: 3)) mm")
                     ResultRow(label: "Element current", value: Format.amps(e.currentAmps))
                     ResultRow(label: "Surface density", value: "\(Format.number(e.surfaceWPerCm2, digits: 2)) W/cm²")
+                    ResultRow(label: "Material", value: selectedMaterial.label)
+                    if let maxTemp = selectedMaterial.maxElementTempC {
+                        ResultRow(label: "Typical max element temp", value: "\(Format.number(maxTemp, digits: 0)) °C in air")
+                    }
                 }
                 .opacity(elementSession.isStale ? 0.72 : 1)
+
+                if let built = coil {
+                    if let geometry = built.geometry {
+                        HeaterCoilDiagram(
+                            geometry: geometry,
+                            materialLabel: selectedMaterial.id == HeaterMaterials.customID
+                                ? "custom alloy, ρ \(Format.number(e.resistivityOhmMm2PerM, digits: 2))"
+                                : selectedMaterial.label,
+                            resistanceOhms: e.targetResistanceOhms
+                        )
+                        .opacity(elementSession.isStale ? 0.72 : 1)
+                    } else if let message = built.message {
+                        ErrorText(message: message)
+                    }
+                }
             }
 
             if let r = session.displayedResult {
@@ -674,6 +748,24 @@ struct HeaterDesignView: View {
         .onChange(of: inputFingerprint) { _, _ in
             session.markInputsChanged()
             elementSession.markInputsChanged()
+        }
+        .onAppear {
+            // Saved jobs from before the picker only stored a resistivity. Match it to a listed alloy.
+            let matched = HeaterMaterials.material(matching: rho.parsedDouble).id
+            if matched != material { material = matched }
+        }
+        .onChange(of: material) { _, id in
+            // Picking a listed alloy fills its resistivity. Custom leaves the number alone.
+            guard let picked = HeaterMaterials.material(id: id), picked.id != HeaterMaterials.customID else { return }
+            let text = Self.rhoText(picked.resistivity)
+            if rho != text { rho = text }
+        }
+        .onChange(of: rho) { _, text in
+            // Typing a different resistivity means it is no longer that listed alloy.
+            guard let listed = HeaterMaterials.material(id: material), listed.id != HeaterMaterials.customID else { return }
+            if abs((text.parsedDouble ?? .nan) - listed.resistivity) > 1e-9 {
+                material = HeaterMaterials.customID
+            }
         }
         .sensoryFeedback(.success, trigger: successTick)
     }

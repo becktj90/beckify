@@ -122,7 +122,8 @@ struct ToolScaffold<Content: View>: View {
                 .scrollDismissesKeyboard(.interactively)
             }
         }
-        .navigationTitle(immersivePlay ? "" : tool.title)
+        // The identity header already names the tool in large type. A second copy in the bar read as a duplicate.
+        .navigationTitle(immersivePlay || showsIdentityHeader ? "" : tool.title)
         .navigationBarTitleDisplayMode(.inline)
         .background(Theme.background.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {

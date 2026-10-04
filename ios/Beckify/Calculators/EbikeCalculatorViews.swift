@@ -185,13 +185,15 @@ struct EbikeSprocketView: View {
     @StoredInput(.eBikeSprocket, "wheelDiam", default: "26") private var wheelDiam
     @StoredInput(.eBikeSprocket, "targetRPM", default: "800") private var targetRPM
     @StoredInput(.eBikeSprocket, "targetTorque", default: "20") private var targetTorque
+    @StoredInput(.eBikeSprocket, "chain", default: "410") private var chainID
+    @StoredInput(.eBikeSprocket, "centerDist", default: "") private var centerDist
     @StoredInput(.eBikeSprocket, "jobName", default: "Sprocket") private var jobName
     @State private var session = ExplicitCalculationState<Output>()
     @State private var successTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var inputFingerprint: String {
-        "\(mode)|\(motorRPM)|\(motorTorque)|\(driveTeeth)|\(drivenTeeth)|\(efficiency)|\(wheelDiam)|\(targetRPM)|\(targetTorque)"
+        "\(mode)|\(motorRPM)|\(motorTorque)|\(driveTeeth)|\(drivenTeeth)|\(efficiency)|\(wheelDiam)|\(targetRPM)|\(targetTorque)|\(chainID)|\(centerDist)"
     }
 
     var body: some View {
@@ -218,6 +220,18 @@ struct EbikeSprocketView: View {
             NumberField(title: "Motor RPM", unit: "rpm", text: $motorRPM, fieldID: "motorRPM", onSubmit: calculate)
             NumberField(title: "Motor torque", unit: "N·m", text: $motorTorque, fieldID: "motorTorque", onSubmit: calculate)
             NumberField(title: "Drive sprocket", unit: "teeth", text: $driveTeeth, fieldID: "driveTeeth", onSubmit: calculate)
+            MenuField(title: "Chain", selection: $chainID, options: SprocketChains.all.map(\.id)) { id in
+                SprocketChains.chain(id: id).label
+            }
+            NumberField(
+                title: "Center distance",
+                unit: "mm",
+                text: $centerDist,
+                optional: true,
+                helpText: "Sprocket center to center. Leave blank for about 30 chain pitches. Drawn chain length rounds up to a whole, even link count.",
+                fieldID: "centerDist",
+                onSubmit: calculate
+            )
             if mode == .ratio {
                 NumberField(title: "Driven sprocket", unit: "teeth", text: $drivenTeeth, fieldID: "drivenTeeth", onSubmit: calculate)
                 NumberField(title: "Drivetrain efficiency", unit: "%", text: $efficiency, fieldID: "efficiency", onSubmit: calculate)
@@ -268,11 +282,43 @@ struct EbikeSprocketView: View {
                     }
                     .opacity(session.isStale ? 0.72 : 1)
                 }
+                if let setup = sprocketSetup(for: output) {
+                    SprocketSetupDiagram(setup: setup, motorRPM: motorRPM.parsedDouble, outputRPM: outputRPM(for: output))
+                        .opacity(session.isStale ? 0.72 : 1)
+                } else {
+                    Text("The sprocket drawing needs tooth counts from \(SprocketGeometry.minimumTeeth) to \(SprocketGeometry.maximumTeeth).")
+                        .font(Theme.TypeRole.help)
+                        .foregroundStyle(Theme.muted)
+                }
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(output) }
             }
         }
         .onChange(of: inputFingerprint) { _, _ in session.markInputsChanged() }
         .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    private func sprocketSetup(for output: Output) -> SprocketSetup? {
+        let drive = driveTeeth.parsedDouble ?? .nan
+        let driven: Double
+        switch output {
+        case .ratio:
+            driven = drivenTeeth.parsedDouble ?? .nan
+        case .target(let r):
+            driven = Double(r.rpmDrivenTeethRounded ?? r.torqueDrivenTeethRounded ?? 0)
+        }
+        return SprocketGeometry.setup(
+            driveTeeth: drive,
+            drivenTeeth: driven,
+            chain: SprocketChains.chain(id: chainID),
+            centerDistanceMM: centerDist.parsedDouble
+        )
+    }
+
+    private func outputRPM(for output: Output) -> Double? {
+        switch output {
+        case .ratio(let r): return r.outputRPM
+        case .target(let r): return r.rpmRatio == nil ? nil : targetRPM.parsedDouble
+        }
     }
 
     private func applyExample() {
@@ -614,10 +660,10 @@ struct EbikePackDesignerView: View {
             NumberField(title: "Cell capacity", unit: "Ah", text: $cellAh, fieldID: "cellAh", onSubmit: calculate)
             NumberField(title: "Cell continuous current", unit: "A", text: $cellA, fieldID: "cellA", onSubmit: calculate)
 
+            MenuField(title: "Packing", selection: $pattern, options: Pattern.allCases) { $0.rawValue }
+            NumberField(title: "Cell diameter", unit: "mm", text: $diameter, optional: true, fieldID: "diameter", onSubmit: calculate)
+            NumberField(title: "Cell length", unit: "mm", text: $length, optional: true, fieldID: "length", onSubmit: calculate)
             if mode == .plan {
-                MenuField(title: "Packing", selection: $pattern, options: Pattern.allCases) { $0.rawValue }
-                NumberField(title: "Cell diameter", unit: "mm", text: $diameter, optional: true, fieldID: "diameter", onSubmit: calculate)
-                NumberField(title: "Cell length", unit: "mm", text: $length, optional: true, fieldID: "length", onSubmit: calculate)
                 NumberField(title: "Cell mass", unit: "g", text: $mass, optional: true, fieldID: "mass", onSubmit: calculate)
                 NumberField(title: "Enclosure width", unit: "mm", text: $encW, optional: true, fieldID: "encW", onSubmit: calculate)
                 NumberField(title: "Enclosure height", unit: "mm", text: $encH, optional: true, fieldID: "encH", onSubmit: calculate)
@@ -678,11 +724,39 @@ struct EbikePackDesignerView: View {
                     }
                     .opacity(session.isStale ? 0.72 : 1)
                 }
+                packDiagram(for: output)
+                    .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(output) }
             }
         }
         .onChange(of: inputFingerprint) { _, _ in session.markInputsChanged() }
         .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    /// 3D view of the finished S×P pack, from the cell size fields. Falls back to 18650 size when blank.
+    @ViewBuilder
+    private func packDiagram(for output: Output) -> some View {
+        let counts: (s: Int, p: Int, volts: Double, wh: Double) = {
+            switch output {
+            case .plan(let r): return (r.series, r.parallel, r.nominalVolts, r.energyWattHours)
+            case .check(let r): return (r.series, r.parallel, r.nominalVolts, r.energyWattHours)
+            }
+        }()
+        let cellD = diameter.parsedDouble ?? 18.5
+        let cellL = length.parsedDouble ?? 65.2
+        if let model = PackGeometry.model(
+            series: counts.s,
+            parallel: counts.p,
+            cellDiameterMM: cellD,
+            cellLengthMM: cellL,
+            honeycomb: pattern == .honeycomb
+        ) {
+            PackIsometricDiagram(model: model, nominalVolts: counts.volts, energyWattHours: counts.wh)
+        } else {
+            Text("The 3D view draws packs up to \(PackGeometry.maximumDrawnCells) cells and needs a cell diameter and length.")
+                .font(Theme.TypeRole.help)
+                .foregroundStyle(Theme.muted)
+        }
     }
 
     private func applyCellPreset(_ preset: CellPreset) {
@@ -864,6 +938,9 @@ struct NickelStripView: View {
                     ResultRow(label: "Short-pulse planning current", value: Format.amps(r.pulseAmps))
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+
+                NickelStripDiagram(result: r)
+                    .opacity(session.isStale ? 0.72 : 1)
 
                 ResultCard(title: "Common sizes at these densities") {
                     ForEach(NickelStrip.commonSizes) { size in

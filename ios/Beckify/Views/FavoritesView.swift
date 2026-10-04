@@ -92,7 +92,6 @@ private struct FavoriteRowLabel: View {
                 Text(tool.subtitle)
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
-                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

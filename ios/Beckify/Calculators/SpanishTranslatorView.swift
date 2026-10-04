@@ -23,10 +23,8 @@ struct SpanishTranslatorView: View {
     @State private var lastAttentionPhrase = ""
     @FocusState private var composerFocused: Bool
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    /// Height of this destination (above the tab bar). Used only to cap the dock.
+    /// Height of this destination above the tab bar. Only used to decide when the header goes compact.
     @State private var layoutHeight: CGFloat = 900
-    /// Ideal height of the dock stack, before the cap.
-    @State private var dockContentHeight: CGFloat = 180
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -49,26 +47,29 @@ struct SpanishTranslatorView: View {
             stickyAnswer: nil,
             copyText: copyText,
             disclaimer: .designAidExtra(SpanishTranslatorAPI.disclaimer),
+            showsIdentityHeader: false,
+            showsAboutWhenCollapsed: false,
+            showsRelatedTools: false,
             showsKeyboardToolbar: false
         ) {
-            phaseLine
-            directionCard
-            attentionCard
-            recordCard
+            answerCard
+            quickPhrasesCard
             if showAdvanced {
                 advancedCard
             } else {
-                Button("API endpoint / token (optional)") {
+                Button("API endpoint / token / test phrase") {
                     showAdvanced = true
                 }
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
+                .frame(minHeight: Theme.touchTarget, alignment: .leading)
             }
             if let err = engine.errorMessage, !err.isEmpty {
                 Text(err)
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.warn)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("spanishTranslator.error")
             }
         }
         .spanishOnDeviceTranslation(
@@ -87,7 +88,7 @@ struct SpanishTranslatorView: View {
             crewHelperBar
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            dockChrome
+            composerDock
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -137,6 +138,12 @@ struct SpanishTranslatorView: View {
             guard newValue > 1, abs(layoutHeight - newValue) > 0.5 else { return }
             layoutHeight = newValue
         }
+    }
+
+    /// The pinned header shrinks when the keyboard is up, at accessibility text sizes, and on short screens,
+    /// so it never squeezes the answer and Quick Lines out of view.
+    private var crewIsCompact: Bool {
+        composerFocused || dynamicTypeSize.isAccessibilitySize || layoutHeight < 640
     }
 
     /// D1: the picker and stored helper stay on this direction's roster.
@@ -206,14 +213,12 @@ struct SpanishTranslatorView: View {
         crew.speakLanguage
     }
 
-    /// One short phase word — no STATUS essay, engine/URL notes, or voice tech.
-    private var phaseLine: some View {
-        Text(engine.statusLabel)
-            .font(.system(size: 20, weight: .bold, design: .rounded))
-            .foregroundStyle(statusTone)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityIdentifier("spanishTranslator.phase")
-            .accessibilityLabel(engine.statusLabel)
+    // MARK: - Layout
+
+    private func translate(_ phrase: String) {
+        engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
+        engine.setDirection(direction)
+        engine.translateText(phrase, customEndpoint: customEndpoint, token: apiToken)
     }
 
     private var statusTone: Color {
@@ -233,215 +238,11 @@ struct SpanishTranslatorView: View {
 
     private var showsActionBusyChrome: Bool {
         switch engine.phase {
-        case .listening, .finishingTranscript, .translating, .preparingVoice, .playing:
+        case .finishingTranscript, .translating, .preparingVoice:
             return true
-        case .ready, .cancelled, .failed:
+        case .ready, .listening, .playing, .cancelled, .failed:
             return false
         }
-    }
-
-    private var directionCard: some View {
-        ResultCard(title: "Direction", copyText: direction.uiLabel) {
-            Picker("Direction", selection: $directionRaw) {
-                ForEach(SpanishTranslateDirection.allCases, id: \.rawValue) { way in
-                    Text(way.uiLabel).tag(way.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("spanishTranslator.direction")
-        }
-    }
-
-    private var attentionCard: some View {
-        Group {
-            if !direction.listensInSpanish {
-                Button {
-                    let phrase = SpanishTranslatorAPI.nextAttentionCallPhrase(excluding: lastAttentionPhrase)
-                    lastAttentionPhrase = phrase
-                    typedLine = phrase
-                    engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                    engine.setDirection(direction)
-                    engine.translateText(
-                        phrase,
-                        customEndpoint: customEndpoint,
-                        token: apiToken
-                    )
-                } label: {
-                    Label(SpanishTranslatorAPI.attentionButtonTitle, systemImage: "hand.wave.fill")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .frame(maxWidth: 120, minHeight: Theme.touchTarget)
-                }
-                .buttonStyle(.bordered)
-                .tint(Theme.accent)
-                .disabled(engine.isBusyForNewInput)
-                .accessibilityIdentifier("spanishTranslator.attention")
-                .accessibilityLabel(SpanishTranslatorAPI.attentionButtonAccessibilityLabel)
-                .padding(.vertical, 4)
-            }
-        }
-    }
-
-    private var recordCard: some View {
-        VStack(spacing: 14) {
-            Button {
-                if engine.phase == .listening {
-                    engine.stopListening(translateAfter: true)
-                } else if engine.phase == .playing || engine.phase == .preparingVoice {
-                    engine.stopPlayback()
-                } else {
-                    engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                    engine.setDirection(direction)
-                    engine.startListening(customEndpoint: customEndpoint, token: apiToken)
-                }
-            } label: {
-                Label(
-                    primaryRecordLabel,
-                    systemImage: primaryRecordSymbol
-                )
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(primaryRecordIsStop ? Theme.warn : Theme.accent)
-            .accessibilityIdentifier("spanishTranslator.record")
-
-            Button {
-                let typed = typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
-                let heard = direction.listensInSpanish ? engine.spanishText : engine.englishText
-                let source = typed.isEmpty ? heard : typed
-                engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                engine.setDirection(direction)
-                engine.translateText(
-                    source,
-                    customEndpoint: customEndpoint,
-                    token: apiToken
-                )
-            } label: {
-                Label("Translate", systemImage: "globe")
-                    .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
-            }
-            .buttonStyle(.bordered)
-            .disabled(translateDisabled)
-
-            if showsActionBusyChrome {
-                actionBusyRow
-            }
-
-            if let audioURL = engine.translatedAudioURL {
-                HStack(spacing: 12) {
-                    Button {
-                        engine.copyTranslatedAudio()
-                    } label: {
-                        Label("Copy Audio", systemImage: "doc.on.doc")
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("spanishTranslator.copyAudio")
-
-                    ShareLink(item: audioURL) {
-                        Label("Share Audio", systemImage: "square.and.arrow.up")
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("spanishTranslator.shareAudio")
-                }
-                Text(engine.audioCopyNotice ?? "Copy the recording, then paste in Messages. You can also share it directly to Messages.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.muted)
-            } else if let notice = engine.audioCopyNotice {
-                Text(notice)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.warn)
-            } else if !engine.voiceNote.isEmpty {
-                Text("The audio recording will be available to copy and share when voice generation finishes.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.muted)
-            }
-
-            if engine.phase == .preparingVoice, engine.canSpeakWithDeviceVoice {
-                Button {
-                    engine.speakNowWithDeviceVoice()
-                } label: {
-                    Label(SpanishTranslatorAPI.speakNowDeviceVoiceTitle, systemImage: "iphone.and.arrow.forward")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 40)
-                }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("spanishTranslator.speakDeviceNow")
-            }
-
-            if engine.canCancelInFlight {
-                Button(role: .destructive) {
-                    engine.cancelInFlightWork()
-                } label: {
-                    Label(SpanishTranslatorAPI.cancelActionTitle, systemImage: "xmark.circle.fill")
-                        .font(.headline.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("spanishTranslator.cancel")
-            }
-
-            Button {
-                let phrase = SpanishTranslatorAPI.nextRandomTestPhrase(
-                    direction: direction,
-                    excluding: lastTestPhrase
-                )
-                lastTestPhrase = phrase
-                typedLine = phrase
-                engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                engine.setDirection(direction)
-                engine.translateText(
-                    phrase,
-                    customEndpoint: customEndpoint,
-                    token: apiToken
-                )
-            } label: {
-                Label("Test", systemImage: "shuffle")
-                    .font(.headline.weight(.bold))
-                    .frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.copper)
-            .disabled(engine.isBusyForNewInput)
-            .accessibilityIdentifier("spanishTranslator.testRandom")
-            .accessibilityLabel("Test with a random phrase")
-        }
-        .padding(.vertical, 4)
-    }
-
-    /// Spinner + phase beside Record / Translate / Speak (not only under the transcript).
-    private var actionBusyRow: some View {
-        HStack(spacing: 10) {
-            ProgressView()
-            Text(engine.actionFeedbackLabel)
-                .font(Theme.TypeRole.help)
-                .foregroundStyle(Theme.muted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(engine.actionFeedbackLabel)
-        .accessibilityIdentifier("spanishTranslator.actionBusy")
-    }
-
-    private var primaryRecordIsStop: Bool {
-        engine.phase == .listening || engine.phase == .playing || engine.phase == .preparingVoice
-    }
-
-    private var primaryRecordLabel: String {
-        if engine.phase == .listening || engine.phase == .playing || engine.phase == .preparingVoice {
-            return SpanishTranslatorAPI.stopActionTitle
-        }
-        return "Record"
-    }
-
-    private var primaryRecordSymbol: String {
-        primaryRecordIsStop ? "stop.circle.fill" : "mic.circle.fill"
-    }
-
-    private var translateDisabled: Bool {
-        let typed = typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
-        let heard = direction.listensInSpanish ? engine.spanishText : engine.englishText
-        return (heard.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && typed.isEmpty)
-            || engine.isBusyForNewInput
     }
 
     private var speakAgainDisabled: Bool {
@@ -455,181 +256,318 @@ struct SpanishTranslatorView: View {
         SpanishTranslatorAPI.quickPhrases(direction: direction)
     }
 
-    /// Pinned crew chrome is tall. Shrink it when the keyboard is up, when
-    /// Dynamic Type is an accessibility size, or when the destination is
-    /// SE-short — otherwise the top inset plus the dock cover the tab bar.
-    private var crewIsCompact: Bool {
-        composerFocused
-            || dynamicTypeSize.isAccessibilitySize
-            || layoutHeight < 640
+    private var typedTrimmed: String {
+        typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Cap so Quick lines, the field, and Speak scroll inside the inset
-    /// instead of drawing over the tab bar. Leaves room for the crew bar.
-    private var dockMaxHeight: CGFloat {
-        let crewReserve: CGFloat = crewIsCompact ? 220 : 360
-        let room = layoutHeight - crewReserve
-        let hardCap: CGFloat = dynamicTypeSize.isAccessibilitySize ? 440 : 320
-        return min(hardCap, max(156, room))
+    /// What the person said or typed, shown small above the answer.
+    private var heardLine: String {
+        let heard = direction.listensInSpanish ? engine.spanishText : engine.englishText
+        return heard.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// One bottom inset: chips, field, answer, Speak. Stays in the safe area
-    /// above the tab bar; the keyboard safe area lifts that inset. Taller
-    /// than the cap, the stack scrolls inside the dock.
-    private var dockChrome: some View {
-        ScrollView(.vertical) {
-            composerDock
-                .fixedSize(horizontal: false, vertical: true)
-                .background {
-                    GeometryReader { proxy in
-                        Color.clear.preference(key: CrewTalkDockHeightKey.self, value: proxy.size.height)
-                    }
+    /// The translated line, its status, and Speak. Lives at the top of the scroll area, so the
+    /// result is the first thing seen and nothing pinned covers it.
+    private var answerCard: some View {
+        let answer = SpanishTranslatorAPI.displayText(dockSpokenAnswer)
+        let helper = SpanishTranslatorAPI.displayText(dockDialectHelper)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                if showsActionBusyChrome {
+                    ProgressView()
                 }
-        }
-        .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-        .frame(height: min(max(dockContentHeight, 1), dockMaxHeight))
-        .onPreferenceChange(CrewTalkDockHeightKey.self) { newValue in
-            guard abs(dockContentHeight - newValue) > 0.5 else { return }
-            dockContentHeight = newValue
-        }
-        .background(Theme.surfaceRaised.opacity(0.96))
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(Theme.accent)
-                .frame(height: 2)
-        }
-    }
-
-    private var quickLinesStrip: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .center, spacing: 8) {
-                Text("QUICK LINES")
-                    .font(.caption.weight(.semibold))
-                    .tracking(0.8)
+                Text(engine.actionFeedbackLabel)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(statusTone)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("spanishTranslator.phase")
+            }
+            if !heardLine.isEmpty {
+                Text("“\(heardLine)”")
+                    .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
-                    .accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 8)
-                CopyResultButton(
-                    text: quickPhrases.joined(separator: " · "),
-                    compact: true,
-                    accessibilityName: "Copy Quick lines results"
-                )
+                    .lineLimit(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("spanishTranslator.heard")
             }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Array(quickPhrases.enumerated()), id: \.offset) { index, phrase in
-                        Button {
-                            typedLine = phrase
-                            engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                            engine.setDirection(direction)
-                            engine.translateText(
-                                phrase,
-                                customEndpoint: customEndpoint,
-                                token: apiToken
-                            )
-                        } label: {
-                            Text(phrase)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Theme.foreground)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Theme.surface.opacity(0.9), in: Capsule(style: .continuous))
-                                .overlay(
-                                    Capsule(style: .continuous)
-                                        .stroke(Theme.border, lineWidth: 1)
-                                )
-                                .frame(minHeight: Theme.touchTarget)
-                                .contentShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(engine.isBusyForNewInput)
-                        .accessibilityIdentifier("spanishTranslator.quickPhrase.\(index)")
-                        .accessibilityLabel("Quick translate: \(phrase)")
-                    }
-                }
-                .padding(.vertical, 2)
+            Text(answer.isEmpty ? "Tap the mic or type a line. The translation shows here." : answer)
+                .font(.system(size: answer.isEmpty ? 16 : 24, weight: .semibold, design: .rounded))
+                .foregroundStyle(answer.isEmpty ? Theme.muted : Theme.foreground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .accessibilityIdentifier("spanishTranslator.answer")
+            if !helper.isEmpty {
+                Text(helper)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(Theme.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("spanishTranslator.dialectHelper")
             }
-        }
-        .accessibilityIdentifier("spanishTranslator.quickLines")
-    }
-
-    /// Quick lines, the field, the other-language answer, and Speak stay in one dock
-    /// above the keyboard and the tab bar. One Done lives on the keyboard toolbar.
-    private var composerDock: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            quickLinesStrip
-            TextField(SpanishTranslatorAPI.typedPlaceholder(direction: direction), text: $typedLine, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(1...3)
-                .focused($composerFocused)
-                .submitLabel(.send)
-                .onSubmit { submitTypedLine() }
-                .accessibilityIdentifier("spanishTranslator.composer")
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(SpanishTranslatorAPI.displayText(dockSpokenAnswer).isEmpty ? "—" : SpanishTranslatorAPI.displayText(dockSpokenAnswer))
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.foreground)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .lineLimit(4)
-                        .textSelection(.enabled)
-                        .accessibilityIdentifier("spanishTranslator.answer")
-                    if !SpanishTranslatorAPI.displayText(dockDialectHelper).isEmpty {
-                        Text(SpanishTranslatorAPI.displayText(dockDialectHelper))
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(Theme.muted)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .lineLimit(3)
-                            .accessibilityIdentifier("spanishTranslator.dialectHelper")
+            HStack(spacing: 8) {
+                if engine.canCancelInFlight {
+                    Button(role: .destructive) {
+                        engine.cancelInFlightWork()
+                    } label: {
+                        Label(SpanishTranslatorAPI.cancelActionTitle, systemImage: "xmark.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(minHeight: Theme.touchTarget)
                     }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("spanishTranslator.cancel")
                 }
                 Button {
                     engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
                     engine.speakDockAnswer(dockSpeakLine, language: dockSpeakLanguage)
                 } label: {
                     Label("Speak", systemImage: "speaker.wave.3.fill")
-                        .font(.headline.weight(.bold))
-                        .labelStyle(.iconOnly)
-                        .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Theme.accent)
                 .disabled(speakAgainDisabled)
                 .accessibilityIdentifier("spanishTranslator.speakAgain")
-                .accessibilityLabel("Speak")
+                if let audioURL = engine.translatedAudioURL {
+                    Button {
+                        engine.copyTranslatedAudio()
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel("Copy audio")
+                    .accessibilityIdentifier("spanishTranslator.copyAudio")
+                    ShareLink(item: audioURL) {
+                        Image(systemName: "square.and.arrow.up")
+                            .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel("Share audio")
+                    .accessibilityIdentifier("spanishTranslator.shareAudio")
+                }
+            }
+            if engine.phase == .preparingVoice, engine.canSpeakWithDeviceVoice {
+                Button {
+                    engine.speakNowWithDeviceVoice()
+                } label: {
+                    Label(SpanishTranslatorAPI.speakNowDeviceVoiceTitle, systemImage: "iphone.and.arrow.forward")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("spanishTranslator.speakDeviceNow")
+            }
+            if let notice = engine.audioCopyNotice {
+                Text(notice)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.warn)
             }
         }
+        .padding(Theme.Space.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Theme.surfaceRaised)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Theme.border, lineWidth: 1)
+        )
+    }
+
+    /// Two columns of full chips. Nothing is clipped or hidden behind a sideways scroll.
+    private var quickPhrasesCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("QUICK LINES")
+                .font(.caption.weight(.semibold))
+                .tracking(0.8)
+                .foregroundStyle(Theme.muted)
+                .accessibilityAddTraits(.isHeader)
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
+                spacing: 8
+            ) {
+                if !direction.listensInSpanish {
+                    Button {
+                        let phrase = SpanishTranslatorAPI.nextAttentionCallPhrase(excluding: lastAttentionPhrase)
+                        lastAttentionPhrase = phrase
+                        typedLine = phrase
+                        translate(phrase)
+                    } label: {
+                        Label(SpanishTranslatorAPI.attentionButtonTitle, systemImage: "hand.wave.fill")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.accent)
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Theme.accent.opacity(0.16))
+                            )
+                            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(engine.isBusyForNewInput)
+                    .accessibilityIdentifier("spanishTranslator.attention")
+                    .accessibilityLabel(SpanishTranslatorAPI.attentionButtonAccessibilityLabel)
+                }
+                ForEach(Array(quickPhrases.enumerated()), id: \.offset) { index, phrase in
+                    Button {
+                        typedLine = phrase
+                        translate(phrase)
+                    } label: {
+                        Text(phrase)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Theme.foreground)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.85)
+                            .padding(.horizontal, 8)
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Theme.surfaceRaised)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Theme.border, lineWidth: 1)
+                            )
+                            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(engine.isBusyForNewInput)
+                    .accessibilityIdentifier("spanishTranslator.quickPhrase.\(index)")
+                    .accessibilityLabel("Quick translate: \(phrase)")
+                }
+            }
+        }
+    }
+
+    private var primaryIsStop: Bool {
+        engine.phase == .listening || engine.phase == .playing || engine.phase == .preparingVoice
+    }
+
+    private var primarySymbol: String {
+        if primaryIsStop { return "stop.fill" }
+        if !typedTrimmed.isEmpty { return "arrow.up" }
+        return "mic.fill"
+    }
+
+    private var primaryLabel: String {
+        if primaryIsStop { return SpanishTranslatorAPI.stopActionTitle }
+        if !typedTrimmed.isEmpty { return "Translate" }
+        return "Record"
+    }
+
+    private func primaryTapped() {
+        if engine.phase == .listening {
+            engine.stopListening(translateAfter: true)
+        } else if engine.phase == .playing || engine.phase == .preparingVoice {
+            engine.stopPlayback()
+        } else if !typedTrimmed.isEmpty {
+            submitTypedLine()
+        } else {
+            engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
+            engine.setDirection(direction)
+            engine.startListening(customEndpoint: customEndpoint, token: apiToken)
+        }
+    }
+
+    /// One field and one button, like a messaging app. The button is Record when the field is empty,
+    /// Translate when it has text, and Stop while the mic or voice is running. The dock is opaque, so
+    /// scrolled content never shows through it, and it sits directly above the tab bar.
+    private var composerDock: some View {
+        HStack(alignment: .bottom, spacing: 10) {
+            TextField(SpanishTranslatorAPI.typedPlaceholder(direction: direction), text: $typedLine, axis: .vertical)
+                .lineLimit(1...3)
+                .focused($composerFocused)
+                .submitLabel(.send)
+                .onSubmit { submitTypedLine() }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Theme.background)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Theme.border, lineWidth: 1)
+                )
+                .accessibilityIdentifier("spanishTranslator.composer")
+            Button(action: primaryTapped) {
+                Image(systemName: primarySymbol)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Theme.background)
+                    .frame(width: 52, height: 52)
+                    .background(Circle().fill(primaryIsStop ? Theme.warn : Theme.accent))
+            }
+            .buttonStyle(.plain)
+            .disabled(engine.isBusyForNewInput && engine.phase != .listening)
+            .opacity(engine.isBusyForNewInput && engine.phase != .listening ? 0.5 : 1)
+            .accessibilityLabel(primaryLabel)
+            .accessibilityIdentifier("spanishTranslator.record")
+        }
         .padding(.horizontal, Theme.Space.lg)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.vertical, 10)
+        // Not `ignoresSafeArea`: that painted the plate through the tab bar band (WP-0B root cause).
+        // The plate stops at the top of the floating tab bar.
+        .background(Theme.surfaceRaised, ignoresSafeAreaEdges: [])
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Theme.border)
+                .frame(height: 1)
+        }
     }
 
     private func submitTypedLine() {
         composerFocused = false
-        engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-        engine.setDirection(direction)
-        engine.translateText(typedLine, customEndpoint: customEndpoint, token: apiToken)
+        translate(typedLine)
     }
 
-    /// Selected helper. Stays pinned while the rest of the tool scrolls.
-    /// Idle sprite until playback. While audio plays, the talk pose flashes
-    /// on a short syllable beat and the body bobs a little.
+    /// Direction, Conversation, and the person on screen. One compact block, so the answer and
+    /// Quick Lines keep most of the screen. The sprite shrinks while the keyboard is up.
     private var crewHelperBar: some View {
-        VStack(alignment: .center, spacing: 8) {
-            CrewTalkSprite(
-                crew: crew,
-                isTalking: engine.phase == .playing,
-                height: crewIsCompact ? 96 : 168
-            )
-            Text(crew.firstName)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.foreground)
-            if !crewIsCompact {
-                Text(crew.blurb)
-                    .font(Theme.TypeRole.help)
-                    .foregroundStyle(Theme.muted)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Picker("Direction", selection: $directionRaw) {
+                    ForEach(SpanishTranslateDirection.allCases, id: \.rawValue) { way in
+                        Text(way.uiLabel).tag(way.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("spanishTranslator.direction")
+                NavigationLink {
+                    CrewTalkConversationView()
+                } label: {
+                    Image(systemName: "person.2.wave.2.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                        .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                        .background(Circle().fill(Theme.accent.opacity(0.16)))
+                }
+                .accessibilityLabel("Conversation")
+                .accessibilityHint("Two people take turns, or link two phones")
+                .accessibilityIdentifier("spanishTranslator.conversation")
+            }
+            HStack(spacing: 12) {
+                CrewTalkSprite(
+                    crew: crew,
+                    isTalking: engine.phase == .playing,
+                    height: crewIsCompact ? 56 : 84
+                )
+                .frame(width: crewIsCompact ? 100 : 150, height: crewIsCompact ? 56 : 84)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(crew.firstName)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.foreground)
+                    if !crewIsCompact {
+                        Text(crew.blurb)
+                            .font(Theme.TypeRole.help)
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -640,7 +578,7 @@ struct SpanishTranslatorView: View {
                             Text(member.firstName)
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundStyle(member == crew ? Theme.background : Theme.foreground)
-                                .frame(minWidth: Theme.touchTarget, minHeight: Theme.touchTarget)
+                                .frame(minWidth: Theme.touchTarget, minHeight: 40)
                                 .padding(.horizontal, 12)
                                 .background(
                                     Capsule(style: .continuous)
@@ -653,9 +591,9 @@ struct SpanishTranslatorView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(member.displayName)
+                        .accessibilityAddTraits(member == crew ? .isSelected : [])
                     }
                 }
-                .padding(.vertical, 2)
             }
             .accessibilityIdentifier("spanishTranslator.crew")
         }
@@ -664,73 +602,6 @@ struct SpanishTranslatorView: View {
         .padding(.bottom, Theme.Space.sm)
         .background(Theme.background)
     }
-
-
-private struct CrewTalkLayoutHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-private struct CrewTalkDockHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-/// Full-body 16-bit helper. Two existing frames, nearest-neighbor so pixels stay crisp.
-/// Talk is a syllable beat (idle held longer than the talk pose), not a 150 ms hard swap.
-/// Junie's talk frame is the idle pose with the mouth open. Sloane is centered on the canvas.
-/// The bob is a small continuous offset, independent of the frame cut.
-private struct CrewTalkSprite: View {
-    let crew: CrewTalkMember
-    let isTalking: Bool
-    var height: CGFloat = 168
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// One beat. Longer than a display frame so a timeline tick cannot skip the pose.
-    private static let beat: TimeInterval = 0.10
-    /// Closed, closed, open, closed, closed, open, closed, open.
-    private static let mouthOpenOnBeat: [Bool] = [false, false, true, false, false, true, false, true]
-    /// Gentle whole-sprite bob. Not locked to the mouth, and much smaller than the old 5 pt jump.
-    private static let bobPeriod: TimeInterval = 0.70
-    private static let bobAmplitude: CGFloat = 1.25
-
-    var body: some View {
-        Group {
-            if isTalking, !reduceMotion {
-                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
-                    let t = context.date.timeIntervalSinceReferenceDate
-                    let beatIndex = Int(t / Self.beat) % Self.mouthOpenOnBeat.count
-                    let bob = CGFloat(sin(t * (2 * .pi) / Self.bobPeriod)) * Self.bobAmplitude
-                    frame(mouthOpen: Self.mouthOpenOnBeat[beatIndex], bob: bob)
-                }
-            } else {
-                frame(mouthOpen: isTalking, bob: 0)
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityIdentifier("spanishTranslator.crewPortrait")
-        .accessibilityLabel(isTalking ? "\(crew.displayName), talking" : crew.displayName)
-    }
-
-    private func frame(mouthOpen: Bool, bob: CGFloat) -> some View {
-        Image(mouthOpen ? crew.talkAssetName : crew.portraitAssetName)
-            .interpolation(.none)
-            .resizable()
-            .scaledToFit()
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .offset(y: bob)
-            // Instant cut. A linear animation on the frame smears two poses and fights nearest-neighbor.
-            .transaction { transaction in
-                transaction.animation = nil
-            }
-    }
-}
 
     private var advancedCard: some View {
         ResultCard(title: "Beckify API", copyText: endpointHint) {
@@ -747,6 +618,21 @@ private struct CrewTalkSprite: View {
             Text("Leave blank to use https://api.beckify.com/api/translate. A personal token is not sent to Beckify unless you set a custom URL. If the API fails, the app tries on-device Apple Translation on iOS 18+.")
                 .font(Theme.TypeRole.help)
                 .foregroundStyle(Theme.muted)
+            Button {
+                let phrase = SpanishTranslatorAPI.nextRandomTestPhrase(
+                    direction: direction,
+                    excluding: lastTestPhrase
+                )
+                lastTestPhrase = phrase
+                typedLine = phrase
+                translate(phrase)
+            } label: {
+                Label("Test with a random phrase", systemImage: "shuffle")
+                    .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
+            }
+            .buttonStyle(.bordered)
+            .disabled(engine.isBusyForNewInput)
+            .accessibilityIdentifier("spanishTranslator.testRandom")
         }
     }
 
@@ -756,6 +642,13 @@ private struct CrewTalkSprite: View {
             return "Custom translate URL is set."
         }
         return "Uses https://api.beckify.com/api/translate and /api/speak when the custom URL is blank. On-device Apple Translation + Apple TTS are fallbacks."
+    }
+}
+
+private struct CrewTalkLayoutHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
