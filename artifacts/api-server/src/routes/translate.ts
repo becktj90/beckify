@@ -10,6 +10,7 @@ import {
   translateTargetLanguage,
   translateUserPrompt,
 } from "../prompts/translatePrompt.js";
+import { observeRouteTiming } from "../lib/logger.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
 import { OutputTruncatedError, assertNotTruncated, chargeBudget, logAIUsage, refundBudget, textMaxOutputTokens } from "../lib/usageBudget.js";
 
@@ -33,6 +34,8 @@ const PROVIDER_TIMEOUT_MS = 25_000;
 const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
 
 router.post("/translate", async (req, res) => {
+  const startedAtMs = Date.now();
+  observeRouteTiming(res, "/api/translate", startedAtMs);
   const body = (req.body || {}) as TranslateBody;
   const sourceText = pickText(body);
   if (!sourceText) {

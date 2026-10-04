@@ -25,6 +25,7 @@ import {
   speakVoiceMode,
   type SpeakLanguage,
 } from "../prompts/speakPrompt.js";
+import { observeRouteTiming } from "../lib/logger.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
 import { chargeBudget, logAIUsage, refundBudget } from "../lib/usageBudget.js";
 
@@ -75,6 +76,12 @@ const ALLOWED_VOICES = new Set([
 const rateBuckets = new Map<string, { count: number; resetAt: number; inFlight: number }>();
 
 router.post("/speak", async (req, res) => {
+  const startedAtMs = Date.now();
+  // Provider time-to-first-audio-chunk. The HTTP response stays fully buffered.
+  let firstAudioChunkMs: number | null = null;
+  observeRouteTiming(res, "/api/speak", startedAtMs, () => ({
+    first_audio_chunk_ms: firstAudioChunkMs,
+  }));
   const body = (req.body || {}) as SpeakBody;
   const text = pickText(body);
   if (!text) {
@@ -153,7 +160,9 @@ router.post("/speak", async (req, res) => {
       return res.status(502).json({ error: "The speech provider could not synthesize this text." });
     }
 
-    const audio = Buffer.from(await response.arrayBuffer());
+    const audioResult = await readProviderAudio(response, startedAtMs);
+    firstAudioChunkMs = audioResult.firstAudioChunkMs;
+    const audio = audioResult.audio;
     if (!audio.length) {
       refundBudget(budgetKind, clientKey, budgetUnits);
       logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 502 });
@@ -193,6 +202,42 @@ router.post("/speak", async (req, res) => {
   }
 });
 
+
+
+/**
+ * Buffer the provider body the same way arrayBuffer() did, while noting when the
+ * first non-empty audio chunk arrived. The client still receives one buffered
+ * body with Content-Length; status codes and headers are unchanged.
+ */
+async function readProviderAudio(
+  response: globalThis.Response,
+  startedAtMs: number,
+): Promise<{ audio: Buffer; firstAudioChunkMs: number | null }> {
+  const body = response.body;
+  if (!body || typeof body.getReader !== "function") {
+    const audio = Buffer.from(await response.arrayBuffer());
+    return {
+      audio,
+      firstAudioChunkMs: audio.length > 0 ? Date.now() - startedAtMs : null,
+    };
+  }
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let firstAudioChunkMs: number | null = null;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value || value.byteLength === 0) continue;
+      if (firstAudioChunkMs == null) firstAudioChunkMs = Date.now() - startedAtMs;
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const audio = chunks.length === 0 ? Buffer.alloc(0) : Buffer.concat(chunks);
+  return { audio, firstAudioChunkMs };
+}
 
 async function synthesizeOpenAI(
   text: string,
