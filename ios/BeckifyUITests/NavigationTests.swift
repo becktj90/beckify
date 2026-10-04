@@ -68,9 +68,9 @@ final class NavigationTests: XCTestCase {
         pin.tap()
         pin.tap()
 
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5))
-        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 1)
+        start.press(forDuration: 0, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 1)
         XCTAssertTrue(toolToolbar("voltageDrop").isHittable)
         XCTAssertFalse(app.navigationBars["Jobsite"].exists)
 
@@ -99,8 +99,9 @@ final class NavigationTests: XCTestCase {
     }
 
     private func swipeBack() {
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
-        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
-        start.press(forDuration: 0.1, thenDragTo: end)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+        // Start at the physical edge without a hold to exercise UIKit's edge pan.
+        start.press(forDuration: 0, thenDragTo: end, withVelocity: .fast, thenHoldForDuration: 0)
     }
 }
