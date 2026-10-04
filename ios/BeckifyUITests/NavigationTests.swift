@@ -62,7 +62,8 @@ final class NavigationTests: XCTestCase {
         XCTAssertTrue(toolToolbar("voltageDrop").waitForExistence(timeout: 5))
 
         let pin = app.buttons.matching(NSPredicate(
-            format: "identifier == %@ AND label CONTAINS %@", "star.fill", "Voltage Drop"
+            format: "label == %@ OR label == %@",
+            "Unpin Voltage Drop from home", "Pin Voltage Drop to home"
         )).firstMatch
         pin.tap()
         pin.tap()
