@@ -1626,6 +1626,7 @@ struct MagneticCircuitView: View {
     @StoredInput(.magneticCircuit, "length", default: "0.2") private var length
     @StoredInput(.magneticCircuit, "area", default: "1") private var areaCm2
     @StoredInput(.magneticCircuit, "muR", default: "1000") private var muR
+    @StoredInput(.magneticCircuit, "gap", default: "") private var gapMm
     @StoredInput(.magneticCircuit, "jobName", default: "Magnetic circuit") private var jobName
     @State private var session = ExplicitCalculationState<MagneticCircuitResult>()
     @State private var successTick = 0
@@ -1634,7 +1635,7 @@ struct MagneticCircuitView: View {
     /// Entered in cm² since that is how core cross-sections are usually spec'd.
     private var areaSquareMetres: Double { (areaCm2.parsedDouble ?? .nan) * 1e-4 }
 
-    private var inputFingerprint: String { "\(mmf)|\(length)|\(areaCm2)|\(muR)" }
+    private var inputFingerprint: String { "\(mmf)|\(length)|\(areaCm2)|\(muR)|\(gapMm)" }
 
     var body: some View {
         ToolScaffold(
@@ -1658,15 +1659,16 @@ struct MagneticCircuitView: View {
             NumberField(title: "Path length", unit: "m", text: $length, fieldID: "length", onSubmit: calculate)
             NumberField(title: "Cross-sectional area", unit: "cm²", text: $areaCm2, fieldID: "area", onSubmit: calculate)
             NumberField(title: "Relative permeability µᵣ", unit: "", text: $muR, fieldID: "muR", onSubmit: calculate)
+            NumberField(title: "Air gap", unit: "mm", text: $gapMm, optional: true, helpText: "Optional. A gap adds reluctance in series and the field map shows the fringing.", fieldID: "gap", onSubmit: calculate)
 
             CalculatorActionBar(
                 onCalculate: calculate,
                 onReset: reset,
                 onExample: {
-                    mmf = "500"; length = "0.2"; areaCm2 = "1"; muR = "1000"
+                    mmf = "500"; length = "0.2"; areaCm2 = "1"; muR = "1000"; gapMm = "1"
                     session.prepareForNewInputs()
                 },
-                exampleTitle: "Small relay-sized core"
+                exampleTitle: "Small relay-sized core, 1 mm gap"
             )
 
             if let error = session.lastValidationError ?? session.error {
@@ -1680,6 +1682,8 @@ struct MagneticCircuitView: View {
                     ResultRow(label: "Flux density B", value: "\(Format.number(r.fluxDensity, digits: 3)) T", emphasis: true)
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                coreFieldExplorer
+                    .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
         }
@@ -1695,7 +1699,8 @@ struct MagneticCircuitView: View {
                 magnetomotiveForce: mmf.parsedDouble ?? .nan,
                 pathLength: length.parsedDouble ?? .nan,
                 crossSectionalArea: areaSquareMetres,
-                relativePermeability: muR.parsedDouble ?? .nan
+                relativePermeability: muR.parsedDouble ?? .nan,
+                airGap: airGapMetres
             )
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion {
@@ -1703,8 +1708,39 @@ struct MagneticCircuitView: View {
         }
     }
 
+    /// Blank means no gap.
+    private var airGapMetres: Double {
+        let trimmed = gapMm.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? 0 : (gapMm.parsedDouble ?? .nan) / 1000
+    }
+
+    /// A 2D solve of this core as a rectangular loop with the winding on one leg. The ampere-turns are drawn as a
+    /// one-turn winding, so a real coil scales the induced E by its turns.
+    @ViewBuilder
+    private var coreFieldExplorer: some View {
+        let mmfValue = mmf.parsedDouble ?? .nan
+        let area = areaSquareMetres
+        let path = length.parsedDouble ?? .nan
+        let mu = muR.parsedDouble ?? .nan
+        let gap = airGapMetres
+        if mmfValue.isFinite, area.isFinite, area > 0, path.isFinite, mu.isFinite, gap.isFinite {
+            let leg = area.squareRoot()
+            FieldExplorerCard(
+                title: "Field explorer",
+                key: "\(mmfValue)|\(leg)|\(path)|\(mu)|\(gap)",
+                note: "Drawn as a square-legged loop with the winding on the left leg, solved in 2D per metre of depth with a constant µᵣ and no saturation. Lines are equal-flux contours. The gap shows fringing: flux bulges out of the gap faces, so the gap field is a little lower than the series circuit says. Induced E is for a one-turn winding carrying these ampere-turns. Multiply by the real turns.",
+                build: {
+                    FieldRaster.core(
+                        ampTurns: mmfValue, legThicknessM: leg, pathLengthM: path, gapM: gap,
+                        relativePermeability: mu, currentAmps: mmfValue
+                    )
+                }
+            )
+        }
+    }
+
     private func reset() {
-        mmf = ""; length = ""; areaCm2 = ""; muR = ""
+        mmf = ""; length = ""; areaCm2 = ""; muR = ""; gapMm = ""
         session.reset()
     }
 
@@ -1722,7 +1758,7 @@ struct MagneticCircuitView: View {
         jobs.save(SavedJob(
             name: jobName,
             toolID: .magneticCircuit,
-            inputs: ["mmf": "\(mmf) At", "l": "\(length) m", "A": "\(areaCm2) cm²", "muR": muR],
+            inputs: ["mmf": "\(mmf) At", "l": "\(length) m", "A": "\(areaCm2) cm²", "muR": muR, "gap": gapMm.isEmpty ? "0 mm" : "\(gapMm) mm"],
             outputs: ["B": "\(Format.number(r.fluxDensity, digits: 3)) T", "flux": "\(Format.number(r.flux * 1000, digits: 4)) mWb"]
         ))
     }

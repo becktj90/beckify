@@ -71,6 +71,7 @@
 		BECF000000000000000000E2 /* PlotChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF000000000000000000E1 /* PlotChrome.swift */; };
 		BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000077 /* EngineeringDiagrams.swift */; };
 		BECFD7000000000000000002 /* BenchDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFD7000000000000000001 /* BenchDiagrams.swift */; };
+		BECFD7000000000000000006 /* FieldExplorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFD7000000000000000005 /* FieldExplorer.swift */; };
 		BECFD7000000000000000004 /* PartDiagrams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFD7000000000000000003 /* PartDiagrams.swift */; };
 		BECF0000000000000000007C /* RecentToolsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007B /* RecentToolsStore.swift */; };
 		BECF0000000000000000007E /* ConductorHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000007D /* ConductorHandoff.swift */; };
@@ -224,6 +225,7 @@
 		BECF000000000000000000E1 /* PlotChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlotChrome.swift; sourceTree = "<group>"; };
 		BECF00000000000000000077 /* EngineeringDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineeringDiagrams.swift; sourceTree = "<group>"; };
 		BECFD7000000000000000001 /* BenchDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchDiagrams.swift; sourceTree = "<group>"; };
+		BECFD7000000000000000005 /* FieldExplorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldExplorer.swift; sourceTree = "<group>"; };
 		BECFD7000000000000000003 /* PartDiagrams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartDiagrams.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007B /* RecentToolsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentToolsStore.swift; sourceTree = "<group>"; };
 		BECF0000000000000000007D /* ConductorHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConductorHandoff.swift; sourceTree = "<group>"; };
@@ -470,6 +472,7 @@
 				BECF00000000000000000077 /* EngineeringDiagrams.swift */,
 				BECFD7000000000000000001 /* BenchDiagrams.swift */,
 				BECFD7000000000000000003 /* PartDiagrams.swift */,
+				BECFD7000000000000000005 /* FieldExplorer.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -850,6 +853,7 @@
 				BECF00000000000000000078 /* EngineeringDiagrams.swift in Sources */,
 				BECFD7000000000000000002 /* BenchDiagrams.swift in Sources */,
 				BECFD7000000000000000004 /* PartDiagrams.swift in Sources */,
+				BECFD7000000000000000006 /* FieldExplorer.swift in Sources */,
 				BECF000000000000000000E2 /* PlotChrome.swift in Sources */,
 				BECF0000000000000000007C /* RecentToolsStore.swift in Sources */,
 				BECF0000000000000000007E /* ConductorHandoff.swift in Sources */,

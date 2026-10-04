@@ -274,14 +274,18 @@ public enum MagneticCircuit {
         magnetomotiveForce: Double,
         pathLength: Double,
         crossSectionalArea: Double,
-        relativePermeability: Double
+        relativePermeability: Double,
+        airGap: Double = 0
     ) throws -> MagneticCircuitResult {
         let mmf = try Positive.require(magnetomotiveForce, name: "Magnetomotive force")
         let length = try Positive.require(pathLength, name: "Path length")
         let area = try Positive.require(crossSectionalArea, name: "Cross-sectional area")
         let mu_r = try Positive.require(relativePermeability, name: "Relative permeability")
 
-        let reluctance = length / (mu0 * mu_r * area)
+        guard airGap.isFinite, airGap >= 0 else { throw CalcError.outOfRange("Air gap must be zero or more.") }
+
+        // Steel path plus the gap in series. The gap is air, so it has no µr.
+        let reluctance = length / (mu0 * mu_r * area) + airGap / (mu0 * area)
         let flux = mmf / reluctance
         return MagneticCircuitResult(
             reluctance: reluctance,
