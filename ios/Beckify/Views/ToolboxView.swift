@@ -270,5 +270,48 @@ struct CalculatorHostView: View {
             case .switchgearLogicLab: SwitchgearLogicLabView()
             }
         }
+        .background(ToolBackSwipeSupport().allowsHitTesting(false))
+    }
+}
+
+/// Keep the native edge swipe available even when calculator chrome uses an
+/// empty navigation title. UIKit performs a single interactive pop, so SwiftUI
+/// removes only the last destination and preserves the shelf / previous tool.
+private struct ToolBackSwipeSupport: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+    func updateUIViewController(_ controller: Controller, context: Context) {}
+
+    final class Controller: UIViewController, UIGestureRecognizerDelegate {
+        private weak var popGesture: UIGestureRecognizer?
+        private var previousDelegate: UIGestureRecognizerDelegate?
+        private var previouslyEnabled = false
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            guard let navigationController,
+                  let gesture = navigationController.interactivePopGestureRecognizer,
+                  gesture.delegate !== self else { return }
+            popGesture = gesture
+            previousDelegate = gesture.delegate
+            previouslyEnabled = gesture.isEnabled
+            gesture.delegate = self
+            gesture.isEnabled = navigationController.viewControllers.count > 1
+        }
+
+        override func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
+            // A newly visible tool may already own the gesture. Do not undo it.
+            if let gesture = popGesture, gesture.delegate === self {
+                gesture.delegate = previousDelegate
+                gesture.isEnabled = previouslyEnabled
+            }
+            previousDelegate = nil
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let navigationController else { return false }
+            return navigationController.viewControllers.count > 1
+                && navigationController.transitionCoordinator == nil
+        }
     }
 }

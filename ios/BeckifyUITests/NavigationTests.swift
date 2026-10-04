@@ -17,6 +17,8 @@ final class NavigationTests: XCTestCase {
         let tool = element("toolTile.voltageDrop")
         XCTAssertTrue(tool.waitForExistence(timeout: 5))
         tool.tap()
+        XCTAssertTrue(toolToolbar("voltageDrop").waitForExistence(timeout: 5))
+        XCTAssertTrue(toolToolbar("voltageDrop").isHittable)
         XCTAssertFalse(app.navigationBars["Jobsite"].exists)
 
         swipeBack()
@@ -39,17 +41,19 @@ final class NavigationTests: XCTestCase {
         let related = app.buttons["Open related tool Wire Size & Ampacity"]
         reveal(related)
         related.tap()
-        XCTAssertTrue(header("Wire Size & Ampacity").waitForExistence(timeout: 5))
+        XCTAssertTrue(toolToolbar("wireAmpacity").waitForExistence(timeout: 5))
+        XCTAssertTrue(toolToolbar("wireAmpacity").isHittable)
 
         swipeBack()
-        XCTAssertTrue(header("Voltage Drop").waitForExistence(timeout: 5))
+        XCTAssertTrue(toolToolbar("voltageDrop").waitForExistence(timeout: 5))
+        XCTAssertTrue(toolToolbar("voltageDrop").isHittable)
         XCTAssertFalse(app.navigationBars["Jobsite"].exists)
         swipeBack()
         XCTAssertTrue(app.navigationBars["Jobsite"].waitForExistence(timeout: 5))
     }
 
-    private func header(_ title: String) -> XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", title + ". ")).firstMatch
+    private func toolToolbar(_ toolID: String) -> XCUIElement {
+        app.buttons.matching(identifier: "howItWorksToolbar." + toolID).firstMatch
     }
 
     private func element(_ identifier: String) -> XCUIElement {
