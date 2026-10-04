@@ -44,7 +44,7 @@ math tests do not exercise SwiftUI, VoiceOver, or system file pickers.
 
 ## Back navigation
 
-CI runs `BeckifyUITests/NavigationTests` on iPhone 16 with iOS 18.5 and 26.1.
+CI runs `BeckifyUITests/NavigationTests` on iPhone 16 with iOS 18.5 and 26.2.
 Run the same tests on a Mac with the **Beckify** scheme:
 
 ```bash

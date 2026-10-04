@@ -43,8 +43,8 @@ jobs:
         include:
           - xcode: "16.4"
             ios: "18.5"
-          - xcode: "26.1.1"
-            ios: "26.1"
+          - xcode: "26.3"
+            ios: "26.2"
     name: Beckify swipe-back navigation (iOS ${{ matrix.ios }})
     runs-on: macos-15
     timeout-minutes: 30
