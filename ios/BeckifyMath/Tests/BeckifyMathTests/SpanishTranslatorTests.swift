@@ -105,8 +105,8 @@ final class SpanishTranslatorTests: XCTestCase {
     func testCatalogPolicyAndHowItWorks() {
         XCTAssertTrue(ToolCalculationPolicy.knownToolIDs.contains("spanishTranslator"))
         XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "spanishTranslator"), .explicit)
-        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "spanishTranslator"), .toolkit)
-        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "spanishTranslator"), .reference)
+        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "spanishTranslator"), .field)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "spanishTranslator"), .crew)
         let copy = ToolHowItWorksCatalog.copy(forToolID: "spanishTranslator")
         XCTAssertNotNil(copy)
         let joined = (copy!.summary + " " + copy!.bullets.joined(separator: " ")).lowercased()

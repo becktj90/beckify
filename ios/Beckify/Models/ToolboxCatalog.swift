@@ -154,14 +154,18 @@ extension ToolShelfKind {
     var title: String {
         switch self {
         case .jobsite: return "Jobsite"
+        case .wiring: return "Wire & Cable"
+        case .motors: return "Motors"
         case .power: return "Power & AC"
         case .controls: return "Controls"
         case .magnetics: return "Magnetics & Fields"
-        case .analysis: return "Analysis"
         case .instruments: return "Instruments"
+        case .crew: return "Crew & Paperwork"
         case .basics: return "Basics"
-        case .bench: return "Bench"
-        case .reference: return "Reference"
+        case .electronics: return "Electronics"
+        case .rfOptics: return "RF & Optics"
+        case .build: return "Build & Design"
+        case .math: return "Math & Data"
         }
     }
 
@@ -173,14 +177,13 @@ extension ToolShelfKind {
     /// Existing category glyph / color family for this shelf.
     var category: ToolCategory {
         switch self {
-        case .jobsite: return .field
-        case .power: return .power
+        case .jobsite, .wiring, .motors: return .field
+        case .power, .magnetics: return .power
         case .controls: return .controls
-        case .magnetics: return .power
-        case .analysis: return .analysis
         case .instruments: return .sensors
-        case .basics, .bench: return .homework
-        case .reference: return .reference
+        case .crew: return .reference
+        case .basics, .electronics, .rfOptics, .build: return .homework
+        case .math: return .analysis
         }
     }
 }
@@ -205,11 +208,11 @@ extension ToolboxCatalog {
         tools.filter { Self.area(of: $0.id) == area }
     }
 
-    /// Shelf membership comes from `ToolHomeAreaPolicy`. Category arrays supply
-    /// preferred grid order only; extras (policy members not yet listed) append.
+    /// Shelf membership and grid order both come from `ToolHomeAreaPolicy`. Anything the policy
+    /// leaves out of the order (a new Jobsite tool, say) appends at the end.
     static func tools(on shelf: ToolShelfKind) -> [ToolDefinition] {
         let members = tools.filter { Self.shelf(of: $0.id) == shelf }
-        let preferred = categories[shelf.category] ?? []
+        let preferred = ToolHomeAreaPolicy.toolIDs(on: shelf).compactMap { ToolID(rawValue: $0) }
         var seen = Set<ToolID>()
         var ordered: [ToolDefinition] = []
         for id in preferred {

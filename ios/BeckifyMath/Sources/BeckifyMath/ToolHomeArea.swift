@@ -7,22 +7,29 @@ public enum ToolHomeArea: String, CaseIterable, Sendable, Hashable {
     case toolkit
 }
 
-/// Display shelf inside a home area. Sensors live on Field → Instruments.
+/// Display shelf inside a home area, in the order the grid shows them.
+/// Field is what you carry onto a job. Toolkit is for the bench and for learning.
 public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
+    // Field
     case jobsite
+    case wiring
+    case motors
     case power
     case controls
     case magnetics
-    case analysis
     case instruments
+    case crew
+    // Toolkit
     case basics
-    case bench
-    case reference
+    case electronics
+    case rfOptics
+    case build
+    case math
 
     public var homeArea: ToolHomeArea {
         switch self {
-        case .jobsite, .power, .controls, .magnetics, .analysis, .instruments: return .field
-        case .basics, .bench, .reference: return .toolkit
+        case .jobsite, .wiring, .motors, .power, .controls, .magnetics, .instruments, .crew: return .field
+        case .basics, .electronics, .rfOptics, .build, .math: return .toolkit
         }
     }
 }
@@ -36,20 +43,12 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
 /// → Jobsite unless listed here as Toolkit (including AoE analog IDs).
 public enum ToolHomeAreaPolicy {
     public static func area(forToolID id: String) -> ToolHomeArea {
-        if toolkitIDs.contains(id) { return .toolkit }
-        return .field
+        shelf(forToolID: id).homeArea
     }
 
+    /// Unknown future IDs land on Field → Jobsite.
     public static func shelf(forToolID id: String) -> ToolShelfKind {
-        if magneticsIDs.contains(id) { return .magnetics }
-        if instrumentIDs.contains(id) { return .instruments }
-        if basicsIDs.contains(id) { return .basics }
-        if benchIDs.contains(id) { return .bench }
-        if referenceIDs.contains(id) { return .reference }
-        if powerIDs.contains(id) { return .power }
-        if controlsIDs.contains(id) { return .controls }
-        if analysisIDs.contains(id) { return .analysis }
-        return .jobsite
+        shelfByTool[id] ?? .jobsite
     }
 
     public static var fieldToolIDs: [String] {
@@ -82,82 +81,61 @@ public enum ToolHomeAreaPolicy {
     // MARK: - Membership
 
     /// Default home Pinned seeds (FavoritesStore) — one-tap jobsite calcs plus Wi-Fi Path.
-    /// Editable after first launch; Translator and others pin via star / context menu.
+    /// Editable after first launch; Crew Talk and others pin via star / context menu.
     public static let fieldQuickIDs: [String] = [
         "voltageDrop", "wireAmpacity", "motorFLA",
         "receptacleSelector", "wifiStatus", "conduitFill",
     ]
 
-    /// Homework / bench / reference — including AoE analog IDs from open PRs
-    /// so those tools land in Toolkit when they merge, without this PR adding ToolIDs.
-    private static let toolkitIDs: Set<String> = [
-        "ohmsLaw", "voltageDivider", "seriesParallel", "resistorColor",
-        "ledRC", "frequencyWave", "unitConverter", "timer555",
-        "reactance", "numberBase", "magneticCircuit",
-        "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
-        "electronicsLab",
-        "referenceLibrary",
-        "analogWorkbench", "noiseSNR", "linearRegulator",
-        "instrumentationAmp", "adcDac",
-        "heaterDesign", "solenoidDesign", "empEmc",
-        "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
-        "panelDirectory", "loadWorksheet", "cableSchedule",
-        "spanishTranslator",
+    /// Which shelf each tool sits on. This map is the only place that decides it.
+    private static let shelves: [(ToolShelfKind, [String])] = [
+        (.jobsite, [
+            "voltageDrop", "wireAmpacity", "conduitFill", "receptacleSelector", "necCircuit",
+            "loadFactors", "shortCircuit", "equipmentGround",
+        ]),
+        (.wiring, ["cableLadder", "flexibleCable", "conductorCost", "conductorLength", "circularMils"]),
+        (.motors, ["motorFLA", "motorNameplate", "motorNameplateOCR", "motorSpeed"]),
+        (.power, [
+            "power", "threePhasePower", "powerWizard", "transformer", "powerFactor", "batteryBank",
+            "solarDesign", "tapChanger", "harmonicsTHD", "upsSizing",
+        ]),
+        (.controls, [
+            "signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "isLoopVerifier",
+            "controlSystems", "controlStrategies", "phasorImpedance", "phasorDiagram", "ul508aPanelLab",
+            "switchgearLogicLab",
+        ]),
+        (.magnetics, ["magneticsLab", "emFields", "magneticCircuit", "solenoidDesign", "empEmc"]),
+        (.instruments, [
+            "wifiStatus", "cellularStatus", "bluetoothScan", "noiseMeter", "acousticImager", "setupCheck", "bubbleLevel",
+            "magnetometer", "barometer", "stillnessWatch", "motionSnapshot", "coupledVibration", "fieldPosition",
+            "deviceHealth",
+        ]),
+        (.crew, ["spanishTranslator", "panelDirectory", "loadWorksheet", "cableSchedule", "referenceLibrary"]),
+        (.basics, [
+            "ohmsLaw", "voltageDivider", "seriesParallel", "resistorColor",
+            "ledRC", "frequencyWave", "unitConverter", "timer555",
+        ]),
+        (.electronics, [
+            "electronicsLab", "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp",
+            "adcDac", "transientCircuit", "diodeIV", "reactance",
+        ]),
+        (.rfOptics, ["rfLink", "fiberLink", "gaussianBeam"]),
+        (.build, [
+            "heaterDesign", "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
+        ]),
+        (.math, ["statistics", "numberBase"]),
     ]
 
-    private static let basicsIDs: Set<String> = [
-        "ohmsLaw", "voltageDivider", "seriesParallel", "resistorColor",
-        "ledRC", "frequencyWave", "unitConverter", "timer555",
-    ]
+    private static let shelfByTool: [String: ToolShelfKind] = {
+        var map: [String: ToolShelfKind] = [:]
+        for (shelf, ids) in shelves { for id in ids { map[id] = shelf } }
+        return map
+    }()
 
-    private static let benchIDs: Set<String> = [
-        "reactance", "numberBase", "magneticCircuit",
-        "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
-        "electronicsLab",
-        "analogWorkbench", "noiseSNR", "linearRegulator",
-        "instrumentationAmp", "adcDac",
-        "heaterDesign", "solenoidDesign", "empEmc",
-        "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
-    ]
-
-    private static let referenceIDs: Set<String> = [
-        "referenceLibrary",
-        "panelDirectory", "loadWorksheet", "cableSchedule",
-        "spanishTranslator",
-    ]
-
-    private static let instrumentIDs: Set<String> = [
-        "wifiStatus", "cellularStatus", "bluetoothScan", "noiseMeter", "acousticImager", "setupCheck", "bubbleLevel",
-        "magnetometer", "barometer", "stillnessWatch", "motionSnapshot", "coupledVibration", "fieldPosition",
-        "deviceHealth",
-    ]
-
-    /// Field → Power: distribution / facility energy only. Specialty design
-    /// (heaters, solenoids, EMP, e-bike / nickel pack) lives on Toolkit → Bench.
-    private static let powerIDs: Set<String> = [
-        "power", "threePhasePower", "powerWizard", "transformer", "powerFactor", "batteryBank",
-        "solarDesign", "tapChanger", "harmonicsTHD", "upsSizing",
-    ]
-
-    /// Field → Controls: jobsite loop helpers plus the Control Systems lab.
-    /// Analysis (PID / Bode / lead) sits next to Signal Scaling and PLC Timer
-    /// rather than Toolkit → Bench (Analog Workbench) because the same Field
-    /// audience already uses those tools on a loop. State-space studios stay web-only.
-    /// Field → Magnetics & Fields. Core and EM checks, separate from the bench magnetic-circuit card.
-    private static let magneticsIDs: Set<String> = [
-        "magneticsLab", "emFields",
-    ]
-
-    private static let controlsIDs: Set<String> = [
-        "signalScaling", "modbusAddress", "plcTimer", "rackCurrent",
-        "controlSystems", "controlStrategies", "phasorImpedance", "phasorDiagram", "ul508aPanelLab",
-        "switchgearLogicLab",
-    ]
-
-    /// Field → Analysis: distributions, rescale, paired normals, covariance.
-    private static let analysisIDs: Set<String> = [
-        "statistics",
-    ]
+    /// Tool IDs on a shelf, in the order the grid prefers.
+    public static func toolIDs(on shelf: ToolShelfKind) -> [String] {
+        shelves.first { $0.0 == shelf }?.1 ?? []
+    }
 
     /// Saved-job keys are short labels (`V`, `I`); stored fields are longer.
     private static let fieldAliases: [String: [String: String]] = [
