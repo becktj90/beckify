@@ -424,3 +424,57 @@ private struct CrewTalkConversationTalk: View {
         model.sendTyped(text)
     }
 }
+
+// MARK: - Sprite
+
+/// Full-body 16-bit helper. Two existing frames, nearest-neighbor so pixels stay crisp.
+/// Talk is a syllable beat (idle held longer than the talk pose), not a 150 ms hard swap.
+/// Junie's talk frame is the idle pose with the mouth open. Sloane is centered on the canvas.
+/// The bob is a small continuous offset, independent of the frame cut.
+struct CrewTalkSprite: View {
+    let crew: CrewTalkMember
+    let isTalking: Bool
+    var height: CGFloat = 168
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One beat. Longer than a display frame so a timeline tick cannot skip the pose.
+    private static let beat: TimeInterval = 0.10
+    /// Closed, closed, open, closed, closed, open, closed, open.
+    private static let mouthOpenOnBeat: [Bool] = [false, false, true, false, false, true, false, true]
+    /// Gentle whole-sprite bob. Not locked to the mouth, and much smaller than the old 5 pt jump.
+    private static let bobPeriod: TimeInterval = 0.70
+    private static let bobAmplitude: CGFloat = 1.25
+
+    var body: some View {
+        Group {
+            if isTalking, !reduceMotion {
+                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
+                    let t = context.date.timeIntervalSinceReferenceDate
+                    let beatIndex = Int(t / Self.beat) % Self.mouthOpenOnBeat.count
+                    let bob = CGFloat(sin(t * (2 * .pi) / Self.bobPeriod)) * Self.bobAmplitude
+                    frame(mouthOpen: Self.mouthOpenOnBeat[beatIndex], bob: bob)
+                }
+            } else {
+                frame(mouthOpen: isTalking, bob: 0)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("spanishTranslator.crewPortrait")
+        .accessibilityLabel(isTalking ? "\(crew.displayName), talking" : crew.displayName)
+    }
+
+    private func frame(mouthOpen: Bool, bob: CGFloat) -> some View {
+        Image(mouthOpen ? crew.talkAssetName : crew.portraitAssetName)
+            .interpolation(.none)
+            .resizable()
+            .scaledToFit()
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .offset(y: bob)
+            // Instant cut. A linear animation on the frame smears two poses and fights nearest-neighbor.
+            .transaction { transaction in
+                transaction.animation = nil
+            }
+    }
+}
