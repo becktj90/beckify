@@ -701,3 +701,190 @@ struct NickelStripDiagram: View {
         )
     }
 }
+
+// MARK: - Gaussian beam envelope
+
+/// w(z) both sides of the axis, with the waist and the Rayleigh range marked. Units are millimetres.
+struct GaussianBeamEnvelopeDiagram: View {
+    let waistMM: Double
+    let rayleighMM: Double
+    /// The distance the user entered, when there is one.
+    var distanceMM: Double?
+    var radiusAtDistanceMM: Double?
+
+    private var extent: Double { max(rayleighMM * 3, (distanceMM ?? 0) * 1.15) }
+
+    var body: some View {
+        let upper = GaussianBeam.envelope(waistRadius: waistMM, rayleighRange: rayleighMM, extent: extent)
+        let lower = upper.map { PlotPoint(x: $0.x, y: -$0.y) }
+        var markers = [
+            EngineerMarker(x: 0, y: waistMM, label: "w₀", color: Theme.good),
+            EngineerMarker(x: rayleighMM, y: waistMM * 2.0.squareRoot(), label: "z_R", color: Theme.warn),
+        ]
+        if let distanceMM, let radiusAtDistanceMM {
+            markers.append(EngineerMarker(x: distanceMM, y: radiusAtDistanceMM, label: "z", color: Theme.accent))
+        }
+        return DiagramCard(
+            title: "Beam envelope",
+            accessibilitySummary: "Gaussian beam envelope. Waist \(Format.number(waistMM, digits: 3)) millimetres, Rayleigh range \(Format.number(rayleighMM, digits: 1)) millimetres.",
+            exportName: "gaussian-beam"
+        ) {
+            VStack(alignment: .leading, spacing: 6) {
+                EngineerLinePlot(
+                    series: [
+                        EngineerSeries(name: "+w(z)", points: upper, color: Theme.accent),
+                        EngineerSeries(name: "−w(z)", points: lower, color: Theme.accent),
+                    ],
+                    xLabel: "z from the waist (mm)",
+                    yLabel: "beam radius (mm)",
+                    markers: markers,
+                    xGuides: [
+                        EngineerGuide(value: rayleighMM, label: "z_R", axis: .x),
+                        EngineerGuide(value: -rayleighMM, label: "−z_R", axis: .x),
+                    ],
+                    height: 190
+                )
+                Text("At z_R the radius is √2 times the waist and the beam area has doubled. Past a few z_R it spreads in a straight cone at the divergence angle.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityIdentifier("gaussianBeam.envelope")
+    }
+}
+
+// MARK: - Fiber acceptance cone
+
+/// Light entering the end face of a fiber. Rays inside the acceptance cone stay guided and rays outside leak.
+struct FiberAcceptanceDiagram: View {
+    let numericalAperture: Double
+    let acceptanceDegrees: Double
+
+    var body: some View {
+        DiagramCard(
+            title: "Acceptance cone",
+            accessibilitySummary: "Fiber acceptance cone. Numerical aperture \(Format.number(numericalAperture, digits: 3)). Half angle \(Format.number(acceptanceDegrees, digits: 1)) degrees.",
+            exportName: "fiber-acceptance"
+        ) {
+            Canvas { context, size in
+                draw(Self.fit(context, size))
+            }
+            .aspectRatio(320.0 / 170.0, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Fiber acceptance cone, half angle \(Format.number(acceptanceDegrees, digits: 1)) degrees")
+        }
+        .accessibilityIdentifier("fiberLink.cone")
+    }
+
+    private static func fit(_ context: GraphicsContext, _ size: CGSize) -> GraphicsContext {
+        var scaled = context
+        let k = min(size.width / 320, size.height / 170)
+        scaled.translateBy(x: (size.width - 320 * k) / 2, y: (size.height - 170 * k) / 2)
+        scaled.scaleBy(x: k, y: k)
+        return scaled
+    }
+
+    private func draw(_ c: GraphicsContext) {
+        let faceX: CGFloat = 170
+        let midY: CGFloat = 85
+        let half = min(max(acceptanceDegrees, 1), 89) * .pi / 180
+        // Fiber: core and cladding to the right of the face.
+        let cladding = CGRect(x: faceX, y: midY - 24, width: 140, height: 48)
+        let core = CGRect(x: faceX, y: midY - 14, width: 140, height: 28)
+        c.fill(Path(cladding), with: .color(Theme.muted.opacity(0.22)))
+        c.fill(Path(core), with: .color(Theme.accent.opacity(0.30)))
+        c.stroke(Path(core), with: .color(Theme.accent), lineWidth: 1.2)
+        BenchInk.label(c, "core", at: CGPoint(x: faceX + 70, y: midY), size: 10.5, color: Theme.accent)
+        BenchInk.label(c, "cladding", at: CGPoint(x: faceX + 70, y: midY + 36), size: 10, color: Theme.muted)
+
+        // Acceptance cone on the left, apex at the face centre.
+        let reach: CGFloat = 130
+        var cone = Path()
+        cone.move(to: CGPoint(x: faceX, y: midY))
+        cone.addLine(to: CGPoint(x: faceX - reach * CGFloat(cos(half)), y: midY - reach * CGFloat(sin(half))))
+        cone.addLine(to: CGPoint(x: faceX - reach * CGFloat(cos(half)), y: midY + reach * CGFloat(sin(half))))
+        cone.closeSubpath()
+        c.fill(cone, with: .color(Theme.good.opacity(0.16)))
+        c.stroke(cone, with: .color(Theme.good), style: StrokeStyle(lineWidth: 1.4, lineJoin: .round))
+
+        // Axis.
+        var axis = Path()
+        axis.move(to: CGPoint(x: faceX - reach - 10, y: midY))
+        axis.addLine(to: CGPoint(x: faceX, y: midY))
+        c.stroke(axis, with: .color(Theme.muted), style: StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
+
+        // A guided ray inside the cone and a leaking one outside it.
+        func ray(angle: Double, color: Color, guided: Bool) {
+            let start = CGPoint(x: faceX - 105 * CGFloat(cos(angle)), y: midY - 105 * CGFloat(sin(angle)))
+            var path = Path()
+            path.move(to: start)
+            path.addLine(to: CGPoint(x: faceX, y: midY))
+            if guided {
+                path.addLine(to: CGPoint(x: faceX + 70, y: midY + 70 * CGFloat(tan(asin(sin(angle) / 1.46)))))
+            } else {
+                path.addLine(to: CGPoint(x: faceX + 22, y: midY + 22 * CGFloat(tan(asin(min(sin(angle) / 1.46, 0.99)))) * 1.9))
+            }
+            c.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
+        }
+        ray(angle: half * 0.55, color: Theme.good, guided: true)
+        ray(angle: min(half * 1.5, 1.45), color: Theme.bad, guided: false)
+
+        // Angle arc and labels.
+        var arc = Path()
+        arc.addArc(center: CGPoint(x: faceX, y: midY), radius: 46, startAngle: .radians(Double.pi - half), endAngle: .radians(Double.pi), clockwise: true)
+        c.stroke(arc, with: .color(Theme.good), lineWidth: 1.4)
+        BenchInk.label(c, "θ \(Format.number(acceptanceDegrees, digits: 1))°", at: CGPoint(x: faceX - 78, y: midY - 20 - 14), size: 12, color: Theme.good)
+        BenchInk.label(c, "NA \(Format.number(numericalAperture, digits: 3)) = sin θ", at: CGPoint(x: 90, y: 150), size: 11, color: Theme.foreground)
+        BenchInk.label(c, "guided", at: CGPoint(x: faceX + 70, y: midY - 32), size: 10, color: Theme.good, anchor: .center)
+        BenchInk.label(c, "outside the cone leaks", at: CGPoint(x: faceX - 8, y: 20), size: 10, color: Theme.bad, anchor: .trailing)
+    }
+}
+
+// MARK: - Noise contributions
+
+/// Where the noise power comes from. The parts add in power, so each bar is a share of the total.
+struct NoiseContributionDiagram: View {
+    let contributions: [NoiseSNRResult.Contribution]
+
+    var body: some View {
+        let summary = contributions.map { "\($0.name) \(Format.percent($0.share * 100))" }.joined(separator: ", ")
+        return DiagramCard(
+            title: "Noise budget",
+            accessibilitySummary: "Share of noise power. \(summary).",
+            exportName: "noise-budget"
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(contributions, id: \.name) { item in
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack {
+                            Text(item.name)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Theme.foreground)
+                            Spacer()
+                            Text("\(Format.percent(item.share * 100)) · \(AnalogFormat.rms(item.vrms))")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(Theme.muted)
+                        }
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.surface)
+                                Capsule()
+                                    .fill(item.share > 0.5 ? Theme.warn : Theme.accent)
+                                    .frame(width: max(geo.size.width * item.share, 4))
+                            }
+                        }
+                        .frame(height: 8)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+                Text("Noise sources add as power, not as volts. The biggest bar is the one worth fixing first.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityIdentifier("noiseSNR.budget")
+    }
+}

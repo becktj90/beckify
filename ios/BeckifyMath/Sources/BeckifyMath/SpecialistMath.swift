@@ -402,4 +402,13 @@ public enum GaussianBeam {
             radiusAtDistance: radiusAtZ
         )
     }
+
+    /// Beam radius w(z) = w₀√(1 + (z/z_R)²) from −extent to +extent. Same units as the waist and range.
+    public static func envelope(waistRadius w0: Double, rayleighRange zR: Double, extent: Double, samples: Int = 81) -> [PlotPoint] {
+        guard w0 > 0, zR > 0, extent > 0, samples >= 3 else { return [] }
+        return (0..<samples).map { index in
+            let z = -extent + 2 * extent * Double(index) / Double(samples - 1)
+            return PlotPoint(x: z, y: w0 * (1 + (z / zR) * (z / zR)).squareRoot())
+        }
+    }
 }

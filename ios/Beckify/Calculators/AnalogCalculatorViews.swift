@@ -649,6 +649,10 @@ struct NoiseSNRView: View {
                     }
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                if r.contributions.count > 1 {
+                    NoiseContributionDiagram(contributions: r.contributions)
+                        .opacity(session.isStale ? 0.72 : 1)
+                }
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
         }

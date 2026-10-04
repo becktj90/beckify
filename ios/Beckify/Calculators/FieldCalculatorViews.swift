@@ -1844,6 +1844,8 @@ struct FiberLinkView: View {
                     }
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                FiberAcceptanceDiagram(numericalAperture: r.numericalAperture, acceptanceDegrees: r.acceptanceAngleDegrees)
+                    .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
         }
@@ -1961,6 +1963,13 @@ struct GaussianBeamView: View {
                         ResultRow(label: "Radius at distance", value: "\(Format.number(radius, digits: 4)) mm", emphasis: true)
                     }
                 }
+                .opacity(session.isStale ? 0.72 : 1)
+                GaussianBeamEnvelopeDiagram(
+                    waistMM: waist.parsedDouble ?? 0,
+                    rayleighMM: r.rayleighRange,
+                    distanceMM: distance.parsedDouble,
+                    radiusAtDistanceMM: r.radiusAtDistance
+                )
                 .opacity(session.isStale ? 0.72 : 1)
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
