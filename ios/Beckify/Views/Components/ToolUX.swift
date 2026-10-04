@@ -127,13 +127,7 @@ struct ToolScaffold<Content: View>: View {
         .navigationTitle(tool.title)
         .navigationBarTitleDisplayMode(.inline)
         .background(Theme.background.ignoresSafeArea())
-        .background {
-            if #available(iOS 26.0, *) {
-                EmptyView()
-            } else {
-                LegacyToolBackSwipeSupport().allowsHitTesting(false)
-            }
-        }
+        .supportLegacyBackSwipe()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !immersivePlay {
                 stickyChrome
@@ -880,120 +874,115 @@ struct CloudVisionAnalyzeChrome: View {
     }
 }
 
-/// Older SwiftUI stacks can leave the edge recognizer disabled for calculator
-/// content. Resolve the containing navigation controller through the view's
-/// window, and keep UIKit's interactive one-page pop and cancellation behavior.
-private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
-    func makeCoordinator() -> Coordinator { Coordinator() }
+extension View {
+    func supportLegacyBackSwipe() -> some View {
+        modifier(LegacyBackSwipeModifier())
+    }
+}
+
+/// Some older SwiftUI stacks do not start UIKit's screen-edge recognizer.
+/// Complete a qualifying edge drag with the destination's one-page dismiss.
+/// Leave an active native pop alone so it cannot remove a second page.
+private struct LegacyBackSwipeModifier: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var navigation = BackSwipeNavigationContext()
+    @State private var startingDepth: Int?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+        } else {
+            content
+                .background(BackSwipeNavigationProbe(navigation: navigation).allowsHitTesting(false))
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 16)
+                        .onChanged { value in
+                            if startingDepth == nil, value.startLocation.x >= 0, value.startLocation.x <= 24 {
+                                startingDepth = navigation.depth
+                            }
+                        }
+                        .onEnded { value in
+                            defer { startingDepth = nil }
+                            let distance = value.translation.width
+                            guard value.startLocation.x >= 0, value.startLocation.x <= 24,
+                                  distance > 30, distance > abs(value.translation.height) * 2,
+                                  navigation.width > 0,
+                                  max(distance, value.predictedEndTranslation.width) > navigation.width * 0.45,
+                                  let startingDepth, navigation.canDismiss(startingAt: startingDepth) else { return }
+                            dismiss()
+                        }
+                )
+                .onDisappear { startingDepth = nil }
+        }
+    }
+}
+
+private final class BackSwipeNavigationContext: ObservableObject {
+    weak var navigation: UINavigationController?
+    weak var carrier: UIView?
+
+    var depth: Int? { navigation?.viewControllers.count }
+    var width: CGFloat { navigation?.view.bounds.width ?? 0 }
+
+    func canDismiss(startingAt depth: Int) -> Bool {
+        guard let navigation, let carrier,
+              navigation.viewControllers.count == depth, depth > 1,
+              navigation.transitionCoordinator == nil,
+              let top = navigation.topViewController?.viewIfLoaded,
+              carrier.isDescendant(of: top) else { return false }
+        switch navigation.interactivePopGestureRecognizer?.state {
+        case .began, .changed, .ended: return false
+        default: return true
+        }
+    }
+
+    func resolve(in view: UIView) {
+        carrier = view
+        guard let root = view.window?.rootViewController else { navigation = nil; return }
+        navigation = findNavigation(in: root, containing: view)
+    }
+
+    private func findNavigation(in controller: UIViewController, containing view: UIView) -> UINavigationController? {
+        if let navigation = controller as? UINavigationController,
+           let navigationView = navigation.viewIfLoaded,
+           view.isDescendant(of: navigationView) {
+            return navigation
+        }
+        for child in controller.children {
+            if let navigation = findNavigation(in: child, containing: view) { return navigation }
+        }
+        return nil
+    }
+}
+
+private struct BackSwipeNavigationProbe: UIViewRepresentable {
+    let navigation: BackSwipeNavigationContext
 
     func makeUIView(context: Context) -> CarrierView {
         let view = CarrierView()
-        if ProcessInfo.processInfo.environment["BECKIFY_NAV_DIAGNOSTICS"] == "1" {
-            view.isAccessibilityElement = true
-            view.accessibilityIdentifier = "legacyBackSwipeDiagnostic"
-            view.diagnostic = { [weak view, coordinator = context.coordinator] in
-                guard let view else { return "missing view" }
-                return coordinator.diagnostic(in: view)
-            }
-        }
-        view.windowChanged = { [weak view, coordinator = context.coordinator] in
+        view.windowChanged = { [weak view, navigation] in
             DispatchQueue.main.async {
                 guard let view else { return }
-                if view.window != nil { coordinator.install(in: view) }
-                else { coordinator.restore() }
+                navigation.resolve(in: view)
             }
         }
         return view
     }
 
-    func updateUIView(_ view: CarrierView, context: Context) {}
+    func updateUIView(_ view: CarrierView, context: Context) {
+        navigation.resolve(in: view)
+    }
 
-    static func dismantleUIView(_ view: CarrierView, coordinator: Coordinator) {
+    static func dismantleUIView(_ view: CarrierView, coordinator: ()) {
         view.windowChanged = nil
-        coordinator.restore()
     }
 
     final class CarrierView: UIView {
         var windowChanged: (() -> Void)?
-        var diagnostic: (() -> String)?
-        override var accessibilityLabel: String? {
-            get { diagnostic?() }
-            set {}
-        }
         override func didMoveToWindow() {
             super.didMoveToWindow()
             windowChanged?()
-        }
-    }
-
-    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
-        private weak var navigation: UINavigationController?
-        private weak var gesture: UIGestureRecognizer?
-        private var previousDelegate: UIGestureRecognizerDelegate?
-        private var gestureAttempts = 0
-        private var initialGestureSurface = ""
-
-        func install(in view: UIView) {
-            guard let root = view.window?.rootViewController,
-                  let navigation = findNavigation(in: root, containing: view),
-                  let gesture = navigation.interactivePopGestureRecognizer,
-                  gesture.delegate !== self else { return }
-            initialGestureSurface = "type=\(type(of: gesture)) view=\(String(describing: gesture.view.map { type(of: $0) })) frame=\(String(describing: gesture.view?.frame)) navFrame=\(navigation.view.frame) edges=\((gesture as? UIScreenEdgePanGestureRecognizer)?.edges.rawValue ?? 0)"
-            if gesture.view !== navigation.view {
-                navigation.view.addGestureRecognizer(gesture)
-            }
-            if let edge = gesture as? UIScreenEdgePanGestureRecognizer {
-                edge.edges = .left
-            }
-            self.navigation = navigation
-            self.gesture = gesture
-            if let previous = gesture.delegate as? Coordinator {
-                previousDelegate = previous.previousDelegate
-            } else {
-                previousDelegate = gesture.delegate
-            }
-            gesture.delegate = self
-            gesture.isEnabled = navigation.viewControllers.count > 1
-        }
-
-        func diagnostic(in view: UIView) -> String {
-            let current = navigation ?? view.window?.rootViewController.flatMap { findNavigation(in: $0, containing: view) }
-            let recognizer = current?.interactivePopGestureRecognizer
-            func hierarchy(_ controller: UIViewController) -> String {
-                "\(type(of: controller))[\(controller.children.map(hierarchy).joined(separator: ","))]"
-            }
-            return "surface=\(initialGestureSurface) attempts=\(gestureAttempts) nav=\(String(describing: current.map { type(of: $0) })) count=\(current?.viewControllers.count ?? -1) enabled=\(recognizer?.isEnabled ?? false) delegate=\(String(describing: recognizer?.delegate)) transition=\(current?.transitionCoordinator != nil) hierarchy=\(view.window?.rootViewController.map(hierarchy) ?? "no window")"
-        }
-
-        func restore() {
-            if let gesture, gesture.delegate === self {
-                gesture.delegate = previousDelegate
-                gesture.isEnabled = (navigation?.viewControllers.count ?? 0) > 1
-            }
-            previousDelegate = nil
-        }
-
-        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-            gestureAttempts += 1
-            guard let navigation else { return false }
-            return navigation.viewControllers.count > 1 && navigation.transitionCoordinator == nil
-        }
-
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-                               shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-            gestureRecognizer === gesture
-        }
-
-        private func findNavigation(in controller: UIViewController, containing view: UIView) -> UINavigationController? {
-            if let navigation = controller as? UINavigationController,
-               let navigationView = navigation.viewIfLoaded,
-               view.isDescendant(of: navigationView) {
-                return navigation
-            }
-            for child in controller.children {
-                if let navigation = findNavigation(in: child, containing: view) { return navigation }
-            }
-            return nil
         }
     }
 }

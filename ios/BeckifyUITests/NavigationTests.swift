@@ -5,7 +5,6 @@ final class NavigationTests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app.launchEnvironment["BECKIFY_NAV_DIAGNOSTICS"] = "1"
         app.launch()
     }
 
@@ -100,12 +99,9 @@ final class NavigationTests: XCTestCase {
     }
 
     private func swipeBack() {
-        let diagnostic = element("legacyBackSwipeDiagnostic")
-        if diagnostic.exists { print("BECKIFY_NAV: " + diagnostic.label) }
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.5))
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
         // Start inside the screen-edge region so the first touch reaches the window.
         start.press(forDuration: 0.05, thenDragTo: end)
-        if diagnostic.exists { print("BECKIFY_NAV_AFTER: " + diagnostic.label) }
     }
 }

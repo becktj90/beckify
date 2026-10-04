@@ -369,6 +369,7 @@ struct ToolShelfScreen: View {
             }
         }
         .navigationTitle(shelf.title)
+        .supportLegacyBackSwipe()
         .navigationBarTitleDisplayMode(.inline)
     }
 }
