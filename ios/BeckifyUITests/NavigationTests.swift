@@ -39,13 +39,17 @@ final class NavigationTests: XCTestCase {
         let related = app.buttons["Open related tool Wire Size & Ampacity"]
         reveal(related)
         related.tap()
-        XCTAssertTrue(app.staticTexts["Wire Size & Ampacity"].waitForExistence(timeout: 5))
+        XCTAssertTrue(header("Wire Size & Ampacity").waitForExistence(timeout: 5))
 
         swipeBack()
-        XCTAssertTrue(app.staticTexts["Voltage Drop"].waitForExistence(timeout: 5))
+        XCTAssertTrue(header("Voltage Drop").waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["Jobsite"].exists)
         swipeBack()
         XCTAssertTrue(app.navigationBars["Jobsite"].waitForExistence(timeout: 5))
+    }
+
+    private func header(_ title: String) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", title + ". ")).firstMatch
     }
 
     private func element(_ identifier: String) -> XCUIElement {
