@@ -299,12 +299,27 @@ struct AnalogDesignWorkbenchView: View {
                     return "\(part.name) · \(part.kindLabel) · \(part.packageLabel)"
                 }
             }
-            Picker("View", selection: $picture) {
+            // A passive filter has no op-amp, so Pinout is not offered. Fall back to the schematic if it was selected.
+            let shown: WorkbenchPicture = (picture == .pinout && !usesPart) ? .schematic : picture
+            Picker("View", selection: Binding(get: { shown }, set: { picture = $0 })) {
                 ForEach(WorkbenchPicture.allCases.filter { usesPart || $0 != .pinout }) { Text($0.rawValue).tag($0) }
             }
             .segmentedControlStyle()
             .accessibilityIdentifier("analogWorkbench.viewMode")
-            switch (usesPart && picture == .pinout) ? WorkbenchPicture.pinout : picture {
+            if panel == .filters, let values = filterBoardValues {
+                if let limit = WorkbenchBoards.filterLimitation(filter, values: values) {
+                    Text(limit)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.warn)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if let note = WorkbenchBoards.filterGainNote(filter, values: values, requestedGain: filterGain.parsedDouble ?? .nan) {
+                    Text(note)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.warn)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            switch shown {
             case .schematic: schematicView
             case .breadboard: breadboardView
             case .pinout: pinoutView
@@ -344,7 +359,9 @@ struct AnalogDesignWorkbenchView: View {
         if let layout {
             BreadboardCard(layout: layout)
         } else {
-            Text("Enter every value for this circuit and the breadboard appears here.")
+            Text(panel == .filters && filterBoardValues.map { WorkbenchBoards.filterLimitation(filter, values: $0) != nil } == true
+                ? "No board for these numbers. See the note above."
+                : "Enter every value for this circuit and the breadboard appears here.")
                 .font(.footnote)
                 .foregroundStyle(Theme.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)

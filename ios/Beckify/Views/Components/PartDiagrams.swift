@@ -938,31 +938,34 @@ struct FilterSchematic: View {
             if resistor { Sch.resistor(ctx, from: from, to: to) } else { Sch.capacitor(ctx, from: from, to: to) }
             label(ctx, text, CGPoint(x: (from.x + to.x) / 2, y: from.y - 15))
         }
+        // Each part carries its value so the schematic is enough to build from.
+        let rv = rText.isEmpty ? "" : " \(rText)"
+        let cv = cText.isEmpty ? "" : " \(cText)"
         // Series arm, then the junction.
-        series(CGPoint(x: 26, y: y), CGPoint(x: 80, y: y), resistor: lowpass, text: lowpass ? "R1" : "C1")
+        series(CGPoint(x: 26, y: y), CGPoint(x: 80, y: y), resistor: lowpass, text: lowpass ? "R1\(rv)" : "C1\(cv)")
         Sch.wire(ctx, [CGPoint(x: 80, y: y), junction, CGPoint(x: 104, y: y)])
         Sch.dot(ctx, junction)
-        series(CGPoint(x: 104, y: y), CGPoint(x: 142, y: y), resistor: lowpass, text: lowpass ? "R2" : "C2")
+        series(CGPoint(x: 104, y: y), CGPoint(x: 142, y: y), resistor: lowpass, text: lowpass ? "R2\(rv)" : "C2\(cv)")
         Sch.wire(ctx, [CGPoint(x: 142, y: y), plusNode, amp.plus])
         Sch.dot(ctx, plusNode)
         // Shunt from IN+ to ground.
         let groundY: CGFloat = 150
         if lowpass {
             Sch.capacitor(ctx, from: plusNode, to: CGPoint(x: plusNode.x, y: groundY))
-            label(ctx, "C2", CGPoint(x: plusNode.x - 8, y: 104), anchor: .trailing)
+            label(ctx, "C2\(cv)", CGPoint(x: plusNode.x - 8, y: 104), anchor: .trailing)
         } else {
             Sch.resistor(ctx, from: plusNode, to: CGPoint(x: plusNode.x, y: groundY))
-            label(ctx, "R2", CGPoint(x: plusNode.x - 8, y: 104), anchor: .trailing)
+            label(ctx, "R2\(rv)", CGPoint(x: plusNode.x - 8, y: 104), anchor: .trailing)
         }
         Sch.ground(ctx, at: CGPoint(x: plusNode.x, y: groundY))
         // Feedback from the junction over the top to Vout.
         Sch.wire(ctx, [junction, CGPoint(x: junction.x, y: 22), CGPoint(x: 130, y: 22)])
         if lowpass {
             Sch.capacitor(ctx, from: CGPoint(x: 130, y: 22), to: CGPoint(x: 176, y: 22))
-            label(ctx, "C1", CGPoint(x: 153, y: 9))
+            label(ctx, "C1\(cv)", CGPoint(x: 153, y: 9))
         } else {
             Sch.resistor(ctx, from: CGPoint(x: 130, y: 22), to: CGPoint(x: 176, y: 22))
-            label(ctx, "R1", CGPoint(x: 153, y: 9))
+            label(ctx, "R1\(rv)", CGPoint(x: 153, y: 9))
         }
         Sch.wire(ctx, [CGPoint(x: 176, y: 22), CGPoint(x: outNode.x, y: 22), outNode])
         Sch.wire(ctx, [amp.out, CGPoint(x: 296, y: amp.out.y)])

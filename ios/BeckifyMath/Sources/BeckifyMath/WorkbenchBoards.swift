@@ -207,6 +207,7 @@ public enum WorkbenchBoards {
         values: WorkbenchFilterValues,
         part: WorkbenchOpAmpPart
     ) -> BreadboardLayout? {
+        guard filterLimitation(family, values: values) == nil else { return nil }
         var builder = BreadboardBuilder(blankSolution(for: .firstOrderFilter))
         let seat = WBSeat(part: part, origin: 12)
         switch family {
@@ -216,6 +217,44 @@ public enum WorkbenchBoards {
         case .sallenKeyHighpass: return builder.wbSallenKey(seat, values, lowpass: false)
         case .twinTNotch: return builder.wbTwinT(values)
         case .firstOrderAllpass: return builder.wbAllpass(seat, values)
+        }
+    }
+
+    /// The passband gain the drawn circuit actually has. The Bode plot can show any gain, a circuit shows one.
+    public static func realizedGain(_ family: AnalogFilterFamily, values: WorkbenchFilterValues) -> Double {
+        switch family {
+        case .sallenKeyLowpass, .sallenKeyHighpass: return max(values.sallenKeyK ?? 1, 1)
+        case .rcLowpass, .rcHighpass, .twinTNotch, .firstOrderAllpass: return 1
+        }
+    }
+
+    /// Why a family cannot be drawn for these numbers, or nil when it can. The board is not drawn in that case.
+    public static func filterLimitation(_ family: AnalogFilterFamily, values: WorkbenchFilterValues) -> String? {
+        switch family {
+        case .sallenKeyLowpass, .sallenKeyHighpass:
+            if let k = values.sallenKeyK, k < 0.999 {
+                return "Q below 0.5 needs a section with gain under 1. An op-amp stage cannot give that, so no board is drawn. Use Q of 0.5 or more."
+            }
+        case .twinTNotch:
+            if abs(values.quality - 0.25) > 0.02 {
+                return "A passive twin-T has Q ≈ 0.25. A sharper notch needs a bootstrapped or active twin-T, which this board does not draw."
+            }
+        default: break
+        }
+        return nil
+    }
+
+    /// A line to show when the requested passband gain is not the one the drawn circuit gives.
+    public static func filterGainNote(_ family: AnalogFilterFamily, values: WorkbenchFilterValues, requestedGain: Double) -> String? {
+        guard requestedGain.isFinite, requestedGain > 0 else { return nil }
+        let real = realizedGain(family, values: values)
+        guard abs(real - requestedGain) > 0.01 * max(real, 1) else { return nil }
+        let shown = BreadboardFormat.trim(real)
+        switch family {
+        case .sallenKeyLowpass, .sallenKeyHighpass:
+            return "The circuit shown has passband gain K = \(shown), which its Q sets. The Passband gain field only scales the Bode plot."
+        default:
+            return "The circuit shown has a passband gain of \(shown). The Passband gain field only scales the Bode plot. Add a gain stage to realize it."
         }
     }
 
@@ -391,7 +430,17 @@ extension BreadboardBuilder {
             fail(#line, id)
             return
         }
-        capacitor(id, name, farads, hole(positive.col, row, positive.net), hole(negative.col, row, negative.net))
+        wbNonPolarCapacitor(id, name, farads, hole(positive.col, row, positive.net), hole(negative.col, row, negative.net))
+    }
+
+    /// Filter and amplifier caps sit in bipolar signal paths, so they are drawn as film or ceramic parts at every value.
+    /// An electrolytic there would be reverse-biased for half of every cycle.
+    mutating func wbNonPolarCapacitor(_ id: String, _ name: String, _ farads: Double, _ a: BBLead, _ b: BBLead) {
+        components.append(BBComponent(
+            id: id,
+            part: .ceramic(farads: farads, label: "\(name) \(BreadboardFormat.farads(farads))"),
+            leads: [a, b]
+        ))
     }
 
     /// A part standing across the gutter in one column. The top half is lead 0.
@@ -412,7 +461,7 @@ extension BreadboardBuilder {
             fail(#line, id)
             return
         }
-        capacitor(id, name, farads, hole(col, .e, top), hole(col, .f, bottom))
+        wbNonPolarCapacitor(id, name, farads, hole(col, .e, top), hole(col, .f, bottom))
     }
 
     /// A signal source standing in as a cell. Its + lead is in `plusCol`, its − lead three columns left on the ground rail.

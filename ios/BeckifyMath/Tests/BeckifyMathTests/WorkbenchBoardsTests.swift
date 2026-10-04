@@ -28,7 +28,9 @@ final class WorkbenchBoardsTests: XCTestCase {
         for part in WorkbenchBoards.opAmpParts {
             for family in AnalogFilterFamily.allCases {
                 for q in [0.5, 0.707, 2.0] {
-                    guard let layout = WorkbenchBoards.filter(family, values: filterValues(q: q, k: 3 - 1 / q), part: part) else {
+                    // A passive twin-T is Q 0.25, so the board only exists for that.
+                    let values = filterValues(q: family == .twinTNotch ? 0.25 : q, k: 3 - 1 / q)
+                    guard let layout = WorkbenchBoards.filter(family, values: values, part: part) else {
                         XCTFail("\(part.name) \(family) q=\(q) did not fit the board: \(WorkbenchBoards.lastFailure)")
                         continue
                     }
@@ -77,6 +79,38 @@ final class WorkbenchBoardsTests: XCTestCase {
                 XCTAssertEqual(role(amp.inMinus), .inputMinus, "\(part.id) \(amp.letter)")
                 XCTAssertEqual(role(amp.inPlus), .inputPlus, "\(part.id) \(amp.letter)")
                 XCTAssertEqual(role(amp.out), .output, "\(part.id) \(amp.letter)")
+            }
+        }
+    }
+
+    func testBoardsAreNotDrawnForCircuitsThatCannotRealizeTheRequest() throws {
+        let part = try XCTUnwrap(WorkbenchBoards.opAmpPart(id: "lm741"))
+        // Q = 0.4 would need K = 0.5. A non-inverting stage cannot do that.
+        let low = filterValues(q: 0.4, k: 0.5)
+        XCTAssertNotNil(WorkbenchBoards.filterLimitation(.sallenKeyLowpass, values: low))
+        XCTAssertNil(WorkbenchBoards.filter(.sallenKeyLowpass, values: low, part: part))
+        // A passive twin-T cannot be sharper than about Q 0.25.
+        XCTAssertNotNil(WorkbenchBoards.filterLimitation(.twinTNotch, values: filterValues(q: 2, k: nil)))
+        XCTAssertNil(WorkbenchBoards.filterLimitation(.twinTNotch, values: filterValues(q: 0.25, k: nil)))
+    }
+
+    func testGainNoteAppearsOnlyWhenTheCircuitGainDiffers() {
+        let sk = filterValues(q: 0.707, k: 1.586)
+        XCTAssertEqual(WorkbenchBoards.realizedGain(.sallenKeyLowpass, values: sk), 1.586, accuracy: 1e-9)
+        XCTAssertNil(WorkbenchBoards.filterGainNote(.sallenKeyLowpass, values: sk, requestedGain: 1.586))
+        XCTAssertNotNil(WorkbenchBoards.filterGainNote(.sallenKeyLowpass, values: sk, requestedGain: 1))
+        XCTAssertNotNil(WorkbenchBoards.filterGainNote(.firstOrderAllpass, values: sk, requestedGain: 2))
+        XCTAssertNil(WorkbenchBoards.filterGainNote(.rcLowpass, values: sk, requestedGain: 1))
+    }
+
+    func testFilterCapacitorsAreNeverPolarized() throws {
+        let part = try XCTUnwrap(WorkbenchBoards.opAmpPart(id: "lm741"))
+        // 10 Hz at 10 kΩ puts 1.59 µF in the signal path.
+        let big = WorkbenchFilterValues(resistance: 10_000, capacitance: 1.59e-6, cornerHz: 10, quality: 0.707, sallenKeyK: 1.586)
+        for family in [AnalogFilterFamily.sallenKeyLowpass, .sallenKeyHighpass, .firstOrderAllpass, .rcLowpass, .rcHighpass] {
+            let layout = try XCTUnwrap(WorkbenchBoards.filter(family, values: big, part: part), "\(family)")
+            for component in layout.components {
+                if case .electrolytic = component.part { XCTFail("\(family) drew an electrolytic: \(component.id)") }
             }
         }
     }
