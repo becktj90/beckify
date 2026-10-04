@@ -306,9 +306,9 @@ struct ToolGridView: View {
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-                    .frame(width: 76)
+                    // Wrap instead of clipping: "Instrumentation Amplifier" needs three lines at this width.
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: 84)
             }
         }
         .buttonStyle(.plain)
