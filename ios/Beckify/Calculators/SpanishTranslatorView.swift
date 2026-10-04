@@ -48,7 +48,6 @@ struct SpanishTranslatorView: View {
             copyText: copyText,
             disclaimer: .designAidExtra(SpanishTranslatorAPI.disclaimer),
             showsIdentityHeader: false,
-            showsAboutWhenCollapsed: false,
             showsRelatedTools: false,
             showsKeyboardToolbar: false
         ) {

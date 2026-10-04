@@ -167,7 +167,7 @@ public enum LabIdentityBook {
         case .led(let label), .diode(let label): return label
         case .inductor(_, let label): return label
         case .npn(let name), .nmos(let name), .pmos(let name): return name
-        case .dip8(let name, _): return name
+        case .dip8(let name, _), .dip14(let name, _): return name
         case .display(let name, let digit, _, _): return "\(name) digit \(digit)"
         case .source(let label): return label
         }

@@ -438,7 +438,6 @@ struct BreathFluteView: View {
             copyText: nil,
             disclaimer: .none,
             showsIdentityHeader: false,
-            showsAboutWhenCollapsed: false,
             showsRelatedTools: false,
             immersivePlay: true
         ) {

@@ -265,15 +265,24 @@ enum BreadboardPaint {
         context.stroke(Path(ellipseIn: rect), with: .color(Color.cyan.opacity(0.95)), lineWidth: 2)
     }
 
+    /// Board coordinates are flipped top to bottom on screen. With the notch facing left, a real DIP has
+    /// pin 1 at the lower left and counts counter-clockwise, so rows a–e sit in the lower half and f–j in
+    /// the upper half. The model and every board's wiring stay as they were.
     private struct Map {
         var pitch: CGFloat
         var origin = CGPoint(x: 92, y: 22)
+        static let unitHeight = BBRow.botPlus.unitY
+
+        /// A point in board units, such as a jumper bend from `BreadboardRoute`.
+        func point(x: Double, y: Double) -> CGPoint {
+            CGPoint(
+                x: origin.x + CGFloat(x - 1) * pitch,
+                y: origin.y + CGFloat(Self.unitHeight - y) * pitch
+            )
+        }
 
         func center(_ hole: BBHole) -> CGPoint {
-            CGPoint(
-                x: origin.x + CGFloat(hole.column - 1) * pitch,
-                y: origin.y + CGFloat(hole.row.unitY) * pitch
-            )
+            point(x: Double(hole.column), y: hole.row.unitY)
         }
 
         func center(column: Int, row: BBRow) -> CGPoint {
@@ -285,8 +294,8 @@ enum BreadboardPaint {
         let pitch = map.pitch
         let left = map.center(column: 1, row: .a).x - pitch * 0.85
         let right = map.center(column: BreadboardBoard.columns, row: .a).x + pitch * 0.85
-        let top = map.center(column: 1, row: .topPlus).y - pitch * 0.85
-        let bottom = map.center(column: 1, row: .botPlus).y + pitch * 0.85
+        let top = map.center(column: 1, row: .botPlus).y - pitch * 0.85
+        let bottom = map.center(column: 1, row: .topPlus).y + pitch * 0.85
         let board = CGRect(x: left, y: top, width: right - left, height: bottom - top)
         let shadow = board.offsetBy(dx: 0, dy: 3)
         context.fill(Path(roundedRect: shadow, cornerRadius: 14), with: .color(Color.black.opacity(0.18)))
@@ -301,8 +310,8 @@ enum BreadboardPaint {
         )
         context.stroke(body, with: .color(rgb(0x8E877C)), lineWidth: 1.2)
 
-        let gutterTop = map.center(column: 1, row: .e).y + pitch * 0.42
-        let gutterBottom = map.center(column: 1, row: .f).y - pitch * 0.42
+        let gutterTop = map.center(column: 1, row: .f).y + pitch * 0.42
+        let gutterBottom = map.center(column: 1, row: .e).y - pitch * 0.42
         let gutter = CGRect(x: left + 8, y: gutterTop, width: right - left - 16, height: gutterBottom - gutterTop)
         context.fill(Path(roundedRect: gutter, cornerRadius: 5), with: .color(rgb(0xB7A99A)))
         context.stroke(Path(roundedRect: gutter, cornerRadius: 5), with: .color(rgb(0x9A8C7E).opacity(0.7)), lineWidth: 0.8)
@@ -312,15 +321,16 @@ enum BreadboardPaint {
         let pitch = map.pitch
         let x0 = map.center(column: 1, row: .a).x - pitch * 0.45
         let x1 = map.center(column: layout.columns, row: .a).x + pitch * 0.45
-        func stripe(_ row: BBRow, above: Bool, color: Color) {
-            let y = map.center(column: 1, row: row).y + (above ? -pitch * 0.46 : pitch * 0.28)
+        // Mirror of the original placement now that the board is drawn flipped top to bottom.
+        func stripe(_ row: BBRow, topOffset: CGFloat, color: Color) {
+            let y = map.center(column: 1, row: row).y + pitch * topOffset
             let rect = CGRect(x: x0, y: y, width: x1 - x0, height: pitch * 0.16)
             context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color))
         }
-        stripe(.topPlus, above: true, color: rgb(0xE23B32))
-        stripe(.topMinus, above: false, color: rgb(0x2A57C4))
-        stripe(.botMinus, above: true, color: rgb(0x2A57C4))
-        stripe(.botPlus, above: false, color: rgb(0xE23B32))
+        stripe(.topPlus, topOffset: 0.30, color: rgb(0xE23B32))
+        stripe(.topMinus, topOffset: -0.44, color: rgb(0x2A57C4))
+        stripe(.botMinus, topOffset: 0.30, color: rgb(0x2A57C4))
+        stripe(.botPlus, topOffset: -0.44, color: rgb(0xE23B32))
 
         for column in stride(from: 1, to: layout.columns + 1, by: 5) {
             mark("+", at: map.center(column: column, row: .topPlus), pitch: pitch, color: rgb(0xE23B32), in: context)
@@ -364,7 +374,7 @@ enum BreadboardPaint {
             context.draw(text, at: CGPoint(x: point.x - map.pitch * 0.72, y: point.y), anchor: .trailing)
         }
         for column in [1, 5, 10, 15, 20, 25, 30] where column <= columns {
-            let point = map.center(column: column, row: .topPlus)
+            let point = map.center(column: column, row: .botPlus)
             let text = context.resolve(
                 Text("\(column)").font(.system(size: max(7, map.pitch * 0.34), weight: .semibold)).foregroundColor(rgb(0x5C564C))
             )
@@ -373,9 +383,11 @@ enum BreadboardPaint {
     }
 
     private static func drawSupply(_ supply: BBSupply, in context: GraphicsContext, map: Map) {
-        guard let first = supply.leads.first else { return }
-        let anchor = map.center(first.hole)
-        let brick = CGRect(x: 8, y: anchor.y - 16, width: 52, height: 16 + CGFloat(max(0, supply.leads.count - 1)) * map.pitch * 0.9 + 20)
+        guard !supply.leads.isEmpty else { return }
+        let ys = supply.leads.map { map.center($0.hole).y }
+        let minY = ys.min() ?? 0
+        let maxY = ys.max() ?? 0
+        let brick = CGRect(x: 8, y: minY - 16, width: 52, height: (maxY - minY) + 36)
         context.fill(Path(roundedRect: brick, cornerRadius: 6), with: .color(rgb(0x2F343C)))
         context.stroke(Path(roundedRect: brick, cornerRadius: 6), with: .color(rgb(0x1B1E24)), lineWidth: 1)
         let title = context.resolve(
@@ -394,9 +406,7 @@ enum BreadboardPaint {
     }
 
     private static func drawJumper(_ jumper: BBJumper, in context: GraphicsContext, map: Map, emphasized: Bool = false) {
-        let points = BreadboardRoute.manhattan(from: jumper.a, to: jumper.b).map {
-            CGPoint(x: map.origin.x + CGFloat($0.x - 1) * map.pitch, y: map.origin.y + CGFloat($0.y) * map.pitch)
-        }
+        let points = BreadboardRoute.manhattan(from: jumper.a, to: jumper.b).map { map.point(x: $0.x, y: $0.y) }
         guard points.count >= 2 else { return }
         var path = Path()
         path.move(to: points[0])
@@ -450,7 +460,7 @@ enum BreadboardPaint {
             drawTO92(component.leads.map { map.center($0.hole) }, name: "M", marks: ["S", "G", "D"], pitch: map.pitch, in: context)
         case .pmos:
             drawTO92(component.leads.map { map.center($0.hole) }, name: "M", marks: ["S", "G", "D"], pitch: map.pitch, in: context)
-        case .dip8(let name, _):
+        case .dip8(let name, _), .dip14(let name, _):
             drawDIP(component.leads.map { map.center($0.hole) }, name: name, pitch: map.pitch, in: context)
         case .display(_, let digit, let mask, _):
             drawDisplay(component.leads.map { map.center($0.hole) }, digit: digit, mask: mask, pitch: map.pitch, in: context)
@@ -498,9 +508,7 @@ enum BreadboardPaint {
         }
 
         for jumper in layout.jumpers {
-            let points = BreadboardRoute.manhattan(from: jumper.a, to: jumper.b).map {
-                CGPoint(x: map.origin.x + CGFloat($0.x - 1) * map.pitch, y: map.origin.y + CGFloat($0.y) * map.pitch)
-            }
+            let points = BreadboardRoute.manhattan(from: jumper.a, to: jumper.b).map { map.point(x: $0.x, y: $0.y) }
             for (a, b) in zip(points, points.dropFirst()) {
                 let padding: CGFloat = 3
                 obstacles.append(LabRect2(
@@ -513,10 +521,11 @@ enum BreadboardPaint {
         }
 
         for supply in layout.supplies {
-            guard let first = supply.leads.first else { continue }
-            let anchor = map.center(first.hole)
-            let height = 36 + CGFloat(max(0, supply.leads.count - 1)) * map.pitch * 0.9
-            obstacles.append(LabRect2(x: 8, y: Double(anchor.y - 16), width: 52, height: Double(height)))
+            guard !supply.leads.isEmpty else { continue }
+            let ys = supply.leads.map { map.center($0.hole).y }
+            let minY = ys.min() ?? 0
+            let maxY = ys.max() ?? 0
+            obstacles.append(LabRect2(x: 8, y: Double(minY - 16), width: 52, height: Double((maxY - minY) + 36)))
         }
 
         for meter in layout.meters {
@@ -680,16 +689,22 @@ enum BreadboardPaint {
         }
     }
 
+    /// Notch to the left. Pin 1 is at the lower left and the count runs counter-clockwise, like a real
+    /// package seen from above: the first half of the pins along the lower row, the rest back along the upper.
+    /// Works for 8 and 14 pins.
     private static func drawDIP(_ pins: [CGPoint], name: String, pitch: CGFloat, in context: GraphicsContext) {
-        guard pins.count >= 8 else { return }
-        let left = pins[0].x
-        let right = pins[3].x
-        let top = pins[0].y
-        let bottom = pins[7].y
+        guard pins.count >= 8, pins.count.isMultiple(of: 2) else { return }
+        let perRow = pins.count / 2
+        let xs = pins.map(\.x)
+        let ys = pins.map(\.y)
+        let left = xs.min() ?? pins[0].x
+        let right = xs.max() ?? pins[perRow - 1].x
+        let top = ys.min() ?? pins[pins.count - 1].y
+        let bottom = ys.max() ?? pins[0].y
         let body = CGRect(x: left - pitch * 0.28, y: top + pitch * 0.28, width: (right - left) + pitch * 0.56, height: (bottom - top) - pitch * 0.56)
         for (index, pin) in pins.enumerated() {
-            let onTop = index < 4
-            let edge = CGPoint(x: pin.x, y: onTop ? body.minY : body.maxY)
+            let onLowerRow = index < perRow
+            let edge = CGPoint(x: pin.x, y: onLowerRow ? body.maxY : body.minY)
             var leg = Path()
             leg.move(to: pin)
             leg.addLine(to: edge)
@@ -707,26 +722,45 @@ enum BreadboardPaint {
         )
         context.stroke(chip, with: .color(rgb(0x0A0A0A)), lineWidth: 1)
         var notch = Path()
-        notch.addArc(
-            center: CGPoint(x: body.minX, y: body.midY),
-            radius: pitch * 0.22,
-            startAngle: .degrees(-70),
-            endAngle: .degrees(70),
-            clockwise: false
-        )
+        for step in 0...12 {
+            let angle = (-70.0 + 140.0 * Double(step) / 12) * Double.pi / 180
+            let point = CGPoint(
+                x: body.minX + CGFloat(cos(angle)) * pitch * 0.22,
+                y: body.midY + CGFloat(sin(angle)) * pitch * 0.22
+            )
+            if step == 0 { notch.move(to: point) } else { notch.addLine(to: point) }
+        }
         context.stroke(notch, with: .color(rgb(0xD7D3CC)), style: StrokeStyle(lineWidth: 1.3, lineCap: .round))
-        let dot = CGRect(x: body.minX + pitch * 0.18, y: body.minY + pitch * 0.16, width: pitch * 0.16, height: pitch * 0.16)
+        // Pin 1 dot, lower left.
+        let dotSize = pitch * 0.16
+        let dot = CGRect(x: body.minX + pitch * 0.18, y: body.maxY - pitch * 0.16 - dotSize, width: dotSize, height: dotSize)
         context.fill(Path(ellipseIn: dot), with: .color(.white))
-        let title = context.resolve(Text(name).font(.system(size: max(11, pitch * 0.62), weight: .bold)).foregroundColor(.white))
+        // Longer part numbers such as NE5532 shrink to stay on the package.
+        let fit = (body.width - pitch * 0.9) / (CGFloat(max(name.count, 1)) * 0.62)
+        let titleSize = min(max(11, pitch * 0.62), max(6.5, fit))
+        let title = context.resolve(Text(name).font(.system(size: titleSize, weight: .bold)).foregroundColor(.white))
         context.draw(title, at: CGPoint(x: body.midX, y: body.midY), anchor: .center)
+        // Pin numbers, when there is room to read them.
+        if pitch >= 10 {
+            let size = max(6.5, pitch * 0.32)
+            for (index, pin) in pins.enumerated() {
+                let onLowerRow = index < perRow
+                let label = context.resolve(
+                    Text("\(index + 1)").font(.system(size: size, weight: .semibold, design: .rounded)).foregroundColor(rgb(0xC9CED3))
+                )
+                context.draw(label, at: CGPoint(x: pin.x, y: onLowerRow ? body.maxY - size * 0.75 : body.minY + size * 0.75), anchor: .center)
+            }
+        }
     }
 
     private static func drawDisplay(_ pins: [CGPoint], digit: Int, mask: Int, pitch: CGFloat, in context: GraphicsContext) {
         guard pins.count >= 10 else { return }
-        let left = pins[0].x
-        let right = pins[4].x
-        let top = pins[0].y
-        let bottom = pins[9].y
+        let xs = pins.map(\.x)
+        let ys = pins.map(\.y)
+        let left = xs.min() ?? pins[0].x
+        let right = xs.max() ?? pins[4].x
+        let top = ys.min() ?? pins[9].y
+        let bottom = ys.max() ?? pins[0].y
         let body = CGRect(
             x: left - pitch * 0.35,
             y: top + pitch * 0.22,
@@ -734,8 +768,9 @@ enum BreadboardPaint {
             height: max(pitch * 2.1, (bottom - top) - pitch * 0.44)
         )
         for (index, pin) in pins.enumerated() {
-            let onTop = index < 5
-            let edgeY = onTop ? body.minY : body.maxY
+            // Pins 1–5 run along the lower row, 6–10 back along the upper row, like a real display.
+            let onLowerRow = index < 5
+            let edgeY = onLowerRow ? body.maxY : body.minY
             var leg = Path()
             leg.move(to: pin)
             leg.addLine(to: CGPoint(x: pin.x, y: edgeY))
@@ -891,7 +926,7 @@ enum BreadboardPaint {
         case .led(let label), .diode(let label): fullName = label
         case .inductor(_, let label): fullName = label
         case .npn(let name), .nmos(let name), .pmos(let name): fullName = "\(component.id.uppercased())  \(name)"
-        case .dip8(let name, _): fullName = "\(component.id.uppercased())  \(name)"
+        case .dip8(let name, _), .dip14(let name, _): fullName = "\(component.id.uppercased())  \(name)"
         case .display(let name, let digit, _, _): fullName = "\(component.id.uppercased())  \(name) digit \(digit)"
         case .source(let label): fullName = label
         }
