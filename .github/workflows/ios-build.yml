@@ -37,18 +37,28 @@ jobs:
           CODE_SIGNING_ALLOWED=NO build
 
   navigation-tests:
-    name: Beckify swipe-back navigation
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - xcode: "16.4"
+            ios: "18.5"
+          - xcode: "26.1.1"
+            ios: "26.1"
+    name: Beckify swipe-back navigation (iOS ${{ matrix.ios }})
     runs-on: macos-15
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
       - name: Test one-page back navigation on iPhone
         run: >-
           xcodebuild -project ios/Beckify.xcodeproj
           -scheme Beckify -configuration Debug
-          -destination 'platform=iOS Simulator,name=iPhone 16'
+          -destination 'platform=iOS Simulator,name=iPhone 16,OS=${{ matrix.ios }}'
           -derivedDataPath '${{ runner.temp }}/BeckifyNavigationDerivedData'
           -resultBundlePath '${{ runner.temp }}/BeckifyNavigation.xcresult'
           -parallel-testing-enabled NO
@@ -57,5 +67,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: beckify-navigation-results
+          name: beckify-navigation-results-ios-${{ matrix.ios }}
           path: ${{ runner.temp }}/BeckifyNavigation.xcresult
