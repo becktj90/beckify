@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import BeckifyMath
 
 struct ToolboxView: View {
@@ -274,12 +275,15 @@ struct CalculatorHostView: View {
     }
 }
 
-/// Keep the native edge swipe available even when calculator chrome uses an
-/// empty navigation title. UIKit performs a single interactive pop, so SwiftUI
+/// Enable the native edge swipe for pushed calculators. UIKit performs a
+/// single interactive pop, so SwiftUI
 /// removes only the last destination and preserves the shelf / previous tool.
 private struct ToolBackSwipeSupport: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> Controller { Controller() }
     func updateUIViewController(_ controller: Controller, context: Context) {}
+    static func dismantleUIViewController(_ controller: Controller, coordinator: ()) {
+        controller.restoreGesture()
+    }
 
     final class Controller: UIViewController, UIGestureRecognizerDelegate {
         private weak var popGesture: UIGestureRecognizer?
@@ -292,14 +296,24 @@ private struct ToolBackSwipeSupport: UIViewControllerRepresentable {
                   let gesture = navigationController.interactivePopGestureRecognizer,
                   gesture.delegate !== self else { return }
             popGesture = gesture
-            previousDelegate = gesture.delegate
-            previouslyEnabled = gesture.isEnabled
+            if let previousTool = gesture.delegate as? Controller {
+                // Preserve the system delegate, not a controller being popped.
+                previousDelegate = previousTool.previousDelegate
+                previouslyEnabled = previousTool.previouslyEnabled
+            } else {
+                previousDelegate = gesture.delegate
+                previouslyEnabled = gesture.isEnabled
+            }
             gesture.delegate = self
             gesture.isEnabled = navigationController.viewControllers.count > 1
         }
 
         override func viewDidDisappear(_ animated: Bool) {
             super.viewDidDisappear(animated)
+            restoreGesture()
+        }
+
+        func restoreGesture() {
             // A newly visible tool may already own the gesture. Do not undo it.
             if let gesture = popGesture, gesture.delegate === self {
                 gesture.delegate = previousDelegate
