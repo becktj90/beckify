@@ -2,13 +2,6 @@ import SwiftUI
 import StoreKit
 import BeckifyMath
 
-/// Navigation destinations from Toolbox home. Shelves and tools share one stack
-/// so related-tool deep links and the review-ask-on-return path stay intact.
-private enum ToolboxHomeRoute: Hashable {
-    case shelf(ToolShelfKind)
-    case tool(ToolID)
-}
-
 /// Premium adaptive tool launcher — Field vs Toolkit, search, favorites,
 /// recents, and shelf hierarchy with original schematic icons in soft wells.
 ///
@@ -22,14 +15,15 @@ struct ToolGridView: View {
     @ObservedObject private var recents = RecentToolsStore.shared
     @Binding var homeArea: ToolHomeArea
     @State private var query = ""
-    @State private var path: [ToolboxHomeRoute] = []
+    @Binding var path: NavigationPath
     @State private var appeared = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.requestReview) private var requestReview
 
-    init(homeArea: Binding<ToolHomeArea> = .constant(.field)) {
+    init(homeArea: Binding<ToolHomeArea>, path: Binding<NavigationPath>) {
         _homeArea = homeArea
+        _path = path
     }
 
     /// Wide enough that two-line titles like "Conductor Cost Optimizer"
@@ -103,7 +97,7 @@ struct ToolGridView: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, prompt: "Search tools…")
             .safeAreaInset(edge: .top, spacing: 0) {
-                if !isSearching && path.isEmpty {
+                if !isSearching {
                     stickyAreaPicker
                 }
             }
@@ -117,14 +111,14 @@ struct ToolGridView: View {
                     ContentUnavailableView.search(text: query)
                 }
             }
-            .navigationDestination(for: ToolboxHomeRoute.self) { route in
-                switch route {
-                case .shelf(let shelf):
-                    ToolShelfScreen(shelf: shelf, columns: columns)
-                case .tool(let id):
-                    CalculatorHostView(toolID: id)
-                        .onAppear { recents.record(id) }
-                }
+            // Register shelves and tools separately on the stable root, outside
+            // the lazy grids. Each push remains its own native back-stack entry.
+            .navigationDestination(for: ToolShelfKind.self) { shelf in
+                ToolShelfScreen(shelf: shelf, columns: columns)
+            }
+            .navigationDestination(for: ToolID.self) { id in
+                CalculatorHostView(toolID: id)
+                    .onAppear { recents.record(id) }
             }
             .onChange(of: path) { oldPath, newPath in
                 // End of a tool / shelf sequence — user is back on home.
@@ -151,7 +145,7 @@ struct ToolGridView: View {
             }
         }
         .environment(\.openRelatedTool, { id in
-            path.append(.tool(id))
+            path.append(id)
             recents.record(id)
         })
     }
@@ -232,7 +226,7 @@ struct ToolGridView: View {
                 ForEach(ToolShelfKind.shelves(in: homeArea), id: \.self) { shelf in
                     let tools = ToolboxCatalog.tools(on: shelf)
                     if !tools.isEmpty {
-                        NavigationLink(value: ToolboxHomeRoute.shelf(shelf)) {
+                        NavigationLink(value: shelf) {
                             ShelfCard(shelf: shelf, previewTools: Array(tools.prefix(4)))
                         }
                         .buttonStyle(ToolTileButtonStyle())
@@ -298,7 +292,7 @@ struct ToolGridView: View {
         accessibilityNamePrefix: String?,
         pinContextMenu: Bool = false
     ) -> some View {
-        let link = NavigationLink(value: ToolboxHomeRoute.tool(tool.id)) {
+        let link = NavigationLink(value: tool.id) {
             VStack(spacing: 5) {
                 IconWell(toolID: tool.id, size: 48, circular: true)
                     .tileLift(
@@ -375,6 +369,7 @@ struct ToolShelfScreen: View {
             }
         }
         .navigationTitle(shelf.title)
+        .supportLegacyBackSwipe()
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -419,7 +414,7 @@ struct ToolCategoryGrid: View {
 
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(tools) { tool in
-                    NavigationLink(value: ToolboxHomeRoute.tool(tool.id)) {
+                    NavigationLink(value: tool.id) {
                         ToolTile(
                             tool: tool,
                             isFavorite: favorites.isFavorite(tool.id),
@@ -651,18 +646,21 @@ private struct ConcentricRings: View {
 }
 
 #Preview("Home — light") {
-    ToolGridView()
+    RootView()
+        .environmentObject(JobStore())
         .environmentObject(FavoritesStore())
 }
 
 #Preview("Home — dark") {
-    ToolGridView()
+    RootView()
+        .environmentObject(JobStore())
         .environmentObject(FavoritesStore())
         .preferredColorScheme(.dark)
 }
 
 #Preview("Home — large type") {
-    ToolGridView()
+    RootView()
+        .environmentObject(JobStore())
         .environmentObject(FavoritesStore())
         .environment(\.sizeCategory, .accessibilityExtraExtraLarge)
 }

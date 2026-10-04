@@ -138,7 +138,26 @@
 		BECFC700000000000000000C /* CrewTalkTranslationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFC700000000000000000D /* CrewTalkTranslationService.swift */; };
 		BECFC700000000000000000E /* CrewTalkOnDeviceTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFC700000000000000000F /* CrewTalkOnDeviceTranslator.swift */; };
 		BECFC7000000000000000010 /* CrewTalkSubviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECFC7000000000000000011 /* CrewTalkSubviews.swift */; };
+		BECA00000000000000000001 /* NavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECA00000000000000000002 /* NavigationTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BECA00000000000000000005 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BECF00000000000000000034 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BECF00000000000000000033;
+			remoteInfo = Beckify;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		BECA00000000000000000006 = {
+			isa = PBXTargetDependency;
+			target = BECF00000000000000000033 /* Beckify */;
+			targetProxy = BECA00000000000000000005;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		BECF00000000000000000001 /* BeckifyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeckifyApp.swift; sourceTree = "<group>"; };
@@ -275,6 +294,8 @@
 		BECFC700000000000000000D /* CrewTalkTranslationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewTalkTranslationService.swift; sourceTree = "<group>"; };
 		BECFC700000000000000000F /* CrewTalkOnDeviceTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewTalkOnDeviceTranslator.swift; sourceTree = "<group>"; };
 		BECFC7000000000000000011 /* CrewTalkSubviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewTalkSubviews.swift; sourceTree = "<group>"; };
+		BECA00000000000000000002 /* NavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationTests.swift; sourceTree = "<group>"; };
+		BECA00000000000000000003 /* BeckifyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = BeckifyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -309,6 +330,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BECA00000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -319,6 +346,7 @@
 				AECF00000000000000000016 /* LookCheck */,
 				KHCF00000000000000000011 /* KestrelHeavy */,
 				BDCF00000000000000000016 /* BeckifyDrive */,
+				BECA00000000000000000004 /* BeckifyUITests */,
 				BECF0000000000000000002C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -326,6 +354,7 @@
 		BECF0000000000000000002C /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				BECA00000000000000000003 /* BeckifyUITests.xctest */,
 				BECF00000000000000000027 /* Beckify.app */,
 				AECF00000000000000000008 /* LookCheck.app */,
 				KHCF00000000000000000007 /* KestrelHeavy.app */,
@@ -556,6 +585,12 @@
 			path = CrewTalk;
 			sourceTree = "<group>";
 		};
+		BECA00000000000000000004 /* BeckifyUITests */ = {
+			isa = PBXGroup;
+			children = (BECA00000000000000000002 /* NavigationTests.swift */,);
+			path = BeckifyUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -639,6 +674,17 @@
 			productReference = BDCF00000000000000000008 /* BeckifyDrive.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BECA00000000000000000009 /* BeckifyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BECA0000000000000000000A;
+			buildPhases = (BECA00000000000000000007 /* Sources */, BECA00000000000000000008 /* Frameworks */,);
+			buildRules = ();
+			dependencies = (BECA00000000000000000006,);
+			name = BeckifyUITests;
+			productName = BeckifyUITests;
+			productReference = BECA00000000000000000003 /* BeckifyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -649,6 +695,10 @@
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					BECA00000000000000000009 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = BECF00000000000000000033;
+					};
 					BECF00000000000000000033 = {
 						CreatedOnToolsVersion = 15.0;
 					};
@@ -679,6 +729,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				BECA00000000000000000009 /* BeckifyUITests */,
 				BECF00000000000000000033 /* Beckify */,
 				AECF00000000000000000015 /* LookCheck */,
 				KHCF00000000000000000012 /* KestrelHeavy */,
@@ -875,6 +926,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BECA00000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (BECA00000000000000000001 /* NavigationTests.swift in Sources */,);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -974,7 +1031,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 256;
+				CURRENT_PROJECT_VERSION = 258;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -999,7 +1056,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.toolbox;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1018,7 +1075,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 256;
+				CURRENT_PROJECT_VERSION = 258;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1043,7 +1100,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.toolbox;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1277,6 +1334,36 @@
 			};
 			name = Release;
 		};
+		BECA0000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.toolbox.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Beckify;
+			};
+			name = Debug;
+		};
+		BECA0000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9TR6R5LV8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beckify.toolbox.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Beckify;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1322,6 +1409,12 @@
 				BDCF00000000000000000017 /* Debug */,
 				BDCF00000000000000000018 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BECA0000000000000000000A /* Build configuration list for PBXNativeTarget "BeckifyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (BECA0000000000000000000B /* Debug */, BECA0000000000000000000C /* Release */,);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};

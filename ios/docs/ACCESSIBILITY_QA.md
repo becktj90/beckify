@@ -42,6 +42,26 @@ math tests do not exercise SwiftUI, VoiceOver, or system file pickers.
   malformed JSON, an unsupported schema version, and an archive containing
   duplicate note IDs. Confirm canceling either system picker is silent.
 
+## Back navigation
+
+CI runs `BeckifyUITests/NavigationTests` on iPhone 16 with iOS 18.5 and 26.2.
+Run the same tests on a Mac with the **Beckify** scheme:
+
+```bash
+xcodebuild -project ios/Beckify.xcodeproj -scheme Beckify \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  CODE_SIGNING_ALLOWED=NO test
+```
+
+- [ ] From Field → Jobsite → Voltage Drop, swipe from the left edge once.
+  Jobsite must remain visible; a second swipe returns to Field home.
+- [ ] From Voltage Drop, open Wire Size & Ampacity through the related-tools
+  row. One edge swipe must return to Voltage Drop; the next returns to Jobsite.
+- [ ] Repeat after pinning/unpinning a tool and after switching tabs. Confirm
+  the back button follows the same sequence as the edge swipe.
+- [ ] Start an edge swipe and cancel it. The current tool and its inputs must
+  stay visible, and the next completed swipe must still return one page.
+
 ## Charts and diagrams
 
 - [ ] Navigate plots and diagrams with VoiceOver. Confirm a concise summary,

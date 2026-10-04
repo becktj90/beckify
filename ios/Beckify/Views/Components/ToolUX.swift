@@ -124,16 +124,25 @@ struct ToolScaffold<Content: View>: View {
         .sheet(isPresented: $showsInfo) {
             ToolInfoSheet(toolID: toolID, showWork: showWork)
         }
-        // The identity header already names the tool in large type. A second copy in the bar read as a duplicate.
-        .navigationTitle(immersivePlay || showsIdentityHeader ? "" : tool.title)
+        // Native back history needs a title even when the identity header is visible.
+        // Hide the duplicate visually in the principal toolbar item below.
+        .navigationTitle(tool.title)
         .navigationBarTitleDisplayMode(.inline)
         .background(Theme.background.ignoresSafeArea())
+        .supportLegacyBackSwipe()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !immersivePlay {
                 stickyChrome
             }
         }
         .toolbar {
+            if immersivePlay || showsIdentityHeader {
+                ToolbarItem(placement: .principal) {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityHidden(true)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 FavoriteToggleButton(isOn: favorites.isFavorite(toolID), name: tool.title) {
                     favorites.toggle(toolID)
@@ -826,5 +835,118 @@ struct CloudVisionAnalyzeChrome: View {
             return "Custom HTTPS endpoint will receive the photo when you tap \(title)."
         }
         return "No custom URL yet. \(title) uses https://api.beckify.com\(defaultPath)."
+    }
+}
+
+extension View {
+    func supportLegacyBackSwipe() -> some View {
+        modifier(LegacyBackSwipeModifier())
+    }
+}
+
+/// Some older SwiftUI stacks do not start UIKit's screen-edge recognizer.
+/// Complete a qualifying edge drag with the destination's one-page dismiss.
+/// Leave an active native pop alone so it cannot remove a second page.
+private struct LegacyBackSwipeModifier: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var navigation = BackSwipeNavigationContext()
+    @State private var startingDepth: Int?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+        } else {
+            content
+                .background(BackSwipeNavigationProbe(navigation: navigation).allowsHitTesting(false))
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 16)
+                        .onChanged { value in
+                            if startingDepth == nil, value.startLocation.x >= 0, value.startLocation.x <= 24 {
+                                startingDepth = navigation.depth
+                            }
+                        }
+                        .onEnded { value in
+                            defer { startingDepth = nil }
+                            let distance = value.translation.width
+                            guard value.startLocation.x >= 0, value.startLocation.x <= 24,
+                                  distance > 30, distance > abs(value.translation.height) * 2,
+                                  navigation.width > 0,
+                                  max(distance, value.predictedEndTranslation.width) > navigation.width * 0.45,
+                                  let startingDepth, navigation.canDismiss(startingAt: startingDepth) else { return }
+                            dismiss()
+                        }
+                )
+                .onDisappear { startingDepth = nil }
+        }
+    }
+}
+
+private final class BackSwipeNavigationContext: ObservableObject {
+    weak var navigation: UINavigationController?
+    weak var carrier: UIView?
+
+    var depth: Int? { navigation?.viewControllers.count }
+    var width: CGFloat { navigation?.view.bounds.width ?? 0 }
+
+    func canDismiss(startingAt depth: Int) -> Bool {
+        guard let navigation, let carrier,
+              navigation.viewControllers.count == depth, depth > 1,
+              navigation.transitionCoordinator == nil,
+              let top = navigation.topViewController?.viewIfLoaded,
+              carrier.isDescendant(of: top) else { return false }
+        switch navigation.interactivePopGestureRecognizer?.state {
+        case .began, .changed, .ended: return false
+        default: return true
+        }
+    }
+
+    func resolve(in view: UIView) {
+        carrier = view
+        guard let root = view.window?.rootViewController else { navigation = nil; return }
+        navigation = findNavigation(in: root, containing: view)
+    }
+
+    private func findNavigation(in controller: UIViewController, containing view: UIView) -> UINavigationController? {
+        if let navigation = controller as? UINavigationController,
+           let navigationView = navigation.viewIfLoaded,
+           view.isDescendant(of: navigationView) {
+            return navigation
+        }
+        for child in controller.children {
+            if let navigation = findNavigation(in: child, containing: view) { return navigation }
+        }
+        return nil
+    }
+}
+
+private struct BackSwipeNavigationProbe: UIViewRepresentable {
+    let navigation: BackSwipeNavigationContext
+
+    func makeUIView(context: Context) -> CarrierView {
+        let view = CarrierView()
+        view.windowChanged = { [weak view, navigation] in
+            DispatchQueue.main.async {
+                guard let view else { return }
+                navigation.resolve(in: view)
+            }
+        }
+        return view
+    }
+
+    func updateUIView(_ view: CarrierView, context: Context) {
+        navigation.resolve(in: view)
+    }
+
+    static func dismantleUIView(_ view: CarrierView, coordinator: ()) {
+        view.windowChanged = nil
+    }
+
+    final class CarrierView: UIView {
+        var windowChanged: (() -> Void)?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            windowChanged?()
+        }
     }
 }
