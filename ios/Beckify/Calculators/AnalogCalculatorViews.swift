@@ -130,6 +130,8 @@ struct AnalogDesignWorkbenchView: View {
 
             if panel == .stages {
                 stagesFields
+                OpAmpStageSchematic(topology: topology, labels: stageLabels)
+                PartPinoutCard(family: .opAmp, title: "Op-amp pinout")
             } else {
                 filterFields
             }
@@ -159,6 +161,34 @@ struct AnalogDesignWorkbenchView: View {
             session.markInputsChanged()
         }
         .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    /// Component names with the values typed in, so the schematic matches the numbers.
+    private var stageLabels: [String: String] {
+        func ohms(_ text: String) -> Double { text.parsedDouble ?? .nan }
+        var labels: [String: String] = [:]
+        switch topology {
+        case .inverting, .integrator:
+            labels["rin"] = "Rin \(AnalogFormat.ohms(ohms(rin)))"
+            labels["rf"] = "Rf \(AnalogFormat.ohms(ohms(rf)))"
+            labels["c"] = "C \(AnalogFormat.farads(capFarads))"
+        case .noninverting:
+            labels["rg"] = "Rg \(AnalogFormat.ohms(ohms(rg)))"
+            labels["rf"] = "Rf \(AnalogFormat.ohms(ohms(rf)))"
+        case .follower:
+            break
+        case .difference:
+            labels["rin"] = "Rin \(AnalogFormat.ohms(ohms(rin)))"
+            labels["rf"] = "Rf \(AnalogFormat.ohms(ohms(rf)))"
+        case .summing:
+            labels["r1"] = "R1 \(AnalogFormat.ohms(ohms(r1)))"
+            labels["r2"] = "R2 \(AnalogFormat.ohms(ohms(r2)))"
+            labels["rf"] = "Rf \(AnalogFormat.ohms(ohms(rf)))"
+        case .differentiator:
+            labels["c"] = "C \(AnalogFormat.farads(capFarads))"
+            labels["rf"] = "Rf \(AnalogFormat.ohms(ohms(rf)))"
+        }
+        return labels
     }
 
     @ViewBuilder
@@ -611,6 +641,9 @@ struct LinearRegulatorView: View {
                 NumberField(title: "θJC", unit: "°C/W", text: $thetaJC, fieldID: "thjc", onSubmit: calculate)
             }
 
+            regulatorSchematic
+            PartPinoutCard(family: .regulator, title: "Regulator pinout")
+
             CalculatorActionBar(
                 onCalculate: calculate,
                 onReset: reset,
@@ -659,6 +692,25 @@ struct LinearRegulatorView: View {
             session.markInputsChanged()
         }
         .sensoryFeedback(.success, trigger: successTick)
+    }
+
+    /// Uses the solved values once calculated, and what is typed until then.
+    private var regulatorSchematic: some View {
+        let result = session.displayedResult
+        let r1Value = result?.r1 ?? (r1.parsedDouble ?? .nan)
+        let r2Value = result?.r2 ?? (r2.parsedDouble ?? .nan)
+        let outText = result.map { Format.volts($0.vout) }
+            ?? (mode == .solveR2 ? "\(vout) V" : "—")
+        let detail = result.map {
+            "Pd \(Format.watts($0.powerDissipation)) · Tj \(Format.number($0.junctionC, digits: 0)) °C"
+        }
+        return RegulatorSchematic(
+            vin: "\(vin) V",
+            vout: outText,
+            r1: AnalogFormat.ohms(r1Value),
+            r2: AnalogFormat.ohms(r2Value),
+            detail: detail
+        )
     }
 
     private func calculate() {
@@ -775,6 +827,14 @@ struct InstrumentationAmpView: View {
             NumberField(title: "− rail", unit: "V", text: $railN, fieldID: "rn", onSubmit: calculate)
             NumberField(title: "Allowed CM min", unit: "V", text: $cmMin, fieldID: "cmin", onSubmit: calculate)
             NumberField(title: "Allowed CM max", unit: "V", text: $cmMax, fieldID: "cmax", onSubmit: calculate)
+
+            InstrumentationAmpSchematic(
+                mode: mode,
+                rText: AnalogFormat.ohms(r.parsedDouble ?? .nan),
+                rgText: AnalogFormat.ohms(rg.parsedDouble ?? .nan),
+                gainText: session.displayedResult.map { AnalogFormat.voltsPerVolt($0.gain) }
+            )
+            PartPinoutCard(family: .instrumentationAmp, title: "InAmp pinout")
 
             CalculatorActionBar(
                 onCalculate: calculate,

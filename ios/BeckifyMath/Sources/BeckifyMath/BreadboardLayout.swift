@@ -421,6 +421,7 @@ public enum BreadboardLayouts {
         .invertingAmp, .nonInvertingAmp, .summingAmp, .diffAmp, .integrator, .differentiator, .comparator,
         .astable555, .monostable555, .ledFlasher, .sevenSegment,
         .linearDrop,
+        .discretePower, .opAmpPower,
     ]
 
     public static func supports(_ circuit: ElectronicsCircuit) -> Bool {
@@ -463,6 +464,8 @@ public enum BreadboardLayouts {
         case .ledFlasher: return built.astable(withLED: true)
         case .sevenSegment: return built.seven()
         case .linearDrop: return built.linearDrop()
+        case .discretePower: return built.discretePowerStage()
+        case .opAmpPower: return built.opAmpLoadStage()
         default: return nil
         }
     }
@@ -1436,5 +1439,41 @@ public enum BreadboardMeters {
     public static func summaryLine(_ meters: [BBMeter]) -> String {
         guard !meters.isEmpty else { return "" }
         return meters.map { "\($0.title) \($0.reading)" }.joined(separator: "  ·  ")
+    }
+}
+
+// MARK: - Power-stage boards (discrete CE stage, op-amp driving a load)
+
+extension BreadboardBuilder {
+    /// The class-A teaching stage uses the same divider-biased 2N3904 as the BJT bias board.
+    mutating func discretePowerStage() -> BreadboardLayout? {
+        guard var board = bjtBias() else { return nil }
+        board.caption = caption("Class-A common-emitter stage on a 2N3904, flat face toward the top of the board, leads E B C left to right. R1 and R2 set the base, Rc is the collector load, and Re sets the emitter. Quiescent power in the transistor is Ic × Vce. Add a heatsink and check the bias before you rely on it for real power.")
+        return board
+    }
+
+    /// A non-inverting op-amp stage with its load resistor, so load power can be measured on the board.
+    mutating func opAmpLoadStage() -> BreadboardLayout? {
+        guard let rf = qty("rf"), let av = qty("av"), av > 1 else { return nil }
+        let rg = rf / (av - 1)
+        let vout = qty("vout") ?? 0
+        let iout = qty("iout") ?? 0
+        let rl = (abs(vout) > 1e-12 && abs(iout) > 1e-12) ? abs(vout / iout) : 1000
+        placeOpAmp(sumNet: "SUM", plusNet: "Vin")
+        dualSupply()
+        components.append(BBComponent(id: "vin", part: .source(label: "Vin"), leads: [
+            hole(7, .d, "Vin"),
+            hole(4, .d, "GND"),
+        ]))
+        resistor("rg", "Rg", rg, hole(13, .c, "SUM"), hole(9, .c, "GND"))
+        resistor("rf", "Rf", rf, hole(13, .a, "SUM"), hole(18, .a, "Vout"))
+        resistor("rl", "RL", rl, hole(18, .c, "Vout"), hole(22, .c, "GND"))
+        jumper("gndsrc", "GND", 4, .b, 4, .topMinus, .black)
+        jumper("in", "Vin", 7, .b, 14, .b, .yellow)
+        jumper("rgg", "GND", 9, .a, 9, .topMinus, .black)
+        jumper("rlg", "GND", 22, .a, 22, .topMinus, .black)
+        jumper("cross", "Vout", 18, .e, 18, .f, .green)
+        jumper("fb", "Vout", 18, .j, 14, .i, .green)
+        return finish(caption("741 pinout. Vin drives pin 3, Rg and Rf set the gain, and RL is the load from Vout to the ground rail. Pin 7 is +V and pin 4 is −V. A 741 cannot source much current, so keep RL large on the real part. The ideal model does not limit output current."))
     }
 }

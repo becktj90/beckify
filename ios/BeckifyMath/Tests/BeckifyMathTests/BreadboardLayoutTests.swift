@@ -25,7 +25,7 @@ final class BreadboardLayoutTests: XCTestCase {
     func testNonBreadboardCircuitsStayOffTheBoard() throws {
         let hidden: [ElectronicsCircuit] = [
             .idealBuck, .quarterWave, .stubCancel, .lMatch, .classOverview,
-            .discretePower, .opAmpPower, .complexConvert, .impedanceCombo,
+            .complexConvert, .impedanceCombo,
         ]
         for circuit in hidden {
             XCTAssertFalse(BreadboardLayouts.supports(circuit))
@@ -401,6 +401,7 @@ final class BreadboardLayoutTests: XCTestCase {
         let extras: [ElectronicsCircuit] = [
             .theveninNorton, .rlStep, .halfWave, .shuntClipper, .clamper,
             .summingAmp, .diffAmp, .integrator, .differentiator, .comparator, .linearDrop,
+            .discretePower, .opAmpPower,
         ]
         for circuit in extras {
             XCTAssertTrue(BreadboardLayouts.supports(circuit), circuit.rawValue)
@@ -434,5 +435,22 @@ final class BreadboardLayoutTests: XCTestCase {
         let info = ElectronicsLab.info(circuit)
         let solved = try ElectronicsLab.solve(circuit, unknown: info.defaultUnknown, inputs: info.defaults)
         return try XCTUnwrap(BreadboardLayouts.make(solved), circuit.rawValue)
+    }
+
+    func testPowerStageBoardsKeepTheirLoadAndBias() throws {
+        let stage = try layout(.opAmpPower)
+        XCTAssertNotNil(stage.component("rl"), "the load resistor is on the board")
+        XCTAssertNotNil(stage.component("rf"))
+        XCTAssertNotNil(stage.component("rg"))
+        XCTAssertEqual(stage.component("rl")?.leads.map(\.net), ["Vout", "GND"])
+        XCTAssertTrue(BreadboardNetlist.audit(stage).ok)
+
+        let discrete = try layout(.discretePower)
+        XCTAssertNotNil(discrete.component("r1"))
+        XCTAssertNotNil(discrete.component("rc"))
+        XCTAssertNotNil(discrete.component("re"))
+        XCTAssertEqual(discrete.circuit, .discretePower)
+        XCTAssertTrue(discrete.caption.contains("Class-A"))
+        XCTAssertTrue(BreadboardNetlist.audit(discrete).ok)
     }
 }

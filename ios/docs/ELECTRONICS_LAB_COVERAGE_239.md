@@ -34,8 +34,8 @@
 | LED flasher (`ledFlasher`) | Breadboard + schematic | ready | Illustrative solderless hookup + schematic |
 | 7-segment drive (`sevenSegment`) | Breadboard + schematic | ready | Illustrative solderless hookup + schematic |
 | Class overview (`classOverview`) | Module / conceptual | deferred | Schematic/module bench; instruments/remaining polish in PR2 |
-| Discrete CE stage (`discretePower`) | Module / conceptual | deferred | Schematic/module bench; instruments/remaining polish in PR2 |
-| Op-amp load amp (`opAmpPower`) | Module / conceptual | deferred | Schematic/module bench; instruments/remaining polish in PR2 |
+| Discrete CE stage (`discretePower`) | Breadboard + schematic | ready | Illustrative solderless hookup + schematic |
+| Op-amp load amp (`opAmpPower`) | Breadboard + schematic | ready | Illustrative solderless hookup + schematic |
 | Linear regulator drop (`linearDrop`) | Breadboard + schematic | ready | Illustrative solderless hookup + schematic |
 | Ideal buck (`idealBuck`) | Module / conceptual | deferred | Schematic/module bench; instruments/remaining polish in PR2 |
 | Complex convert (`complexConvert`) | Module / conceptual | deferred | Schematic/module bench; instruments/remaining polish in PR2 |
