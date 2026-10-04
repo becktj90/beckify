@@ -498,6 +498,28 @@ public struct NoiseSNRResult: Equatable, Sendable {
     }
 }
 
+extension NoiseSNRResult {
+    public struct Contribution: Equatable, Sendable {
+        public var name: String
+        public var vrms: Double
+        /// Share of the total noise power, 0…1. The parts add in power, not in volts.
+        public var share: Double
+    }
+
+    /// Each source with its share of the noise power. Sources that are zero are left out.
+    public var contributions: [Contribution] {
+        let parts: [(String, Double)] = [
+            ("Resistor (Johnson)", johnsonVrms),
+            ("Amp voltage noise", ampVoltageVrms),
+            ("Amp current noise × R", ampCurrentVrms),
+            ("Shot noise × R", shotVrms),
+        ]
+        let power = parts.reduce(0) { $0 + $1.1 * $1.1 }
+        guard power > 0 else { return [] }
+        return parts.filter { $0.1 > 0 }.map { Contribution(name: $0.0, vrms: $0.1, share: $0.1 * $0.1 / power) }
+    }
+}
+
 public enum NoiseSNR {
     public static let boltzmann = 1.380649e-23
     public static let elementaryCharge = 1.602176634e-19

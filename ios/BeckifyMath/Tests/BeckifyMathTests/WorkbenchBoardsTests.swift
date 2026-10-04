@@ -128,3 +128,32 @@ final class WorkbenchBoardsTests: XCTestCase {
         XCTAssertEqual(first.capacitance, 47e-9, accuracy: 1e-15)
     }
 }
+
+final class ExtraPlotMathTests: XCTestCase {
+    func testBeamEnvelopeMatchesTheWaistAndRayleighRange() throws {
+        let r = try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633)
+        let points = GaussianBeam.envelope(waistRadius: 0.5, rayleighRange: r.rayleighRange, extent: 3 * r.rayleighRange)
+        XCTAssertEqual(points.count, 81)
+        let mid = points[40]
+        XCTAssertEqual(mid.x, 0, accuracy: 1e-9)
+        XCTAssertEqual(mid.y, 0.5, accuracy: 1e-12)
+        XCTAssertEqual(points.first?.y ?? 0, points.last?.y ?? 1, accuracy: 1e-12)
+        // At z = z_R the radius is w0·√2. The grid hits it at index 40 + 80/6 only approximately, so check the formula directly.
+        let atRange = GaussianBeam.envelope(waistRadius: 0.5, rayleighRange: 100, extent: 100, samples: 3)
+        XCTAssertEqual(atRange[2].y, 0.5 * 2.0.squareRoot(), accuracy: 1e-12)
+        XCTAssertTrue(GaussianBeam.envelope(waistRadius: 0, rayleighRange: 1, extent: 1).isEmpty)
+    }
+
+    func testNoiseContributionsSumToOne() throws {
+        let r = try NoiseSNR.solve(
+            resistance: 10_000, temperatureKelvin: 290, bandwidthHz: 10_000, ampEn: 5e-9, ampIn: 1e-12,
+            shotCurrent: 1e-6, signalVrms: 1e-3
+        )
+        let parts = r.contributions
+        XCTAssertGreaterThanOrEqual(parts.count, 3)
+        XCTAssertEqual(parts.reduce(0) { $0 + $1.share }, 1, accuracy: 1e-12)
+        let total = parts.reduce(0) { $0 + $1.vrms * $1.vrms }.squareRoot()
+        XCTAssertEqual(total, r.totalReferredVrms, accuracy: r.totalReferredVrms * 1e-9)
+    }
+}
+

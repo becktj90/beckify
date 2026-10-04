@@ -233,6 +233,7 @@ final class MagneticCircuitTests: XCTestCase {
     }
 
     func testNonPositiveInputsThrow() {
+        XCTAssertThrowsError(try MagneticCircuit.solve(magnetomotiveForce: 500, pathLength: 0.2, crossSectionalArea: 0.0001, relativePermeability: 1000, airGap: -0.001))
         XCTAssertThrowsError(try MagneticCircuit.solve(magnetomotiveForce: 0, pathLength: 0.2, crossSectionalArea: 0.0001, relativePermeability: 1000))
         XCTAssertThrowsError(try MagneticCircuit.solve(magnetomotiveForce: 500, pathLength: 0, crossSectionalArea: 0.0001, relativePermeability: 1000))
         XCTAssertThrowsError(try MagneticCircuit.solve(magnetomotiveForce: 500, pathLength: 0.2, crossSectionalArea: 0, relativePermeability: 1000))
@@ -324,5 +325,14 @@ final class GaussianBeamTests: XCTestCase {
         XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633, propagationDistance: -1))
         XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633, propagationDistance: .nan))
         XCTAssertThrowsError(try GaussianBeam.solve(waistRadius: 0.5, wavelengthNanometers: 633, propagationDistance: .infinity))
+    }
+
+    func testAirGapAddsSeriesReluctance() throws {
+        let closed = try MagneticCircuit.solve(magnetomotiveForce: 500, pathLength: 0.2, crossSectionalArea: 0.0001, relativePermeability: 1000)
+        let gapped = try MagneticCircuit.solve(magnetomotiveForce: 500, pathLength: 0.2, crossSectionalArea: 0.0001, relativePermeability: 1000, airGap: 0.001)
+        let mu0 = 4 * Double.pi * 1e-7
+        XCTAssertEqual(gapped.reluctance, closed.reluctance + 0.001 / (mu0 * 0.0001), accuracy: closed.reluctance * 1e-12)
+        // A 1 mm gap in a µr 1000 / 20 cm core is worth 1 m of steel, so it dominates.
+        XCTAssertLessThan(gapped.fluxDensity, closed.fluxDensity / 3)
     }
 }

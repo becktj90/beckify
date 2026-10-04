@@ -519,7 +519,7 @@ private struct ShelfCard: View {
         case .instruments: return "RF, mic, motion, RigScope…"
         case .basics: return "Ohm's Law, divider, RC, units…"
         case .bench: return "Lab, RF, e-bike, analog…"
-        case .reference: return "Tables, schedules, Spanish…"
+        case .reference: return "Tables, schedules, Crew Talk…"
         }
     }
 }

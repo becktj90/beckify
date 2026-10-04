@@ -1549,6 +1549,9 @@ struct SolenoidDesignView: View {
                 )
                 .opacity(session.isStale ? 0.72 : 1)
 
+                solenoidFieldExplorer(r)
+                    .opacity(session.isStale ? 0.72 : 1)
+
                 ResultCard(copyText: copyText) {
                     ResultRow(label: "Center B", value: "\(Format.number(r.bCenterTesla * 1000, digits: 2)) mT", emphasis: true, tone: Theme.good)
                     ResultRow(label: "Ampere-turns", value: "\(Format.number(r.ampereTurns, digits: 0)) At")
@@ -1676,6 +1679,21 @@ struct SolenoidDesignView: View {
             current = Format.number(r.currentAmps, digits: 3)
         }
         if session.displayedResult != nil, !session.isStale, !reduceMotion { successTick += 1 }
+    }
+
+    /// Every turn is solved as a current loop, so B and the induced E are exact for an air core.
+    private func solenoidFieldExplorer(_ r: SolenoidDesignResult) -> some View {
+        let build = max(2 * (r.packing.coilOuterRadiusM - r.meanRadiusM), r.meanRadiusM * 0.04)
+        let inner = max(r.meanRadiusM - build / 2, r.meanRadiusM * 0.3)
+        let length = r.lengthM, turns = r.turns, amps = r.currentAmps
+        let key = "\(length)|\(inner)|\(build)|\(turns)|\(amps)"
+        return FieldExplorerCard(
+            title: "Field explorer",
+            key: key,
+            note: "Air-core field. Each turn is a current loop solved exactly, so B is right near the wire and at the ends. An iron core (µᵣ above 1) would raise B inside it and change the pattern; it is not in this picture. Lines are equal-flux contours. Induced E is E = −∂A/∂t for the current ramp you enter, and it circles the axis.",
+            centered: true,
+            build: { FieldRaster.solenoid(lengthM: length, innerRadiusM: inner, buildM: build, turns: turns, currentAmps: amps) }
+        )
     }
 
     private var substituted: String? {

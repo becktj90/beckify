@@ -240,6 +240,31 @@ struct MagneticsLabView: View {
                 steelB: solved.drop(named: "Steel")?.fluxDensity ?? 0,
                 gapB: solved.drop(named: "Air gap")?.fluxDensity
             )))
+            seriesFieldExplorer(solved)
+        }
+    }
+
+    /// 2D solve of the same core as a loop with the winding on the left leg. Ampere-turns as a one-turn winding.
+    @ViewBuilder
+    private func seriesFieldExplorer(_ solved: MagneticsLab.Solution) -> some View {
+        let area = (areaCm2.parsedDouble ?? .nan) * 1e-4
+        let path = length.parsedDouble ?? .nan
+        let mu = muR.parsedDouble ?? .nan
+        let gap = (gapMm.parsedDouble ?? 0) / 1000
+        let mmf = solved.mmf
+        if area.isFinite, area > 0, path.isFinite, path > 0, mu.isFinite, mu >= 1, gap.isFinite, gap >= 0, mmf.isFinite {
+            let leg = area.squareRoot()
+            FieldExplorerCard(
+                title: "Field explorer",
+                key: "\(mmf)|\(leg)|\(path)|\(mu)|\(gap)",
+                note: "Square-legged loop with the winding on the left leg, solved in 2D per metre of depth. Constant µᵣ, no saturation. Lines are equal-flux contours, so closer lines mean stronger B. Flux bulges out of the gap faces (fringing) and some leaks across the window. Induced E is for a one-turn winding carrying these ampere-turns.",
+                build: {
+                    FieldRaster.core(
+                        ampTurns: mmf, legThicknessM: leg, pathLengthM: path, gapM: gap,
+                        relativePermeability: mu, currentAmps: mmf
+                    )
+                }
+            )
         }
     }
 

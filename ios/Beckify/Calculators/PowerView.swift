@@ -121,6 +121,10 @@ struct PowerView: View {
             ResultRow(label: "Nominal supply", value: code.nominalSupply.summary, tone: Theme.muted)
         }
         .opacity(session.isStale ? 0.72 : 1)
+        if ac.kVA.isFinite, ac.kVA > 0 {
+            PowerTriangleDiagram(kw: ac.kW, kvar: ac.kVAR, kva: ac.kVA)
+                .opacity(session.isStale ? 0.72 : 1)
+        }
         SaveJobBar(jobName: $jobName, canSave: !session.isStale) {
             jobs.save(SavedJob(
                 name: jobName,

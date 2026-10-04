@@ -3,7 +3,7 @@ import BeckifyMath
 
 // MARK: - Shared analog formatting
 
-private enum AnalogFormat {
+enum AnalogFormat {
     static func ohms(_ value: Double) -> String {
         guard value.isFinite else { return "—" }
         if abs(value) >= 1e6 { return "\(Format.number(value / 1e6, digits: 3)) MΩ" }
@@ -649,6 +649,10 @@ struct NoiseSNRView: View {
                     }
                 }
                 .opacity(session.isStale ? 0.72 : 1)
+                if r.contributions.count > 1 {
+                    NoiseContributionDiagram(contributions: r.contributions)
+                        .opacity(session.isStale ? 0.72 : 1)
+                }
                 SaveJobBar(jobName: $jobName, canSave: !session.isStale) { save(r) }
             }
         }

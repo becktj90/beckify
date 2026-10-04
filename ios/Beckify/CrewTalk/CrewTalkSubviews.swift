@@ -316,7 +316,7 @@ private struct CrewTalkConversationTalk: View {
 
     private func sprite(_ crew: CrewTalkMember) -> some View {
         VStack(spacing: 2) {
-            CrewTalkSprite(crew: crew, isTalking: model.talkingCrew == crew, height: typedFocused ? 56 : 104)
+            CrewTalkSprite(crew: crew, isTalking: model.talkingCrew == crew, height: typedFocused ? 44 : 72)
             Text(crew.firstName)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.foreground)
@@ -434,44 +434,100 @@ private struct CrewTalkConversationTalk: View {
 struct CrewTalkSprite: View {
     let crew: CrewTalkMember
     let isTalking: Bool
-    var height: CGFloat = 168
+    var height: CGFloat = 72
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hopTick = 0
 
     /// One beat. Longer than a display frame so a timeline tick cannot skip the pose.
     private static let beat: TimeInterval = 0.10
     /// Closed, closed, open, closed, closed, open, closed, open.
     private static let mouthOpenOnBeat: [Bool] = [false, false, true, false, false, true, false, true]
-    /// Gentle whole-sprite bob. Not locked to the mouth, and much smaller than the old 5 pt jump.
-    private static let bobPeriod: TimeInterval = 0.70
-    private static let bobAmplitude: CGFloat = 1.25
+    /// Talking: a quick bounce with a little squash. Idle: slow breathing.
+    private static let talkPeriod: TimeInterval = 0.55
+    private static let breathPeriod: TimeInterval = 3.4
+
+    /// Where the sprite is in its motion this instant.
+    private struct Pose {
+        var mouthOpen: Bool
+        var lift: CGFloat
+        var squash: CGFloat
+    }
 
     var body: some View {
         Group {
-            if isTalking, !reduceMotion {
-                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
-                    let t = context.date.timeIntervalSinceReferenceDate
-                    let beatIndex = Int(t / Self.beat) % Self.mouthOpenOnBeat.count
-                    let bob = CGFloat(sin(t * (2 * .pi) / Self.bobPeriod)) * Self.bobAmplitude
-                    frame(mouthOpen: Self.mouthOpenOnBeat[beatIndex], bob: bob)
-                }
+            if reduceMotion {
+                still(mouthOpen: isTalking)
             } else {
-                frame(mouthOpen: isTalking, bob: 0)
+                // Talking runs at 30 fps. The idle breath is slow, so 12 fps is plenty and sips battery.
+                TimelineView(.periodic(from: .now, by: isTalking ? 1.0 / 30.0 : 1.0 / 12.0)) { context in
+                    animated(at: context.date.timeIntervalSinceReferenceDate)
+                }
             }
         }
+        .contentShape(Rectangle())
+        .onTapGesture { if !reduceMotion { hopTick += 1 } }
         .accessibilityElement(children: .ignore)
+        // With Reduce Motion there is no hop, so the sprite is not offered as a button.
+        .accessibilityAddTraits(reduceMotion ? [] : .isButton)
+        .accessibilityHint(reduceMotion ? "" : "Makes \(crew.firstName) hop")
         .accessibilityIdentifier("spanishTranslator.crewPortrait")
         .accessibilityLabel(isTalking ? "\(crew.displayName), talking" : crew.displayName)
     }
 
-    private func frame(mouthOpen: Bool, bob: CGFloat) -> some View {
+    private func pose(at t: TimeInterval) -> Pose {
+        if isTalking {
+            let beatIndex = Int(t / Self.beat) % Self.mouthOpenOnBeat.count
+            let phase = sin(t * (2 * .pi) / Self.talkPeriod)
+            return Pose(
+                mouthOpen: Self.mouthOpenOnBeat[beatIndex],
+                lift: CGFloat(max(phase, 0)) * height * 0.05,
+                squash: 1 + CGFloat(max(-phase, 0)) * 0.03
+            )
+        }
+        let breath = sin(t * (2 * .pi) / Self.breathPeriod)
+        return Pose(mouthOpen: false, lift: CGFloat(breath) * 0.8, squash: 1 + CGFloat(breath) * 0.018)
+    }
+
+    private func animated(at t: TimeInterval) -> some View {
+        let pose = pose(at: t)
+        return sprite(mouthOpen: pose.mouthOpen)
+            .scaleEffect(x: 1, y: pose.squash, anchor: .bottom)
+            .offset(y: -pose.lift)
+            .keyframeAnimator(initialValue: CGFloat(0), trigger: hopTick) { content, hop in
+                content.offset(y: -hop)
+            } keyframes: { _ in
+                KeyframeTrack {
+                    CubicKeyframe(height * 0.16, duration: 0.12)
+                    CubicKeyframe(0, duration: 0.16)
+                    CubicKeyframe(height * 0.05, duration: 0.07)
+                    CubicKeyframe(0, duration: 0.08)
+                }
+            }
+            .background(alignment: .bottom) { shadow(lift: pose.lift) }
+    }
+
+    private func still(mouthOpen: Bool) -> some View {
+        sprite(mouthOpen: mouthOpen)
+            .background(alignment: .bottom) { shadow(lift: 0) }
+    }
+
+    /// A small ground shadow that shrinks as the sprite lifts, so the bounce reads as a bounce.
+    private func shadow(lift: CGFloat) -> some View {
+        Ellipse()
+            .fill(Color.black.opacity(0.18))
+            .frame(width: height * 0.55 * (1 - min(lift / max(height, 1), 0.3)), height: max(height * 0.07, 3))
+            .offset(y: 2)
+            .accessibilityHidden(true)
+    }
+
+    private func sprite(mouthOpen: Bool) -> some View {
         Image(mouthOpen ? crew.talkAssetName : crew.portraitAssetName)
             .interpolation(.none)
             .resizable()
             .scaledToFit()
             .frame(maxWidth: .infinity)
             .frame(height: height)
-            .offset(y: bob)
             // Instant cut. A linear animation on the frame smears two poses and fights nearest-neighbor.
             .transaction { transaction in
                 transaction.animation = nil

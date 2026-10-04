@@ -274,14 +274,18 @@ public enum MagneticCircuit {
         magnetomotiveForce: Double,
         pathLength: Double,
         crossSectionalArea: Double,
-        relativePermeability: Double
+        relativePermeability: Double,
+        airGap: Double = 0
     ) throws -> MagneticCircuitResult {
         let mmf = try Positive.require(magnetomotiveForce, name: "Magnetomotive force")
         let length = try Positive.require(pathLength, name: "Path length")
         let area = try Positive.require(crossSectionalArea, name: "Cross-sectional area")
         let mu_r = try Positive.require(relativePermeability, name: "Relative permeability")
 
-        let reluctance = length / (mu0 * mu_r * area)
+        guard airGap.isFinite, airGap >= 0 else { throw CalcError.outOfRange("Air gap must be zero or more.") }
+
+        // Steel path plus the gap in series. The gap is air, so it has no µr.
+        let reluctance = length / (mu0 * mu_r * area) + airGap / (mu0 * area)
         let flux = mmf / reluctance
         return MagneticCircuitResult(
             reluctance: reluctance,
@@ -397,5 +401,14 @@ public enum GaussianBeam {
             divergenceHalfAngleMilliradians: theta * 1000,
             radiusAtDistance: radiusAtZ
         )
+    }
+
+    /// Beam radius w(z) = w₀√(1 + (z/z_R)²) from −extent to +extent. Same units as the waist and range.
+    public static func envelope(waistRadius w0: Double, rayleighRange zR: Double, extent: Double, samples: Int = 81) -> [PlotPoint] {
+        guard w0 > 0, zR > 0, extent > 0, samples >= 3 else { return [] }
+        return (0..<samples).map { index in
+            let z = -extent + 2 * extent * Double(index) / Double(samples - 1)
+            return PlotPoint(x: z, y: w0 * (1 + (z / zR) * (z / zR)).squareRoot())
+        }
     }
 }
