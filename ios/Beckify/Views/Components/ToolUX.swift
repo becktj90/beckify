@@ -122,8 +122,9 @@ struct ToolScaffold<Content: View>: View {
                 .scrollDismissesKeyboard(.interactively)
             }
         }
-        // The identity header already names the tool in large type. A second copy in the bar read as a duplicate.
-        .navigationTitle(immersivePlay || showsIdentityHeader ? "" : tool.title)
+        // Native back history needs a title even when the identity header is visible.
+        // Hide the duplicate visually in the principal toolbar item below.
+        .navigationTitle(tool.title)
         .navigationBarTitleDisplayMode(.inline)
         .background(Theme.background.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -132,6 +133,13 @@ struct ToolScaffold<Content: View>: View {
             }
         }
         .toolbar {
+            if immersivePlay || showsIdentityHeader {
+                ToolbarItem(placement: .principal) {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityHidden(true)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 FavoriteToggleButton(isOn: favorites.isFavorite(toolID), name: tool.title) {
                     favorites.toggle(toolID)
