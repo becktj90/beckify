@@ -888,6 +888,14 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
 
     func makeUIView(context: Context) -> CarrierView {
         let view = CarrierView()
+        if ProcessInfo.processInfo.environment["BECKIFY_NAV_DIAGNOSTICS"] == "1" {
+            view.isAccessibilityElement = true
+            view.accessibilityIdentifier = "legacyBackSwipeDiagnostic"
+            view.diagnostic = { [weak view, coordinator = context.coordinator] in
+                guard let view else { return "missing view" }
+                return coordinator.diagnostic(in: view)
+            }
+        }
         view.windowChanged = { [weak view, coordinator = context.coordinator] in
             DispatchQueue.main.async {
                 guard let view else { return }
@@ -907,6 +915,11 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
 
     final class CarrierView: UIView {
         var windowChanged: (() -> Void)?
+        var diagnostic: (() -> String)?
+        override var accessibilityLabel: String? {
+            get { diagnostic?() }
+            set {}
+        }
         override func didMoveToWindow() {
             super.didMoveToWindow()
             windowChanged?()
@@ -932,6 +945,15 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
             }
             gesture.delegate = self
             gesture.isEnabled = navigation.viewControllers.count > 1
+        }
+
+        func diagnostic(in view: UIView) -> String {
+            let current = navigation ?? view.window?.rootViewController.flatMap { findNavigation(in: $0, containing: view) }
+            let recognizer = current?.interactivePopGestureRecognizer
+            func hierarchy(_ controller: UIViewController) -> String {
+                "\(type(of: controller))[\(controller.children.map(hierarchy).joined(separator: ","))]"
+            }
+            return "nav=\(String(describing: current.map { type(of: $0) })) count=\(current?.viewControllers.count ?? -1) enabled=\(recognizer?.isEnabled ?? false) delegate=\(String(describing: recognizer?.delegate)) transition=\(current?.transitionCoordinator != nil) hierarchy=\(view.window?.rootViewController.map(hierarchy) ?? "no window")"
         }
 
         func restore() {

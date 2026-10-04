@@ -5,6 +5,7 @@ final class NavigationTests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
+        app.launchEnvironment["BECKIFY_NAV_DIAGNOSTICS"] = "1"
         app.launch()
     }
 
@@ -99,6 +100,8 @@ final class NavigationTests: XCTestCase {
     }
 
     private func swipeBack() {
+        let diagnostic = element("legacyBackSwipeDiagnostic")
+        if diagnostic.exists { print("BECKIFY_NAV: " + diagnostic.label) }
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
         // Start at the physical edge without a hold to exercise UIKit's edge pan.
