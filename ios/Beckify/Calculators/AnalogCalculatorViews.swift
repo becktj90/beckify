@@ -3,7 +3,7 @@ import BeckifyMath
 
 // MARK: - Shared analog formatting
 
-private enum AnalogFormat {
+enum AnalogFormat {
     static func ohms(_ value: Double) -> String {
         guard value.isFinite else { return "—" }
         if abs(value) >= 1e6 { return "\(Format.number(value / 1e6, digits: 3)) MΩ" }
