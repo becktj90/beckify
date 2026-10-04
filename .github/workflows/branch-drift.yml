@@ -1,0 +1,59 @@
+name: Branch drift
+
+# Finds branches that fell behind main or that nobody merged, so they get squash-merged or deleted
+# instead of being found weeks later. Runs every morning and on demand. Opens one issue and keeps it current.
+
+on:
+  schedule:
+    - cron: '17 13 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  report:
+    name: Report stale branches
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compare every branch with main
+        id: drift
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash scripts/branch-drift.sh --markdown > drift.md || true
+          cat drift.md
+          if grep -q '^| `' drift.md; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Open or update the issue
+        uses: actions/github-script@v7
+        env:
+          FOUND: ${{ steps.drift.outputs.found }}
+        with:
+          script: |
+            const fs = require('fs');
+            const title = 'Branches behind main or unmerged';
+            const label = 'branch-drift';
+            const found = process.env.FOUND === 'true';
+            const body = fs.readFileSync('drift.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const open = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: label });
+            const existing = open.data.find(i => i.title === title);
+            if (!found) {
+              if (existing) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body: 'Every branch is merged or current. Closing.' });
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed', state_reason: 'completed' });
+              }
+              return;
+            }
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body, labels: [label] });
+            }

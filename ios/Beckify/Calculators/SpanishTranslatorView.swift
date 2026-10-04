@@ -550,10 +550,9 @@ struct SpanishTranslatorView: View {
                 CrewTalkSprite(
                     crew: crew,
                     isTalking: engine.phase == .playing,
-                    height: crewIsCompact ? 56 : 84
+                    height: crewIsCompact ? 44 : 64
                 )
-                .frame(width: crewIsCompact ? 100 : 150, height: crewIsCompact ? 56 : 84)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(width: crewIsCompact ? 64 : 92, height: crewIsCompact ? 48 : 70)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(crew.firstName)
                         .font(.system(size: 20, weight: .bold, design: .rounded))
