@@ -52,6 +52,35 @@ final class NavigationTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Jobsite"].waitForExistence(timeout: 5))
     }
 
+    func testCancelledSwipeAndPinChangeKeepOnePageHistory() {
+        let shelf = element("shelfCard.jobsite")
+        reveal(shelf)
+        shelf.tap()
+        let tool = element("toolTile.voltageDrop")
+        XCTAssertTrue(tool.waitForExistence(timeout: 5))
+        tool.tap()
+        XCTAssertTrue(toolToolbar("voltageDrop").waitForExistence(timeout: 5))
+
+        let pin = app.buttons.matching(NSPredicate(
+            format: "identifier == %@ AND label CONTAINS %@", "star.fill", "Voltage Drop"
+        )).firstMatch
+        pin.tap()
+        pin.tap()
+
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 1)
+        XCTAssertTrue(toolToolbar("voltageDrop").isHittable)
+        XCTAssertFalse(app.navigationBars["Jobsite"].exists)
+
+        swipeBack()
+        XCTAssertTrue(app.navigationBars["Jobsite"].waitForExistence(timeout: 5))
+        XCTAssertTrue(tool.isHittable)
+        app.navigationBars["Jobsite"].buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(element("homeAreaPicker").waitForExistence(timeout: 5))
+        XCTAssertTrue(element("homeAreaPicker").isHittable)
+    }
+
     private func toolToolbar(_ toolID: String) -> XCUIElement {
         app.buttons.matching(identifier: "howItWorksToolbar." + toolID).firstMatch
     }
