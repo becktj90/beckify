@@ -127,6 +127,13 @@ struct ToolScaffold<Content: View>: View {
         .navigationTitle(tool.title)
         .navigationBarTitleDisplayMode(.inline)
         .background(Theme.background.ignoresSafeArea())
+        .background {
+            if #available(iOS 26.0, *) {
+                EmptyView()
+            } else {
+                LegacyToolBackSwipeSupport().allowsHitTesting(false)
+            }
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !immersivePlay {
                 stickyChrome
@@ -870,5 +877,86 @@ struct CloudVisionAnalyzeChrome: View {
             return "Custom HTTPS endpoint will receive the photo when you tap \(title)."
         }
         return "No custom URL yet. \(title) uses https://api.beckify.com\(defaultPath)."
+    }
+}
+
+/// Older SwiftUI stacks can leave the edge recognizer disabled for calculator
+/// content. Resolve the containing navigation controller through the view's
+/// window, and keep UIKit's interactive one-page pop and cancellation behavior.
+private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> CarrierView {
+        let view = CarrierView()
+        view.windowChanged = { [weak view, coordinator = context.coordinator] in
+            DispatchQueue.main.async {
+                guard let view else { return }
+                if view.window != nil { coordinator.install(in: view) }
+                else { coordinator.restore() }
+            }
+        }
+        return view
+    }
+
+    func updateUIView(_ view: CarrierView, context: Context) {}
+
+    static func dismantleUIView(_ view: CarrierView, coordinator: Coordinator) {
+        view.windowChanged = nil
+        coordinator.restore()
+    }
+
+    final class CarrierView: UIView {
+        var windowChanged: (() -> Void)?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            windowChanged?()
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        private weak var navigation: UINavigationController?
+        private weak var gesture: UIGestureRecognizer?
+        private var previousDelegate: UIGestureRecognizerDelegate?
+
+        func install(in view: UIView) {
+            guard let root = view.window?.rootViewController,
+                  let navigation = findNavigation(in: root, containing: view),
+                  let gesture = navigation.interactivePopGestureRecognizer,
+                  gesture.delegate !== self else { return }
+            self.navigation = navigation
+            self.gesture = gesture
+            if let previous = gesture.delegate as? Coordinator {
+                previousDelegate = previous.previousDelegate
+            } else {
+                previousDelegate = gesture.delegate
+            }
+            gesture.delegate = self
+            gesture.isEnabled = navigation.viewControllers.count > 1
+        }
+
+        func restore() {
+            if let gesture, gesture.delegate === self {
+                gesture.delegate = previousDelegate
+                gesture.isEnabled = (navigation?.viewControllers.count ?? 0) > 1
+            }
+            previousDelegate = nil
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let navigation else { return false }
+            return navigation.viewControllers.count > 1 && navigation.transitionCoordinator == nil
+        }
+
+        private func findNavigation(in controller: UIViewController, containing view: UIView) -> UINavigationController? {
+            if let navigation = controller as? UINavigationController,
+               let navigationView = navigation.viewIfLoaded,
+               view.isDescendant(of: navigationView) {
+                return navigation
+            }
+            for child in controller.children {
+                if let navigation = findNavigation(in: child, containing: view) { return navigation }
+            }
+            return nil
+        }
     }
 }
