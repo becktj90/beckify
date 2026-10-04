@@ -26,6 +26,9 @@ struct RootView: View {
     @EnvironmentObject private var jobs: JobStore
     @State private var tab: RootTab = .toolbox
     @State private var toolboxArea: ToolHomeArea = .field
+    // Keep history above the launcher whose Recent / Pinned contents can change
+    // while a tool is visible. Native back navigation removes one entry at a time.
+    @State private var toolboxPath = NavigationPath()
     @State private var didFinishFirstAppear = false
     @ObservedObject private var reviewAsk = ReviewAskStore.shared
     @Environment(\.requestReview) private var requestReview
@@ -33,7 +36,7 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            ToolGridView(homeArea: $toolboxArea)
+            ToolGridView(homeArea: $toolboxArea, path: $toolboxPath)
                 .tabItem {
                     Label("Toolbox", systemImage: "square.grid.2x2.fill")
                 }
