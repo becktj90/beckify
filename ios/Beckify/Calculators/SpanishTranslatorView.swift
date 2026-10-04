@@ -22,6 +22,11 @@ struct SpanishTranslatorView: View {
     @State private var lastTestPhrase = ""
     @State private var lastAttentionPhrase = ""
     @FocusState private var composerFocused: Bool
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Height of this destination (above the tab bar). Used only to cap the dock.
+    @State private var layoutHeight: CGFloat = 900
+    /// Ideal height of the dock stack, before the cap.
+    @State private var dockContentHeight: CGFloat = 180
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -50,7 +55,6 @@ struct SpanishTranslatorView: View {
             directionCard
             attentionCard
             recordCard
-            quickPhrasesCard
             if showAdvanced {
                 advancedCard
             } else {
@@ -83,7 +87,7 @@ struct SpanishTranslatorView: View {
             crewHelperBar
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            composerDock
+            dockChrome
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -123,6 +127,15 @@ struct SpanishTranslatorView: View {
         }
         .onDisappear {
             engine.invalidateOutdatedWork(markCancelled: true)
+        }
+        .background {
+            GeometryReader { proxy in
+                Color.clear.preference(key: CrewTalkLayoutHeightKey.self, value: proxy.size.height)
+            }
+        }
+        .onPreferenceChange(CrewTalkLayoutHeightKey.self) { newValue in
+            guard newValue > 1, abs(layoutHeight - newValue) > 0.5 else { return }
+            layoutHeight = newValue
         }
     }
 
@@ -442,8 +455,66 @@ struct SpanishTranslatorView: View {
         SpanishTranslatorAPI.quickPhrases(direction: direction)
     }
 
-    private var quickPhrasesCard: some View {
-        ResultCard(title: "Quick lines", copyText: quickPhrases.joined(separator: " · ")) {
+    /// Pinned crew chrome is tall. Shrink it when the keyboard is up, when
+    /// Dynamic Type is an accessibility size, or when the destination is
+    /// SE-short — otherwise the top inset plus the dock cover the tab bar.
+    private var crewIsCompact: Bool {
+        composerFocused
+            || dynamicTypeSize.isAccessibilitySize
+            || layoutHeight < 640
+    }
+
+    /// Cap so Quick lines, the field, and Speak scroll inside the inset
+    /// instead of drawing over the tab bar. Leaves room for the crew bar.
+    private var dockMaxHeight: CGFloat {
+        let crewReserve: CGFloat = crewIsCompact ? 220 : 360
+        let room = layoutHeight - crewReserve
+        let hardCap: CGFloat = dynamicTypeSize.isAccessibilitySize ? 440 : 320
+        return min(hardCap, max(156, room))
+    }
+
+    /// One bottom inset: chips, field, answer, Speak. Stays in the safe area
+    /// above the tab bar; the keyboard safe area lifts that inset. Taller
+    /// than the cap, the stack scrolls inside the dock.
+    private var dockChrome: some View {
+        ScrollView(.vertical) {
+            composerDock
+                .fixedSize(horizontal: false, vertical: true)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: CrewTalkDockHeightKey.self, value: proxy.size.height)
+                    }
+                }
+        }
+        .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+        .frame(height: min(max(dockContentHeight, 1), dockMaxHeight))
+        .onPreferenceChange(CrewTalkDockHeightKey.self) { newValue in
+            guard abs(dockContentHeight - newValue) > 0.5 else { return }
+            dockContentHeight = newValue
+        }
+        .background(Theme.surfaceRaised.opacity(0.96))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Theme.accent)
+                .frame(height: 2)
+        }
+    }
+
+    private var quickLinesStrip: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: 8) {
+                Text("QUICK LINES")
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.muted)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                CopyResultButton(
+                    text: quickPhrases.joined(separator: " · "),
+                    compact: true,
+                    accessibilityName: "Copy Quick lines results"
+                )
+            }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Array(quickPhrases.enumerated()), id: \.offset) { index, phrase in
@@ -462,7 +533,7 @@ struct SpanishTranslatorView: View {
                                 .foregroundStyle(Theme.foreground)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
-                                .background(Theme.surfaceRaised.opacity(0.9), in: Capsule(style: .continuous))
+                                .background(Theme.surface.opacity(0.9), in: Capsule(style: .continuous))
                                 .overlay(
                                     Capsule(style: .continuous)
                                         .stroke(Theme.border, lineWidth: 1)
@@ -479,12 +550,14 @@ struct SpanishTranslatorView: View {
                 .padding(.vertical, 2)
             }
         }
+        .accessibilityIdentifier("spanishTranslator.quickLines")
     }
 
-    /// Input, other-language answer, and Speak stay in one dock above the keyboard.
-    /// One Done lives on the shared keyboard toolbar — this dock does not add another.
+    /// Quick lines, the field, the other-language answer, and Speak stay in one dock
+    /// above the keyboard and the tab bar. One Done lives on the keyboard toolbar.
     private var composerDock: some View {
         VStack(alignment: .leading, spacing: 8) {
+            quickLinesStrip
             TextField(SpanishTranslatorAPI.typedPlaceholder(direction: direction), text: $typedLine, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(1...3)
@@ -529,12 +602,6 @@ struct SpanishTranslatorView: View {
         .padding(.horizontal, Theme.Space.lg)
         .padding(.top, 10)
         .padding(.bottom, 8)
-        .background(Theme.surfaceRaised.opacity(0.96))
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(Theme.accent)
-                .frame(height: 2)
-        }
     }
 
     private func submitTypedLine() {
@@ -552,12 +619,12 @@ struct SpanishTranslatorView: View {
             CrewTalkSprite(
                 crew: crew,
                 isTalking: engine.phase == .playing,
-                height: composerFocused ? 96 : 168
+                height: crewIsCompact ? 96 : 168
             )
             Text(crew.firstName)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.foreground)
-            if !composerFocused {
+            if !crewIsCompact {
                 Text(crew.blurb)
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)
@@ -598,6 +665,20 @@ struct SpanishTranslatorView: View {
         .background(Theme.background)
     }
 
+
+private struct CrewTalkLayoutHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct CrewTalkDockHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
 
 /// Full-body 16-bit helper. Two existing frames, nearest-neighbor so pixels stay crisp.
 /// Talk is a syllable beat (idle held longer than the talk pose), not a 150 ms hard swap.
