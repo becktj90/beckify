@@ -141,6 +141,12 @@ public struct FieldRaster: Equatable, Sendable {
             ampTurns: ampTurns, legThicknessM: legThicknessM, pathLengthM: pathLengthM,
             gapM: gapM, relativePermeability: relativePermeability
         ) else { return nil }
+        // Induced E per A/s of one-turn current needs A_z per ampere-turn. At zero excitation the field is zero but that
+        // ratio is not, so take it from a unit solve.
+        let unit = ampTurns == 0 ? CoreFieldMap.compute(
+            ampTurns: 1, legThicknessM: legThicknessM, pathLengthM: pathLengthM,
+            gapM: gapM, relativePermeability: relativePermeability
+        ) : nil
         var tag = [UInt8](repeating: 0, count: map.columns * map.rows)
         var ePerRamp = [Double](repeating: 0, count: map.columns * map.rows)
         var mag = tag.map { _ in 0.0 }
@@ -152,7 +158,7 @@ public struct FieldRaster: Equatable, Sendable {
             case .air: tag[i] = air
             }
             mag[i] = hypot(map.bx[i], map.by[i])
-            ePerRamp[i] = currentAmps != 0 ? -map.az[i] / currentAmps : 0
+            ePerRamp[i] = ampTurns != 0 ? -map.az[i] / ampTurns : -(unit?.az[i] ?? 0)
         }
         return FieldRaster(
             kind: .core, columns: map.columns, rows: map.rows,

@@ -28,7 +28,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          bash scripts/branch-drift.sh --markdown > drift.md || true
+          # No `|| true`: if the comparison itself fails, the job fails instead of reporting "all clear".
+          bash scripts/branch-drift.sh --markdown > drift.md
           cat drift.md
           if grep -q '^| `' drift.md; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; fi
       - name: Open or update the issue

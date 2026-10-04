@@ -1646,9 +1646,9 @@ struct MagneticCircuitView: View {
         ) {
             ShowWorkCard(
                 toolID: .magneticCircuit,
-                symbolic: "R = l / (µ₀ µᵣ A)     Φ = mmf / R     B = Φ / A",
+                symbolic: "R = l / (µ₀ µᵣ A) + g / (µ₀ A)     Φ = mmf / R     B = Φ / A",
                 substituted: substituted,
-                meaning: "This is Ohm's law for a magnetic path: mmf plays the role of voltage, flux plays current, reluctance plays resistance. A higher µᵣ core (more iron, less air gap) means less reluctance and more flux for the same mmf."
+                meaning: "This is Ohm's law for a magnetic path: mmf plays the role of voltage, flux plays current, reluctance plays resistance. The steel and the air gap are in series, so their reluctances add. The gap term g / (µ₀ A) has no µᵣ, so a small gap often dominates. Leave the gap blank for a closed core."
             )
             TryExampleButton(title: "500 At, 20 cm path, 1 cm², µᵣ 1000") {
                 mmf = "500"; length = "0.2"; areaCm2 = "1"; muR = "1000"

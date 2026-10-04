@@ -466,10 +466,11 @@ struct CrewTalkSprite: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { hopTick += 1 }
+        .onTapGesture { if !reduceMotion { hopTick += 1 } }
         .accessibilityElement(children: .ignore)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Makes \(crew.firstName) hop")
+        // With Reduce Motion there is no hop, so the sprite is not offered as a button.
+        .accessibilityAddTraits(reduceMotion ? [] : .isButton)
+        .accessibilityHint(reduceMotion ? "" : "Makes \(crew.firstName) hop")
         .accessibilityIdentifier("spanishTranslator.crewPortrait")
         .accessibilityLabel(isTalking ? "\(crew.displayName), talking" : crew.displayName)
     }

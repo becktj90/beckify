@@ -296,8 +296,9 @@ public struct CoreFieldMap: Equatable, Sendable {
         let windowW = max(w - 1, 1)
         let windowH = max(h - 1, 1)
         let gap = gapM / t
-        // A gap thinner than a cell cannot show. Draw it at a floor and report the real width.
-        let gapDrawn = gapM > 0 ? max(gap, 0.06) : 0
+        // The solver always uses the real gap. A gap thinner than a cell is carried as the series reluctance of the
+        // cells it crosses (below), and only the picture shows a minimum width.
+        let gapDrawn = gap
         let totalW = windowW + 2
         let totalH = windowH + 2
         let margin = 0.9
@@ -311,8 +312,21 @@ public struct CoreFieldMap: Equatable, Sendable {
         var region = [Region](repeating: .air, count: columns * rows)
         func unitsX(_ c: Int) -> Double { Double(c) * cellUnits - margin }
         func unitsY(_ r: Int) -> Double { Double(r) * cellUnits - margin }
-        let gapHalf = gapDrawn / 2
+        let gapHalf = gap / 2
         let gapCentre = totalW / 2
+        // Fraction of each cell column the gap covers, so a gap of any width keeps its true reluctance.
+        var gapShare = [Double](repeating: 0, count: columns)
+        var nearestColumn = 0
+        var nearestDistance = Double.infinity
+        for c in 0..<columns {
+            let x = unitsX(c)
+            let lo = max(x - cellUnits / 2, gapCentre - gapHalf)
+            let hi = min(x + cellUnits / 2, gapCentre + gapHalf)
+            gapShare[c] = gap > 0 ? max(0, hi - lo) / cellUnits : 0
+            let d = abs(x - gapCentre)
+            if d < nearestDistance { nearestDistance = d; nearestColumn = c }
+        }
+        var partialGap = [Int: Double]()
         for r in 0..<rows {
             for c in 0..<columns {
                 let x = unitsX(c), y = unitsY(r)
@@ -322,7 +336,13 @@ public struct CoreFieldMap: Equatable, Sendable {
                 if inside && !inWindow {
                     kind = .steel
                     // Gap through the bottom leg, centred.
-                    if gapDrawn > 0, y < 1, abs(x - gapCentre) < gapHalf { kind = .gap }
+                    if gap > 0, y < 1 {
+                        let share = gapShare[c]
+                        if share >= 0.5 { kind = .gap }
+                        else if share > 0 || c == nearestColumn { kind = (c == nearestColumn) ? .gap : .steel }
+                        if share > 0 { partialGap[r * columns + c] = min(share, 1) }
+                        else if c == nearestColumn { partialGap[r * columns + c] = 0 }
+                    }
                 }
                 // Winding fills the window beside the left leg. Current out of the page on the inner side, back on the outer.
                 if inWindow, x < 1 + min(0.45, windowW * 0.25) { kind = .coilPlus }
@@ -348,6 +368,11 @@ public struct CoreFieldMap: Equatable, Sendable {
         var nu = [Double](repeating: nuAir, count: columns * rows)
         var source = [Double](repeating: 0, count: columns * rows)
         for i in 0..<region.count {
+            if let share = partialGap[i] {
+                // Series reluctance of the steel and air along the flux path through this cell.
+                nu[i] = (1 - share) * nuSteel + share * nuAir
+                continue
+            }
             switch region[i] {
             case .steel: nu[i] = nuSteel
             case .coilPlus: source[i] = jPlus

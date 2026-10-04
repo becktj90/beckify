@@ -90,7 +90,8 @@ private enum FieldBitmap {
     }
 
     /// One pixel per grid cell, row 0 at the bottom of the picture.
-    static func make(raster: FieldRaster, layer: FieldLayer, cap: Double) -> UIImage? {
+    /// For the electric layer `ramp` is the entered dI/dt: `cap` is already scaled by |ramp|, and the sign flips the colors.
+    static func make(raster: FieldRaster, layer: FieldLayer, cap: Double, ramp: Double = 1) -> UIImage? {
         let w = raster.columns, h = raster.rows
         var pixels = [UInt8](repeating: 255, count: w * h * 4)
         let dim = layer == .lines ? 0.55 : 1.0
@@ -99,7 +100,7 @@ private enum FieldBitmap {
                 let i = raster.index(column: column, row: row)
                 var rgb: (Double, Double, Double)
                 if layer == .electric {
-                    rgb = FieldPalette.diverging(cap > 0 ? raster.ePerRamp[i] / cap : 0)
+                    rgb = FieldPalette.diverging(cap > 0 ? raster.ePerRamp[i] * ramp / cap : 0)
                 } else {
                     let t = cap > 0 ? (raster.bMag[i] / cap).squareRoot() : 0
                     rgb = FieldPalette.magnitude(t)
@@ -206,11 +207,14 @@ struct FieldExplorerCard: View {
             probe = nil
             let make = build
             let built = await Task.detached(priority: .userInitiated) { make() }.value
+            // A newer key cancels this task. The detached solve still finishes, but it must not publish over the new one.
+            guard !Task.isCancelled else { return }
             raster = built
             failed = built == nil
             refreshDerived()
         }
         .onChange(of: layer) { _, _ in refreshDerived() }
+        .onChange(of: didtText) { _, _ in refreshDerived() }
     }
 
     // MARK: Pieces
@@ -219,11 +223,12 @@ struct FieldExplorerCard: View {
         guard let raster else { return }
         switch layer {
         case .electric:
-            cap = FieldBitmap.percentile(raster.ePerRamp, 0.98)
+            // Colors and legend follow the ramp the user entered. Zero ramp is a blank, neutral map.
+            cap = FieldBitmap.percentile(raster.ePerRamp, 0.98) * abs(didt)
         default:
             cap = FieldBitmap.percentile(raster.bMag, 0.98)
         }
-        image = FieldBitmap.make(raster: raster, layer: layer, cap: cap)
+        image = FieldBitmap.make(raster: raster, layer: layer, cap: cap, ramp: didt)
         if layer == .lines {
             let low = raster.potential.min() ?? 0
             let high = raster.potential.max() ?? 0
@@ -387,11 +392,11 @@ struct FieldExplorerCard: View {
             .clipShape(Capsule())
             HStack {
                 if layer == .electric {
-                    Text("−\(FieldFormat.volts(perMetre: cap * didt))")
+                    Text("−\(FieldFormat.volts(perMetre: cap))")
                     Spacer()
                     Text("0")
                     Spacer()
-                    Text("+\(FieldFormat.volts(perMetre: cap * didt))")
+                    Text("+\(FieldFormat.volts(perMetre: cap))")
                 } else {
                     Text("0")
                     Spacer()
@@ -438,7 +443,7 @@ struct FieldExplorerCard: View {
         guard let probe = raster.probe(xM: x, yM: y, didt: didt) else { return nil }
         let position: String
         if centered {
-            position = "ρ \(FieldFormat.length(x - raster.widthM / 2))   z \(FieldFormat.length(y - raster.heightM / 2))"
+            position = "x \(FieldFormat.length(x - raster.widthM / 2))   z \(FieldFormat.length(y - raster.heightM / 2))"
         } else {
             position = "x \(FieldFormat.length(x))   y \(FieldFormat.length(y))"
         }

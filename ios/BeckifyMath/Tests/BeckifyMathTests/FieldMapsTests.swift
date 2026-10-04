@@ -111,6 +111,27 @@ final class FieldMapsTests: XCTestCase {
         XCTAssertGreaterThan(closed.steelB, gapped.steelB * 3)
     }
 
+    func testSubCellGapKeepsItsRealReluctance() throws {
+        // 0.1 mm in a 10 mm leg is far below one grid cell. It must still cut the field about as the series circuit says.
+        let thin = try XCTUnwrap(CoreFieldMap.compute(ampTurns: 200, legThicknessM: 0.01, pathLengthM: 0.4, gapM: 0.0001, relativePermeability: 2000))
+        let closed = try XCTUnwrap(CoreFieldMap.compute(ampTurns: 200, legThicknessM: 0.01, pathLengthM: 0.4, gapM: 0, relativePermeability: 2000))
+        let series = mu0 * 200 / (0.0001 + 0.4 / 2000)
+        XCTAssertGreaterThan(thin.steelB, series * 0.4)
+        XCTAssertLessThan(thin.steelB, series * 1.3)
+        XCTAssertLessThan(thin.steelB, closed.steelB * 0.8, "a 0.1 mm gap still matters in a µr 2000 core")
+        // And doubling it lowers the field more.
+        let wider = try XCTUnwrap(CoreFieldMap.compute(ampTurns: 200, legThicknessM: 0.01, pathLengthM: 0.4, gapM: 0.0002, relativePermeability: 2000))
+        XCTAssertLessThan(wider.steelB, thin.steelB)
+    }
+
+    func testInducedEAtZeroCurrentIsStillDefined() throws {
+        let zero = try XCTUnwrap(FieldRaster.core(ampTurns: 0, legThicknessM: 0.01, pathLengthM: 0.4, gapM: 0.001, relativePermeability: 2000, currentAmps: 0))
+        XCTAssertEqual(zero.maxB, 0, accuracy: 1e-12)
+        XCTAssertGreaterThan(zero.maxEPerRamp, 0, "A per ampere-turn does not vanish with the current")
+        let live = try XCTUnwrap(FieldRaster.core(ampTurns: 200, legThicknessM: 0.01, pathLengthM: 0.4, gapM: 0.001, relativePermeability: 2000, currentAmps: 200))
+        XCTAssertEqual(zero.maxEPerRamp, live.maxEPerRamp, accuracy: live.maxEPerRamp * 0.02)
+    }
+
     func testInvalidInputsReturnNil() {
         XCTAssertNil(SolenoidFieldMap.compute(lengthM: 0, innerRadiusM: 0.02, buildM: 0.001, turns: 100, currentAmps: 1))
         XCTAssertNil(CoreFieldMap.compute(ampTurns: .nan, legThicknessM: 0.01, pathLengthM: 0.4, gapM: 0, relativePermeability: 100))

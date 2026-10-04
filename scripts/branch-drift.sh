@@ -3,7 +3,7 @@
 # Usage: scripts/branch-drift.sh [--markdown] [--days N]
 #   --days N   Only flag an unmerged branch once its last commit is N days old (default 3).
 # A branch that is behind main needs main merged in. A branch that is ahead and old needs a squash merge
-# or deleting. Branches that main already contains (squash-merged ones are caught by an empty tree diff) are skipped.
+# or deleting. Branches whose merge into main would change nothing (squash-merged ones) are skipped.
 set -euo pipefail
 
 format=text
@@ -28,8 +28,12 @@ while IFS= read -r ref; do
   [ "$name" = "HEAD" ] && continue
   behind=$(git rev-list --count "$ref..$base")
   ahead=$(git rev-list --count "$base..$ref")
-  # A squash-merged branch still looks "ahead". If it changes nothing against main, it is done.
-  if [ "$ahead" -gt 0 ] && git diff --quiet "$base...$ref" 2>/dev/null; then continue; fi
+  # A squash-merged branch still looks "ahead". Merging it into main would change nothing, so it is done.
+  # merge-tree compares what the merge would produce against main's own tree, which survives later commits on main.
+  if [ "$ahead" -gt 0 ]; then
+    merged_tree=$(git merge-tree --write-tree "$base" "$ref" 2>/dev/null || true)
+    if [ -n "$merged_tree" ] && [ "$merged_tree" = "$(git rev-parse "$base^{tree}")" ]; then continue; fi
+  fi
   [ "$ahead" -eq 0 ] && [ "$behind" -eq 0 ] && continue
   stamp=$(git log -1 --format=%ct "$ref")
   age=$(( (now - stamp) / 86400 ))
