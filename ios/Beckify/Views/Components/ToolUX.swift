@@ -931,12 +931,20 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
         private weak var gesture: UIGestureRecognizer?
         private var previousDelegate: UIGestureRecognizerDelegate?
         private var gestureAttempts = 0
+        private var initialGestureSurface = ""
 
         func install(in view: UIView) {
             guard let root = view.window?.rootViewController,
                   let navigation = findNavigation(in: root, containing: view),
                   let gesture = navigation.interactivePopGestureRecognizer,
                   gesture.delegate !== self else { return }
+            initialGestureSurface = "type=\(type(of: gesture)) view=\(String(describing: gesture.view.map { type(of: $0) })) frame=\(String(describing: gesture.view?.frame)) navFrame=\(navigation.view.frame) edges=\((gesture as? UIScreenEdgePanGestureRecognizer)?.edges.rawValue ?? 0)"
+            if gesture.view !== navigation.view {
+                navigation.view.addGestureRecognizer(gesture)
+            }
+            if let edge = gesture as? UIScreenEdgePanGestureRecognizer {
+                edge.edges = .left
+            }
             self.navigation = navigation
             self.gesture = gesture
             if let previous = gesture.delegate as? Coordinator {
@@ -954,7 +962,7 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
             func hierarchy(_ controller: UIViewController) -> String {
                 "\(type(of: controller))[\(controller.children.map(hierarchy).joined(separator: ","))]"
             }
-            return "attempts=\(gestureAttempts) nav=\(String(describing: current.map { type(of: $0) })) count=\(current?.viewControllers.count ?? -1) enabled=\(recognizer?.isEnabled ?? false) delegate=\(String(describing: recognizer?.delegate)) transition=\(current?.transitionCoordinator != nil) hierarchy=\(view.window?.rootViewController.map(hierarchy) ?? "no window")"
+            return "surface=\(initialGestureSurface) attempts=\(gestureAttempts) nav=\(String(describing: current.map { type(of: $0) })) count=\(current?.viewControllers.count ?? -1) enabled=\(recognizer?.isEnabled ?? false) delegate=\(String(describing: recognizer?.delegate)) transition=\(current?.transitionCoordinator != nil) hierarchy=\(view.window?.rootViewController.map(hierarchy) ?? "no window")"
         }
 
         func restore() {
@@ -969,6 +977,11 @@ private struct LegacyToolBackSwipeSupport: UIViewRepresentable {
             gestureAttempts += 1
             guard let navigation else { return false }
             return navigation.viewControllers.count > 1 && navigation.transitionCoordinator == nil
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            gestureRecognizer === gesture
         }
 
         private func findNavigation(in controller: UIViewController, containing view: UIView) -> UINavigationController? {
