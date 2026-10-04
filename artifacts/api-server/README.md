@@ -13,6 +13,7 @@ Registered POST routes (must be present after every production deploy):
 - `/api/review-calculation`
 - `/api/translate`
 - `/api/speak`
+- `POST /api/rooms`, `POST /api/rooms/:code/join`, `GET /api/rooms/:code/events`, `POST /api/rooms/:code/messages`, `POST /api/rooms/:code/leave` — Crew Talk device linking
 - `POST /api/share` and `GET /api/share/:token` — hosted Voltage Drop or Conduit Fill snapshot (HMAC token, no database)
 
 `GET /api/healthz` returns `status: "ok"` plus that route list.
@@ -48,6 +49,20 @@ Same JSON shape either way: `translation`, `dialect`, `notes`, `voiceMode`, `sou
 ### `POST /api/speak`
 
 Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for translator clips. Look Check roast playback may send up to **900** characters with voice id `uYsaRSYDSuxmtyipO9Qt` (Cassian Vale), model `eleven_v3`, and seed **60606**. That voice uses server voice_settings for a slow, close, delighted delivery (stability 0.38, similarity_boost 0.82, style 1, speed 0.86). The ElevenLabs key stays in `ELEVENLABS_API_KEY` and is never sent to the app. Empty body → **400**. Used by Spanish Translator loud playback and Look Check roasts; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en). Look Check does not fall back to a device voice.
+
+### Crew Talk rooms (`/api/rooms`)
+
+Device linking for Crew Talk **Conversation**: two people, two languages (`en` or `es`), text only. Rooms live in server memory and nothing is stored.
+
+- `POST /api/rooms` `{ "language": "en" }` → `201 { code, pid }`. `code` is six characters (no 0/O/1/I). `pid` is that person's secret; the app keeps it in memory.
+- `POST /api/rooms/:code/join` `{ "language": "es" }` → `{ pid, partnerLanguage }`. **404** unknown code, **409** room full or both people picked the same language.
+- `GET /api/rooms/:code/events?pid=…` → Server-Sent Events. One `data: {json}` line per event: `ready`, `peer`, `message`, `closed`. A `: ping` comment every 15 s keeps proxies open. Reconnecting with the same `pid` replaces the old stream, and up to 20 messages missed while offline are delivered on reconnect.
+- `POST /api/rooms/:code/messages` `{ "pid": "…", "text": "…" }` → **202** `{ id, delivered }`. 500 characters max, 20 per 10 s per person. The sender posts its own words. The receiving app translates and speaks them with the character that person picked, so this route never calls a provider.
+- `POST /api/rooms/:code/leave` `{ "pid": "…" }` → **204**.
+
+Limits: 300 rooms, 12 room creates and 40 join attempts per 15 min per IP, 4 open streams per IP, idle rooms drop after 30 min, and a participant who never reconnects drops after 2 min. The `pid` query parameter is stripped from request logs.
+
+**Run one machine.** Rooms are in process memory, so a second machine would split a pair across two processes. Keep `fly scale count 1 -a beckify-api` (check with `fly status -a beckify-api`). While a stream is open Fly keeps the machine running. Vercel serverless cannot hold these streams, so rooms are Fly-only.
 
 ### `POST /api/share` and `GET /api/share/:token`
 

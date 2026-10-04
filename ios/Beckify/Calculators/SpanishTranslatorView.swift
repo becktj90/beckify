@@ -86,6 +86,14 @@ struct SpanishTranslatorView: View {
             composerDock
         }
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    CrewTalkConversationView()
+                } label: {
+                    Label("Conversation", systemImage: "person.2.wave.2.fill")
+                }
+                .accessibilityIdentifier("spanishTranslator.conversation")
+            }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
@@ -603,7 +611,8 @@ struct SpanishTranslatorView: View {
 /// Talk is a syllable beat (idle held longer than the talk pose), not a 150 ms hard swap.
 /// Junie's talk frame is the idle pose with the mouth open. Sloane is centered on the canvas.
 /// The bob is a small continuous offset, independent of the frame cut.
-private struct CrewTalkSprite: View {
+/// Shared with Conversation Mode (`CrewTalk/CrewTalkSubviews.swift`).
+struct CrewTalkSprite: View {
     let crew: CrewTalkMember
     let isTalking: Bool
     var height: CGFloat = 168
