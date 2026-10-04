@@ -32,12 +32,11 @@ final class ToolHomeAreaTests: XCTestCase {
         let toolkit = [
             "ohmsLaw", "voltageDivider", "seriesParallel", "resistorColor",
             "ledRC", "frequencyWave", "unitConverter", "timer555",
-            "reactance", "electronicsLab", "numberBase", "magneticCircuit",
+            "reactance", "electronicsLab", "numberBase",
             "fiberLink", "gaussianBeam", "transientCircuit", "diodeIV", "rfLink",
-            "referenceLibrary", "spanishTranslator",
-            "heaterDesign", "solenoidDesign", "empEmc",
+            "heaterDesign",
             "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
-            "panelDirectory", "loadWorksheet", "cableSchedule",
+            "statistics",
         ]
         for id in toolkit {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
@@ -51,10 +50,10 @@ final class ToolHomeAreaTests: XCTestCase {
         }
     }
 
-    func testFutureAoEAnalogLandsInToolkitBench() {
+    func testAnalogToolsAreToolkitElectronics() {
         for id in ["analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
-            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .bench, id)
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .electronics, id)
         }
     }
 
@@ -66,7 +65,7 @@ final class ToolHomeAreaTests: XCTestCase {
     func testFacilityPowerStaysFieldPower() {
         XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "solarDesign"), .field)
         XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "solarDesign"), .power)
-        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "motorNameplate"), .jobsite)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "motorNameplate"), .motors)
         let power = [
             "power", "threePhasePower", "powerWizard", "transformer", "powerFactor", "batteryBank",
             "solarDesign", "tapChanger", "harmonicsTHD", "upsSizing",
@@ -77,25 +76,26 @@ final class ToolHomeAreaTests: XCTestCase {
         }
     }
 
-    func testEbikeAndNickelStripAreToolkitBench() {
-        for id in ["eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip"] {
+    func testEbikeAndNickelStripAreToolkitBuild() {
+        for id in ["eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip", "heaterDesign"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
-            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .bench, id)
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .build, id)
         }
     }
 
-    func testSpecialtyDesignIsToolkitBench() {
-        for id in ["heaterDesign", "solenoidDesign", "empEmc", "magneticCircuit", "linearRegulator"] {
-            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
-            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .bench, id)
+    func testCoilAndFieldDesignLivesWithMagnetics() {
+        for id in ["magneticsLab", "emFields", "magneticCircuit", "solenoidDesign", "empEmc"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .magnetics, id)
         }
     }
 
-    func testPaperworkFormsAreToolkitReference() {
-        for id in ["panelDirectory", "loadWorksheet", "cableSchedule", "spanishTranslator"] {
-            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
-            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .reference, id)
+    func testCrewTalkAndPaperworkAreFieldCrew() {
+        for id in ["spanishTranslator", "panelDirectory", "loadWorksheet", "cableSchedule", "referenceLibrary"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .crew, id)
         }
+        XCTAssertEqual(ToolShelfKind.crew.homeArea, .field)
     }
 
     func testNECCircuitStaysFieldJobsite() {
@@ -105,10 +105,8 @@ final class ToolHomeAreaTests: XCTestCase {
 
     func testPrimaryJobsiteShelfMembership() {
         let jobsite = [
-            "voltageDrop", "wireAmpacity", "flexibleCable", "conductorCost", "conductorLength",
-            "conduitFill", "cableLadder", "equipmentGround", "motorFLA", "motorSpeed", "motorNameplate", "motorNameplateOCR",
-            "receptacleSelector", "shortCircuit", "circularMils", "loadFactors",
-            "necCircuit", "isLoopVerifier",
+            "voltageDrop", "wireAmpacity", "conduitFill", "equipmentGround",
+            "receptacleSelector", "shortCircuit", "loadFactors", "necCircuit",
         ]
         for id in jobsite {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
@@ -116,21 +114,49 @@ final class ToolHomeAreaTests: XCTestCase {
         }
     }
 
-    func testMagneticsShelfIsField() {
-        for id in ["magneticsLab", "emFields"] {
-            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
-            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .magnetics, id)
+    func testWireAndMotorShelves() {
+        for id in ["cableLadder", "flexibleCable", "conductorCost", "conductorLength", "circularMils"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .wiring, id)
         }
-        XCTAssertEqual(ToolShelfKind.magnetics.homeArea, .field)
+        for id in ["motorFLA", "motorNameplate", "motorNameplateOCR", "motorSpeed"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .motors, id)
+        }
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "isLoopVerifier"), .controls)
     }
 
-    func testElectronicsLabIsToolkitBench() {
-        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "electronicsLab"), .toolkit)
-        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "electronicsLab"), .bench)
+    func testToolkitShelves() {
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "electronicsLab"), .electronics)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "reactance"), .electronics)
+        for id in ["rfLink", "fiberLink", "gaussianBeam"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .rfOptics, id)
+        }
+        for id in ["statistics", "numberBase"] {
+            XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .toolkit, id)
+            XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .math, id)
+        }
+    }
+
+    func testEveryShelfHasToolsAndNoToolIsListedTwice() {
+        var seen = Set<String>()
+        for shelf in ToolShelfKind.allCases {
+            let ids = ToolHomeAreaPolicy.toolIDs(on: shelf)
+            XCTAssertFalse(ids.isEmpty, "\(shelf) is empty")
+            for id in ids { XCTAssertTrue(seen.insert(id).inserted, "\(id) is on two shelves") }
+        }
+        // Every known tool sits on a shelf the policy lists, not on the fallback by accident.
+        for id in ToolCalculationPolicy.knownToolIDs {
+            XCTAssertTrue(seen.contains(id), "\(id) has no shelf")
+        }
+    }
+
+    func testShelfSizesStayReadable() {
+        for shelf in ToolShelfKind.allCases {
+            XCTAssertLessThanOrEqual(ToolHomeAreaPolicy.toolIDs(on: shelf).count, 14, "\(shelf) is too crowded")
+        }
     }
 
     func testFieldControlsStayLoopHelpers() {
-        for id in ["signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "controlSystems", "controlStrategies", "phasorDiagram", "phasorImpedance", "ul508aPanelLab"] {
+        for id in ["signalScaling", "modbusAddress", "plcTimer", "rackCurrent", "isLoopVerifier", "controlSystems", "controlStrategies", "phasorDiagram", "phasorImpedance", "ul508aPanelLab"] {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
             XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .controls, id)
         }
@@ -144,7 +170,6 @@ final class ToolHomeAreaTests: XCTestCase {
             "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
         ] {
             XCTAssertNotEqual(ToolHomeAreaPolicy.shelf(forToolID: id), .power, id)
-            XCTAssertNotEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)
         }
     }
 
@@ -244,7 +269,7 @@ final class ToolHomeAreaTests: XCTestCase {
         XCTAssertEqual(mapped["method"], "loop2")
         XCTAssertEqual(mapped["temp"], "68")
         XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "conductorLength"), .field)
-        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "conductorLength"), .jobsite)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "conductorLength"), .wiring)
     }
 
     func testConductorLengthRestoreMapsMeasurementQualityAndSnapshotFields() {

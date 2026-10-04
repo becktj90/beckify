@@ -170,11 +170,11 @@ final class StatisticsTests: XCTestCase {
         XCTAssertEqual(seven.probabilityAtMost, 1, accuracy: 1e-12)
     }
 
-    func testStatisticsLivesOnFieldAnalysisAndHasCopy() {
+    func testStatisticsLivesOnToolkitMathAndHasCopy() {
         XCTAssertTrue(ToolCalculationPolicy.knownToolIDs.contains("statistics"))
         XCTAssertEqual(ToolCalculationPolicy.mode(forToolID: "statistics"), .live)
-        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "statistics"), .field)
-        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "statistics"), .analysis)
+        XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: "statistics"), .toolkit)
+        XCTAssertEqual(ToolHomeAreaPolicy.shelf(forToolID: "statistics"), .math)
         let copy = ToolHowItWorksCatalog.copy(forToolID: "statistics")
         XCTAssertNotNil(copy)
         let blob = ([copy?.summary, copy?.context] + (copy?.bullets ?? [])).compactMap { $0 }.joined(separator: " ")

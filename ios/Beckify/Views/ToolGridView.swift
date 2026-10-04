@@ -511,15 +511,19 @@ private struct ShelfCard: View {
 
     private var shelfHomeHint: String {
         switch shelf {
-        case .jobsite: return "Voltage drop, fill, motors, receptacles…"
+        case .jobsite: return "Voltage drop, ampacity, conduit fill, receptacles…"
+        case .wiring: return "Tray, flexible cable, conductor cost and length…"
+        case .motors: return "FLA tables, nameplate, speed and torque."
         case .power: return "kVA, transformers, solar, UPS…"
         case .controls: return "Loops, panels, phasors, Modbus…"
-        case .magnetics: return "Cores, flux, and EM fields."
-        case .analysis: return "Distributions and Monte Carlo."
+        case .magnetics: return "Cores, solenoids, flux, and EM fields."
         case .instruments: return "RF, mic, motion, RigScope…"
+        case .crew: return "Crew Talk, schedules, tables…"
         case .basics: return "Ohm's Law, divider, RC, units…"
-        case .bench: return "Lab, RF, e-bike, analog…"
-        case .reference: return "Tables, schedules, Crew Talk…"
+        case .electronics: return "Lab, op-amp workbench, noise, regulators…"
+        case .rfOptics: return "RF link, fiber, laser beams."
+        case .build: return "Heaters, e-bike, battery packs."
+        case .math: return "Statistics and number bases."
         }
     }
 }
