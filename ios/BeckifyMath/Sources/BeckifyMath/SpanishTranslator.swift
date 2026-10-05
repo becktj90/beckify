@@ -641,6 +641,21 @@ public enum SpanishTranslatorAPI {
         )
     }
 
+    /// The register to request from `/api/translate` when `crew` will voice the result.
+    /// The Jobsite prompt is Cuban and requires hard profanity on every line, which is
+    /// Tito's character. Lupita is Mexican Spanish with no heavy profanity, so her
+    /// unmatched lines ask for the clean register instead.
+    public static func translateVoiceMode(requested: SpanishVoiceMode, crew: CrewTalkMember) -> SpanishVoiceMode {
+        crew == .lupitaReyes ? .clean : requested
+    }
+
+    /// The `fallback` slot for the dock and Speak while the person has typed a line but
+    /// no translation exists yet. A Spanish voice must never be handed the raw typed
+    /// English, so its fallback stays empty until Spanish arrives.
+    public static func dockFallbackLine(crew: CrewTalkMember, typed: String) -> String {
+        crew.speakLanguage == "es" ? "" : typed
+    }
+
     public static func clampSourceText(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.count <= maxSourceCharacters { return trimmed }
@@ -1151,8 +1166,8 @@ public enum SpanishTranslatorAPI {
         }
         if !dockTrim.isEmpty { return dockTrim }
         if !rewrite.isEmpty { return rewrite }
-        // A2: Tito has no template. Speak the API Spanish, else the fallback,
-        // so Speak is not handed "" after a successful translate.
+        // A2: Tito and Lupita have no template for unmatched text. Speak the API
+        // Spanish, else the fallback, so Speak is not handed "" after a successful translate.
         if crew.speakLanguage == "es" {
             let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
             if !spanishLine.isEmpty { return spanishLine }

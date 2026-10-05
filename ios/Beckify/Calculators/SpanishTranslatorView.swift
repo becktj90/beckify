@@ -165,10 +165,11 @@ struct SpanishTranslatorView: View {
         let typed = typedLine.trimmingCharacters(in: .whitespacesAndNewlines)
         let heardEnglish = engine.englishText.trimmingCharacters(in: .whitespacesAndNewlines)
         let heardSpanish = engine.spanishText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallback = SpanishTranslatorAPI.dockFallbackLine(crew: crew, typed: typed)
         if direction.listensInSpanish {
-            return (heardEnglish, typed.isEmpty ? heardSpanish : typed, typed)
+            return (heardEnglish, typed.isEmpty ? heardSpanish : typed, fallback)
         }
-        return (typed.isEmpty ? heardEnglish : typed, heardSpanish, typed)
+        return (typed.isEmpty ? heardEnglish : typed, heardSpanish, fallback)
     }
 
     /// Other-language line Speak plays. Tito's rewrite is the Spanish result.
@@ -1092,6 +1093,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
 
         let snapshotDirection = turnDirection
         let snapshotMode = turnVoiceMode
+        let snapshotCrew = turnCrew
         let generation = translateGeneration
 
         if snapshotDirection.listensInSpanish {
@@ -1114,7 +1116,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                     text: source,
                     customEndpoint: customEndpoint,
                     token: token,
-                    voiceMode: snapshotMode,
+                    voiceMode: SpanishTranslatorAPI.translateVoiceMode(requested: snapshotMode, crew: snapshotCrew),
                     direction: snapshotDirection
                 )
                 try Task.checkCancellation()

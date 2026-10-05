@@ -1226,6 +1226,43 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(spoken.count, cases.count, "different speech must give different lines")
     }
 
+    /// Before any Spanish exists (typed but not translated, or translate failed) a
+    /// Spanish voice must stay silent, not be handed the raw English line.
+    func testSpanishCrewNeverSpeaksRawEnglishBeforeATranslationExists() {
+        let english = "Bring the drill to the truck"
+        for crew in [CrewTalkMember.lupitaReyes, .titoSolano] {
+            let fallback = SpanishTranslatorAPI.dockFallbackLine(crew: crew, typed: english)
+            XCTAssertEqual(fallback, "", "\(crew)")
+            XCTAssertEqual(
+                SpanishTranslatorAPI.spokenAnswerForDock(
+                    crew: crew, direction: .englishToSpanish, english: english, spanish: "", fallback: fallback
+                ),
+                "",
+                "\(crew)"
+            )
+            XCTAssertEqual(
+                SpanishTranslatorAPI.lineToSpeak(
+                    crew: crew, direction: .englishToSpanish, english: english, spanish: "", fallback: fallback
+                ),
+                "",
+                "\(crew)"
+            )
+        }
+        // English voices keep the typed line as their fallback.
+        XCTAssertEqual(SpanishTranslatorAPI.dockFallbackLine(crew: .bodieHale, typed: "hola"), "hola")
+    }
+
+    /// The Jobsite prompt is Cuban and requires hard profanity on every line, so it
+    /// is only for Tito. Lupita asks for the clean register.
+    func testLupitaTranslatesInCleanRegisterOthersKeepTheRequestedOne() {
+        for requested in SpanishVoiceMode.allCases {
+            XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: requested, crew: .lupitaReyes), .clean)
+        }
+        XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: .jobsite, crew: .titoSolano), .jobsite)
+        XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: .clean, crew: .titoSolano), .clean)
+        XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: .jobsite, crew: .bodieHale), .jobsite)
+    }
+
     func testBodieFreeTextUnchangedWhenTitoFallsBack() {
         let english = "Bring the drill to the truck"
         let spanish = "Trae el taladro al camión."
