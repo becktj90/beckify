@@ -1192,33 +1192,43 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(finish, .speak(rewrite))
     }
 
-    func testLupitaAndBodieFreeTextUnchangedWhenTitoFallsBack() {
+    /// Regression: Lupita answered every question, negation, and long sentence with one
+    /// canned line, so recorded speech never seemed to be understood.
+    func testLupitaSpeaksTheRealTranslationWhenNoTemplateMatches() {
+        let cases: [(english: String, spanish: String)] = [
+            ("Bring the drill to the truck", "Trae el taladro al camión."),
+            ("Where is the panel for the second floor?", "¿Dónde está el panel del segundo piso?"),
+            ("Don't touch that wire", "No toques ese cable."),
+            ("We need to finish the rough in on the third floor before the inspector shows up tomorrow morning",
+             "Hay que terminar la instalación del tercer piso antes de que llegue el inspector mañana."),
+        ]
+        var spoken = Set<String>()
+        for item in cases {
+            XCTAssertEqual(CrewDialectRewrite.lupita(item.english), "", item.english)
+            let dock = SpanishTranslatorAPI.spokenAnswerForDock(
+                crew: .lupitaReyes,
+                direction: .englishToSpanish,
+                english: item.english,
+                spanish: item.spanish,
+                fallback: item.english
+            )
+            XCTAssertEqual(dock, item.spanish)
+            let line = SpanishTranslatorAPI.lineToSpeak(
+                crew: .lupitaReyes,
+                direction: .englishToSpanish,
+                english: item.english,
+                spanish: item.spanish,
+                fallback: item.english
+            )
+            XCTAssertEqual(line, item.spanish)
+            spoken.insert(line)
+        }
+        XCTAssertEqual(spoken.count, cases.count, "different speech must give different lines")
+    }
+
+    func testBodieFreeTextUnchangedWhenTitoFallsBack() {
         let english = "Bring the drill to the truck"
         let spanish = "Trae el taladro al camión."
-        let lupitaRewrite = CrewDialectRewrite.lupita(english)
-        XCTAssertFalse(lupitaRewrite.isEmpty)
-        XCTAssertNotEqual(lupitaRewrite, spanish)
-
-        XCTAssertEqual(
-            SpanishTranslatorAPI.spokenAnswerForDock(
-                crew: .lupitaReyes,
-                direction: .englishToSpanish,
-                english: english,
-                spanish: spanish,
-                fallback: english
-            ),
-            lupitaRewrite
-        )
-        XCTAssertEqual(
-            SpanishTranslatorAPI.lineToSpeak(
-                crew: .lupitaReyes,
-                direction: .englishToSpanish,
-                english: english,
-                spanish: spanish,
-                fallback: english
-            ),
-            lupitaRewrite
-        )
 
         let bodieRewrite = SpanishTranslatorAPI.bodieDialectRewrite(english)
         XCTAssertFalse(bodieRewrite.isEmpty)
