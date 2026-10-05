@@ -276,9 +276,10 @@ enum CrewDialectRewrite {
     static func lupita(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
-        let cleaned = scrub(trimmed)
+        // Like Tito: only a recognized ask gets a template. Everything else is empty so
+        // callers speak the real translation. A canned fallback here made her answer
+        // every question, negation, and long sentence with the same line.
         let line: String
-        let fallback = "Órale, dime eso otra vez, despacito, y lo vemos juntos."
         switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
             line = "Chin, corta la corriente primero. No manches, luego quedamos tranquilos."
@@ -304,12 +305,10 @@ enum CrewDialectRewrite {
             line = "Mira nada más, lo haces muy bonito. Eres un naturalito, chin."
         case .greeting:
             line = "Hola, qué gusto verte. Aquí andamos, despacito."
-        case .free:
-            line = "Órale, vamos con \(voicedWords(cleaned)), despacito."
-        case nil:
-            line = fallback
+        case .free, nil:
+            return ""
         }
-        return guarded(line, raw: trimmed, fallback: fallback)
+        return guarded(line, raw: trimmed, fallback: "")
     }
 
     // MARK: - Tito

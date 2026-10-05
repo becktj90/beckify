@@ -1192,33 +1192,80 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(finish, .speak(rewrite))
     }
 
-    func testLupitaAndBodieFreeTextUnchangedWhenTitoFallsBack() {
+    /// Regression: Lupita answered every question, negation, and long sentence with one
+    /// canned line, so recorded speech never seemed to be understood.
+    func testLupitaSpeaksTheRealTranslationWhenNoTemplateMatches() {
+        let cases: [(english: String, spanish: String)] = [
+            ("Bring the drill to the truck", "Trae el taladro al camión."),
+            ("Where is the panel for the second floor?", "¿Dónde está el panel del segundo piso?"),
+            ("Don't touch that wire", "No toques ese cable."),
+            ("We need to finish the rough in on the third floor before the inspector shows up tomorrow morning",
+             "Hay que terminar la instalación del tercer piso antes de que llegue el inspector mañana."),
+        ]
+        var spoken = Set<String>()
+        for item in cases {
+            XCTAssertEqual(CrewDialectRewrite.lupita(item.english), "", item.english)
+            let dock = SpanishTranslatorAPI.spokenAnswerForDock(
+                crew: .lupitaReyes,
+                direction: .englishToSpanish,
+                english: item.english,
+                spanish: item.spanish,
+                fallback: item.english
+            )
+            XCTAssertEqual(dock, item.spanish)
+            let line = SpanishTranslatorAPI.lineToSpeak(
+                crew: .lupitaReyes,
+                direction: .englishToSpanish,
+                english: item.english,
+                spanish: item.spanish,
+                fallback: item.english
+            )
+            XCTAssertEqual(line, item.spanish)
+            spoken.insert(line)
+        }
+        XCTAssertEqual(spoken.count, cases.count, "different speech must give different lines")
+    }
+
+    /// Before any Spanish exists (typed but not translated, or translate failed) a
+    /// Spanish voice must stay silent, not be handed the raw English line.
+    func testSpanishCrewNeverSpeaksRawEnglishBeforeATranslationExists() {
+        let english = "Bring the drill to the truck"
+        for crew in [CrewTalkMember.lupitaReyes, .titoSolano] {
+            let fallback = SpanishTranslatorAPI.dockFallbackLine(crew: crew, typed: english)
+            XCTAssertEqual(fallback, "", "\(crew)")
+            XCTAssertEqual(
+                SpanishTranslatorAPI.spokenAnswerForDock(
+                    crew: crew, direction: .englishToSpanish, english: english, spanish: "", fallback: fallback
+                ),
+                "",
+                "\(crew)"
+            )
+            XCTAssertEqual(
+                SpanishTranslatorAPI.lineToSpeak(
+                    crew: crew, direction: .englishToSpanish, english: english, spanish: "", fallback: fallback
+                ),
+                "",
+                "\(crew)"
+            )
+        }
+        // English voices keep the typed line as their fallback.
+        XCTAssertEqual(SpanishTranslatorAPI.dockFallbackLine(crew: .bodieHale, typed: "hola"), "hola")
+    }
+
+    /// The Jobsite prompt is Cuban and requires hard profanity on every line, so it
+    /// is only for Tito. Lupita asks for the clean register.
+    func testLupitaTranslatesInCleanRegisterOthersKeepTheRequestedOne() {
+        for requested in SpanishVoiceMode.allCases {
+            XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: requested, crew: .lupitaReyes), .clean)
+        }
+        XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: .jobsite, crew: .titoSolano), .jobsite)
+        XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: .clean, crew: .titoSolano), .clean)
+        XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: .jobsite, crew: .bodieHale), .jobsite)
+    }
+
+    func testBodieFreeTextUnchangedWhenTitoFallsBack() {
         let english = "Bring the drill to the truck"
         let spanish = "Trae el taladro al camión."
-        let lupitaRewrite = CrewDialectRewrite.lupita(english)
-        XCTAssertFalse(lupitaRewrite.isEmpty)
-        XCTAssertNotEqual(lupitaRewrite, spanish)
-
-        XCTAssertEqual(
-            SpanishTranslatorAPI.spokenAnswerForDock(
-                crew: .lupitaReyes,
-                direction: .englishToSpanish,
-                english: english,
-                spanish: spanish,
-                fallback: english
-            ),
-            lupitaRewrite
-        )
-        XCTAssertEqual(
-            SpanishTranslatorAPI.lineToSpeak(
-                crew: .lupitaReyes,
-                direction: .englishToSpanish,
-                english: english,
-                spanish: spanish,
-                fallback: english
-            ),
-            lupitaRewrite
-        )
 
         let bodieRewrite = SpanishTranslatorAPI.bodieDialectRewrite(english)
         XCTAssertFalse(bodieRewrite.isEmpty)

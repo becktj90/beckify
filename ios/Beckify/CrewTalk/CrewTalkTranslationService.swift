@@ -7,7 +7,8 @@ enum CrewTalkTranslationService {
     /// Translate what the speaker said into the other person's language.
     static func translate(
         _ text: String,
-        from speaker: CrewTalkConversationLanguage
+        from speaker: CrewTalkConversationLanguage,
+        listener: CrewTalkMember
     ) async throws -> SpanishTranslationDraft {
         let source = SpanishTranslatorAPI.clampSourceText(text)
         guard !source.isEmpty else {
@@ -21,7 +22,7 @@ enum CrewTalkTranslationService {
             text: source,
             sourceLanguage: direction.sourceLanguage,
             targetLanguage: direction.targetLanguage,
-            voiceMode: .jobsite
+            voiceMode: SpanishTranslatorAPI.translateVoiceMode(requested: .jobsite, crew: listener)
         )
         do {
             let payload = try await BeckifyAIClient.postJSON(url: url, body: body, bearerToken: "", timeout: 30)

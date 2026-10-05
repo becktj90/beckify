@@ -312,7 +312,7 @@ final class CrewTalkConversationModel: ObservableObject {
         phase = .translating
         errorMessage = nil
         do {
-            let draft = try await CrewTalkTranslationService.translate(text, from: language)
+            let draft = try await CrewTalkTranslationService.translate(text, from: language, listener: crew)
             guard token == turn else { return false }
             let lines = CrewTalkConversation.lines(
                 sourceText: text,
