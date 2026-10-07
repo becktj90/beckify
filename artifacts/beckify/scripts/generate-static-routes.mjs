@@ -14,10 +14,17 @@ const staticRoutes = STATIC_ROUTE_PATHS.map((route) => {
   return [route, seo.title, seo.description];
 });
 
-// Legacy game slug: keep a directory so GitHub Pages 301s the no-slash URL,
-// then immediately send crawlers to Kestrel Heavy. Do not list this in sitemap.xml.
+// Legacy paths: keep a directory so GitHub Pages 301s the no-slash URL to the
+// trailing-slash form, then the stub sends crawlers onward. GitHub Pages cannot
+// emit a real HTTP 301 to another path, so these are meta-refresh + link stubs
+// with noindex. Do not list these in sitemap.xml.
 const redirectRoutes = new Map([
   ["games/new-glenn-runner", "/games/kestrel-heavy/"],
+  // Removed affiliate catalog (2026-09-04). Send leftover inbound links to toolbox.
+  ["gear", "/toolbox/"],
+  ["products", "/toolbox/"],
+  ["shop", "/toolbox/"],
+  ["store", "/toolbox/"],
 ]);
 
 // The app sets page metadata after hydration, but route-specific static HTML
@@ -67,9 +74,9 @@ const routeShell = (source, route, title, description) => {
     .replace("</head>", `<script type="application/ld+json">${schema}</script></head>`);
 };
 
-// GitHub Pages serves 404.html with a 404 status. Give every React route its
-// own entry file so direct links return 200 while the client router selects
-// the correct page after hydration.
+// GitHub Pages serves public/404.html with a 404 status for unknown paths.
+// Give every React route its own entry file so direct links return 200 while
+// the client router selects the correct page after hydration.
 const appShell = await readFile(shell, "utf8");
 await Promise.all(staticRoutes.map(async ([route, title, description]) => {
   const directory = resolve(dist, route);

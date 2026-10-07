@@ -58,7 +58,7 @@ already has a categorised directory that Phase 9 of the brief asks for.
 | Content | `src/data/site-content.ts` | Nav, hub cards, profile, contact — data-driven by design |
 | Toolbox | Vanilla JS, no build step | `public/toolbox/`, 27 classic `<script>` files sharing one global scope |
 | Build | `prebuild` sitemap → `vite build` → `postbuild` sitemap + static routes | `scripts/generate-*.mjs` |
-| Hosting | GitHub Pages, `deploy.yml` on push to `main` | `404.html` is a copy of `index.html` (SPA fallback) |
+| Hosting | GitHub Pages, `deploy.yml` on push to `main` | Dedicated `public/404.html` with `noindex` (do not copy `index.html`) |
 | PWA | Service worker + manifest scoped to `/toolbox/` only | Deliberate — see `public/toolbox/sw.js` header comment |
 | Tests | `node --test ./tests/*.test.cjs` | 9 files, 9 passing |
 | Lint | Biome, `preset: none` with a hand-picked rule set | Formatter deliberately off; rationale documented in `biome.json` |

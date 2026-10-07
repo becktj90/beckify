@@ -40,14 +40,19 @@ async function main() {
   ok("privacy uses trailing slash", locs.includes("https://beckify.com/privacy/"));
   ok("kestrel-heavy uses trailing slash", locs.includes("https://beckify.com/games/kestrel-heavy/"));
   ok("legacy new-glenn-runner is not sitemapped", !/new-glenn/i.test(xml));
+  ok("removed /gear is not sitemapped", !locs.includes("https://beckify.com/gear/") && !locs.includes("https://beckify.com/gear"));
   ok("no-slash /about is not listed", !locs.includes("https://beckify.com/about"));
 
   const staticRoutes = fs.readFileSync(path.join(root, "scripts/generate-static-routes.mjs"), "utf8");
   const seoCopy = fs.readFileSync(path.join(root, "src/data/seo-copy.mjs"), "utf8");
+  const notFoundHtml = fs.readFileSync(path.join(root, "public/404.html"), "utf8");
   console.log("\n--- Static route canonicals ---");
   ok("static route shells use toCanonicalUrl", staticRoutes.includes("toCanonicalUrl(`/${route}`)"));
   ok("new-glenn-runner stays a static directory", seoCopy.includes('"games/new-glenn-runner"'));
   ok("new-glenn-runner redirects to kestrel-heavy/", staticRoutes.includes('["games/new-glenn-runner", "/games/kestrel-heavy/"]'));
+  ok("gear redirects to toolbox/", staticRoutes.includes('["gear", "/toolbox/"]'));
+  ok("products/shop/store redirect stubs exist", ["products", "shop", "store"].every((slug) => staticRoutes.includes(`["${slug}", "/toolbox/"]`)));
+  ok("404.html is a dedicated noindex page", /noindex/i.test(notFoundHtml) && /Page not found/i.test(notFoundHtml));
 
   const schemaHead = fs.readFileSync(path.join(root, "src/components/seo/SchemaHead.tsx"), "utf8");
   ok("SchemaHead canonicals go through toCanonicalUrl", schemaHead.includes("const canonicalUrl = toCanonicalUrl(path);"));

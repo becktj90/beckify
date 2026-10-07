@@ -5,10 +5,9 @@ import { SchemaHead } from "@/components/seo/SchemaHead";
 import { NAV_LINKS } from "@/data/site-content";
 
 /**
- * GitHub Pages serves this same file for every unmatched path (the SPA
- * 404->200 fallback), so it renders under whatever URL a visitor actually
- * typed or followed. It must never be indexed as a real page — a broken
- * inbound link would otherwise become a crawlable duplicate of this one.
+ * Client-side fallback when the router has no match. Unknown URLs on GitHub
+ * Pages also get public/404.html with HTTP 404 + noindex (see deploy.yml).
+ * Keep this page noindex so a hydrated soft route never becomes crawlable.
  */
 export default function NotFound() {
   return (

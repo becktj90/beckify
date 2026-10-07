@@ -156,3 +156,16 @@ pattern applies to:
 Icons come from [lucide-react](https://lucide.dev/icons). Import any icon by
 name at the top of `site-content.ts` and reference it in your data — no need
 to touch component files.
+
+## Crawl / Search Console notes
+
+Hosted on **GitHub Pages** (`.github/workflows/deploy.yml`), not Vercel.
+
+- `public/404.html` is a real not-found page with `noindex`. Deploy must never
+  overwrite it with `index.html` (that caused soft-404 homepage bodies). See
+  `docs/GH_PAGES_404_DEPLOY_SNIPPET.md` — replace the SPA-fallback `cp` in
+  `deploy.yml` with `bash artifacts/beckify/scripts/finalize-gh-pages.sh`.
+- Removed paths `/gear`, `/products`, `/shop`, and `/store` publish thin redirect
+  stubs to `/toolbox/` via `scripts/generate-static-routes.mjs`. They stay out
+  of `sitemap.xml`. GitHub Pages cannot emit HTTP 301 to another path.
+
