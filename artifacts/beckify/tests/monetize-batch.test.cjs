@@ -26,14 +26,32 @@ console.log("\n--- Removed product catalogs ---");
 const catalogPath = /(?:["'`])\/(?:gear|made-in-america)(?:["'`/])/;
 const publicSurface = [homeSrc, siteContent, sitemapSrc, footerSrc, houseAds].join("\n");
 ok("removed /gear and /made-in-america from public links", !catalogPath.test(publicSurface));
-ok("removed catalog routes from the React router", !/path=["']\/(?:gear|made-in-america)["']/.test(appSrc) && !/pages\/(?:gear|made-in-america)/.test(appSrc));
+// /gear /products /shop /store stay as redirect-only stubs to /toolbox/ (GSC inbound).
+// made-in-america stays fully gone. No catalog page modules.
+const redirectPaths = ["gear", "products", "shop", "store"];
+ok(
+  "removed catalog page modules from the React router",
+  !/pages\/(?:gear|made-in-america|products|shop|store)/.test(appSrc) &&
+    !/path=["']\/made-in-america["']/.test(appSrc),
+);
+ok(
+  "legacy catalog paths redirect to /toolbox/",
+  redirectPaths.every(
+    (seg) =>
+      new RegExp(`path=["']/${seg}["'][\\s\\S]{0,120}Redirect to=["']/toolbox/["']`).test(appSrc),
+  ),
+);
 ok("removed catalog URLs from the XML sitemap generator", !catalogPath.test(sitemapGen));
 const publicSitemap = fs.readFileSync(path.join(root, "public/sitemap.xml"), "utf8");
 ok(
   "removed catalog URLs from the published sitemap.xml",
   !/beckify\.com\/(?:gear|made-in-america)(?:\/|<|\?|#|$)/.test(publicSitemap),
 );
-ok("removed catalog paths from static route shells", !/\["(?:gear|made-in-america)"/.test(staticRoutes));
+ok(
+  "static route shells keep redirect stubs only",
+  redirectPaths.every((seg) => new RegExp(`\\["${seg}", "/toolbox/"\\]`).test(staticRoutes)) &&
+    !/\["made-in-america"/.test(staticRoutes),
+);
 ok("catalog page modules are gone", !fs.existsSync(path.join(root, "src/pages/gear.tsx")) && !fs.existsSync(path.join(root, "src/pages/made-in-america.tsx")));
 ok("lookbook data and GearCard are gone", !fs.existsSync(path.join(root, "src/data/gear-recommendations.ts")) && !fs.existsSync(path.join(root, "src/components/gear/GearCard.tsx")));
 
