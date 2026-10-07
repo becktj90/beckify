@@ -65,6 +65,14 @@ function Router() {
         <Route path="/games/kestrel-heavy/" component={KestrelHeavyPage} />
         <Route path="/games/new-glenn-runner">{() => <Redirect to="/games/kestrel-heavy/" />}</Route>
         <Route path="/games/new-glenn-runner/">{() => <Redirect to="/games/kestrel-heavy/" />}</Route>
+        <Route path="/gear">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/gear/">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/products">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/products/">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/shop">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/shop/">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/store">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/store/">{() => <Redirect to="/toolbox/" />}</Route>
         <Route path="/sitemap" component={SiteMapPage} />
         <Route path="/sitemap/" component={SiteMapPage} />
         <Route path="/share/:token" component={SharePage} />

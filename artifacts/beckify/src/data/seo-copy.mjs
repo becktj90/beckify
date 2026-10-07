@@ -118,6 +118,11 @@ export const STATIC_ROUTE_PATHS = [
   "games",
   "games/kestrel-heavy",
   "games/new-glenn-runner",
+  // Legacy redirects only (see generate-static-routes.mjs). Not in sitemap.
+  "gear",
+  "products",
+  "shop",
+  "store",
   "sitemap",
 ];
 
@@ -156,6 +161,9 @@ export function pageSeo(path) {
 
 export function seoForStaticRoute(route) {
   if (route === "games/new-glenn-runner") return PAGE_SEO["/games/kestrel-heavy"];
+  if (route === "gear" || route === "products" || route === "shop" || route === "store") {
+    return PAGE_SEO["/toolbox/"];
+  }
   return PAGE_SEO[`/${route}`] ?? null;
 }
 
