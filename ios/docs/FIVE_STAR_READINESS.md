@@ -1,6 +1,6 @@
 # Five-star readiness — Beckify iOS
 
-Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed) and **1.0.1 is closed** (Connect rejected **1.0.1 (160)**: ITMS-90186 / ITMS-90062). Connect version **1.0.3** exists (Trevor created it); next binary **1.0.3 (241)** (repo `MARKETING_VERSION` is **1.0.3** and `CURRENT_PROJECT_VERSION` is **241**). **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18. Xcode Cloud Build and Archive on **174** failed to compile `PhasorImpedanceView.swift` and `PlotChrome.swift` and did not upload. Xcode Cloud Build - iOS on repo **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive attempts **158** and **159** compiled and failed while preparing the upload. App ID `6807908745`. Free, no IAP, no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on closed-train **1.0.1 (160)**, on **1.0.1 (149)**, or on closed-train **1.0**. Bumping the build number on **1.0.1** will not reopen that train.
+Jobsite-first checklist for App Store follow-up. **1.0 is approved** (train closed) and **1.0.1 is closed** (Connect rejected **1.0.1 (160)**: ITMS-90186 / ITMS-90062). Repo tip is **1.0.6** / build **296** (`MARKETING_VERSION` **1.0.6**, `CURRENT_PROJECT_VERSION` **296**). Create Connect version **1.0.6** if needed before upload (Connect may still show an older version Trevor created). If TestFlight already has build **≥296**, bump `CURRENT_PROJECT_VERSION` first. Next binary **1.0.6 (296)**. **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18. Xcode Cloud Build and Archive on **174** failed to compile `PhasorImpedanceView.swift` and `PlotChrome.swift` and did not upload. Xcode Cloud Build - iOS on repo **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive attempts **158** and **159** compiled and failed while preparing the upload. App ID `6807908745`. Free calculators; optional Settings tip IAP; no ads. White tunnel icon. Use the **ITMS-90382 upload cooldown** with a **new** `(MARKETING_VERSION, CURRENT_PROJECT_VERSION)` tuple — do not burn the cooldown on a duplicate binary, on closed-train **1.0.1 (160)**, on **1.0.1 (149)**, or on closed-train **1.0**. Bumping the build number on **1.0.1** will not reopen that train.
 
 Listing copy, nutrition-label facts, and screenshot sizes stay in [`APP_STORE.md`](APP_STORE.md). Privacy text stays in [`PRIVACY.md`](PRIVACY.md). This file is the **rating and review-risk** plan.
 
@@ -57,7 +57,7 @@ Crawled public App Store review pages and review-mirror sites for Southwire Cond
 | --- | --- | --- | --- |
 | **Wrong conduit fill / nipple 60%** | Southwire 1★: nipple between panels calculated 56% vs hand 67% / 60% max; inspector called it. Electrician’s Helper: XHHW-2 vs Table 5 mismatch; missing bare wire. | Mixed Ch. 9 Table 4/5 fill; current EMT 2½–4 in bores; **Nipple ≤ 24 in (60%)** toggle; to-scale cross-section marked illustrative, with a three-equal jam-ratio note. Tests cover nipple area, EMT areas, Annex C style counts, and packing. | On device: one mixed pull + one nipple vs the book, and pinch-zoom the section. If a size/insulation is missing, say so in the tool — do not silently substitute. Bare / Table 5A is a later add if operators ask. |
 | **Inaccurate everyday math** | Electrical Calc Elite 1★: 9 W / 120 V shown as 0.043 A (should be 0.075 A). Derate “still unable.” | Explicit Calculate; Ohm’s Law needs two of three; no silent guess on blanks (`CalcError.missing`). | Run Ohm’s Law, VD, 310.16 ampacity, Motor FLA on a physical device. Compare one worked example to the handbook. |
-| **Paywall / paid NEC year / “Google is free”** | Elite IAP for NEC 2023; Electric Toolkit $5.99 with broken keys → “robbed.” | v1 is **$0**, no StoreKit products, no ads. | Do not add IAP or a paid price in Connect. What’s New: “No ads, no IAP.” |
+| **Paywall / paid NEC year / “Google is free”** | Elite IAP for NEC 2023; Electric Toolkit $5.99 with broken keys → “robbed.” | v1 is **$0** for calculators, no ads; optional Settings tip IAP only (calculators not paywalled). | Do not paywall a calculator or add a paid app price. What’s New: “Free calculators; optional Settings tip; no ads.” |
 | **Review nag every launch** | Ugly’s: “unless I leave a review, every single time I open the app…” (lost 3★). | System `requestReview` only, after a **returning** session + a clear win (see §3). Never first launch. | Confirm in Simulator (dev builds always show the sheet) that first launch is silent. |
 | **Search doesn’t find the table** | Ugly’s: article numbers and table titles miss. | Search covers Field + Toolkit and labels the area. Ampacity / wifi / cellular / milliohm footers. | Type the keyword list from `APP_STORE.md` on device. If a shipped tool doesn’t appear, that’s a 1★. |
 | **Crashes / stuck Continue** | Electrician’s Helper: crash after selecting conduit. Elite: “equal sign doesn’t work.” | Linux math tests; stale-result banner instead of silent overwrite. | Mac: Calculate / Reset / Example on Field jobsite tools + Cellular / Wi‑Fi Path + OCR. |
@@ -93,7 +93,7 @@ Do these on a Mac after the ITMS-90382 window. This environment cannot archive o
 ### Listing
 
 - [ ] Name **Beckify**, subtitle **Field EE toolbox**, category Productivity (Utilities secondary OK).
-- [ ] Price **Free**. No IAP. Age 4+.
+- [ ] Price **Free**. Optional Settings tip IAP only (calculators not paywalled). Age 4+.
 - [ ] Support + Marketing: https://beckify.com. Copyright 2026 Trevor Beck.
 - [ ] Description matches the catalog in [`APP_STORE.md`](APP_STORE.md) — including **Cellular Path**, **Conductor Length by Resistance**, and field instruments. Do not list website-only studios (LQR / Kalman / MPC).
 - [ ] Keywords ≤ 100 characters (draft in `APP_STORE.md`).
@@ -119,7 +119,7 @@ Use the draft already in `APP_STORE.md`. Keep all four honesty clauses:
 
 Suggested block:
 
-> Beckify is a native SwiftUI field electrical toolbox (not a web wrapper). Free, no ads, no IAP, no account, no analytics. Saved Jobs and last-used inputs stay in UserDefaults on device.
+> Beckify is a native SwiftUI field electrical toolbox (not a web wrapper). Free calculators, no ads, optional Settings tip IAP only, no account, no analytics. Saved Jobs and last-used inputs stay in UserDefaults on device.
 >
 > Permissions are requested only when that instrument or OCR tool is opened — not at launch. Microphone = uncalibrated Noise Meter (dBFS plus an audible FFT, not an SLM), Acoustic Imager (on-device spectrum, level, and time activity — not a sound camera or a leak locator), and Stillness Anomaly Watch (impulse marks only). Same microphone usage string. Audio is not recorded and is not uploaded. Bluetooth = BLE Scanner and Stillness advertiser IDs/RSSI (not people). Motion = Barometer, Bubble Level, Magnetometer, g-Force, Stillness, Coupled Vibration, optional Solar aim. Location When In Use = Position, Wi‑Fi Path (SSID / Apple 0–1 signalStrength / optional heatmap), optional Solar latitude. Local Network = optional TCP RTT to a LAN/gateway host (latency, not RF). Camera = Motor Nameplate OCR and Panel Directory. On-device Vision is the default. Photos leave the device only after the user taps Analyze. Look Check is not in this toolbox. Photo Library full access is not requested.
 >
@@ -138,7 +138,7 @@ Suggested block:
 ### Binary / ITMS-90382
 
 - [ ] After ~2026-09-05, upload **once** with a unique version/build. ITMS-90382 here is Apple’s “upload limit reached — wait 1 day,” usually from repeating the same tuple or hammering Transporter.
-- [ ] Do not bump marketing version just to spam uploads. **1.0 and 1.0.1 are closed**; **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). Next train/binary is **1.0.3** / `CURRENT_PROJECT_VERSION` **241** (Connect **1.0.3** already exists — Trevor created it). Do not retry **1.0.2** builds **≤230**, **1.0.1 (160)**, **1.0.1 (149)**, **1.0 (121)**, or the failed prepare attempts **158** and **159**. A higher build on **1.0.1** will not upload (ITMS-90186 / ITMS-90062).
+- [ ] Do not bump marketing version just to spam uploads. **1.0 and 1.0.1 are closed**; **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). Next train/binary is **1.0.6** / `CURRENT_PROJECT_VERSION` **296** (create Connect **1.0.6** if needed; if TestFlight already has **≥296**, bump CPV first). Do not retry **1.0.2** builds **≤230**, **1.0.1 (160)**, **1.0.1 (149)**, **1.0 (121)**, or the failed prepare attempts **158** and **159**. A higher build on **1.0.1** will not upload (ITMS-90186 / ITMS-90062).
 - [ ] TestFlight already had **1.0.1 (149)** (~2026-09-17/18). This checklist is still **not** Submit for Review until screenshots + notes are attached.
 
 ---
@@ -157,7 +157,7 @@ Beckify implementation (this PR):
 | When the sheet is considered | Operator **returns to Field home** (pops the tool stack) or **switches back to the Toolbox tab** — end of a sequence. 2 s delay. |
 | When it never fires | First `onAppear`, first calendar session, first 12 hours, Save tap, Calculate tap, **this session after a permission deny** (`notePermissionDenied`), TestFlight (Apple no-ops there). |
 
-`import StoreKit` is for `RequestReviewAction` only. There is still **no** IAP target and **no** StoreKit product.
+`import StoreKit` powers `RequestReviewAction` and the optional Settings tip products (`com.beckify.toolbox.tip.small` / `.medium` / `.large`). Calculators stay free and are not paywalled.
 
 Optional later (not shipped): a quiet “Rate Beckify” row that opens `https://apps.apple.com/app/id6807908745?action=write-review` — user-initiated, Apple-approved. Do not add a “Rate us 5 stars” banner.
 
