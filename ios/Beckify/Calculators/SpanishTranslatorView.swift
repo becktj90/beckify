@@ -1117,7 +1117,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
                     customEndpoint: customEndpoint,
                     token: token,
                     voiceMode: SpanishTranslatorAPI.translateVoiceMode(requested: snapshotMode, crew: snapshotCrew),
-                    direction: snapshotDirection
+                    direction: snapshotDirection,
+                    crew: snapshotCrew
                 )
                 try Task.checkCancellation()
                 guard generation == self.translateGeneration, self.turnID == generation else { return }
@@ -1344,7 +1345,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     private func applyDraft(_ draft: SpanishTranslationDraft) {
         let targetEnglish = draft.resultLanguageLabel == "English" || direction.listensInSpanish
         if targetEnglish {
-            englishText = draft.translation
+            englishText = SpanishTranslatorAPI.englishResultLine(draft: draft, crew: turnCrew)
             if spanishText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 spanishText = draft.sourceText
             }
@@ -1775,7 +1776,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         customEndpoint: String,
         token: String,
         voiceMode: SpanishVoiceMode,
-        direction: SpanishTranslateDirection
+        direction: SpanishTranslateDirection,
+        crew: CrewTalkMember
     ) async throws -> SpanishTranslationDraft {
         guard let url = SpanishTranslatorAPI.translateURL(customEndpoint: customEndpoint) else {
             throw VisionHTTPError(
@@ -1787,7 +1789,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             text: text,
             sourceLanguage: direction.sourceLanguage,
             targetLanguage: direction.targetLanguage,
-            voiceMode: voiceMode
+            voiceMode: voiceMode,
+            crew: direction.listensInSpanish ? crew : nil
         )
         let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
         do {

@@ -304,3 +304,44 @@ export function englishResponseDialect(mode: TranslateVoiceMode, parsedDialect: 
 
 export const TRANSLATE_MAX_OUTPUT_TOKENS = 800;
 export const TRANSLATE_MAX_SOURCE_CHARS = 2000;
+
+/** English Crew Talk helpers that voice Spanish -> English in character. */
+export type EnglishCrew = "bodieHale" | "juniePell" | "pearl" | "sloaneMerritt";
+
+export const ENGLISH_CREW_STYLE: Record<EnglishCrew, string> = {
+  bodieHale:
+    "Bodie Hale: mellow Southern California surfer-electrician. Laid-back, warm, drawn-out vowels (duuude, maaan, okaaay), fillers like 'for real', 'totally', 'we're golden'. Friendly and unhurried. May add at most one ElevenLabs tag such as [chuckles] AFTER the request, never before a safety instruction.",
+  juniePell:
+    "Junie Pell: sweet, folksy Deep South lady. Southern idioms ('bless your heart', 'over yonder', 'fixin' to', 'y'all', 'sugar') and homespun similes, used naturally and sparingly — one or two per line.",
+  pearl:
+    "Pearl: warm, gracious, polished older lady. Kind, encouraging, gentle courtesy ('when you have a moment', 'dear', 'if you would'). Never scolds. Soft but clear.",
+  sloaneMerritt:
+    "Sloane Merritt: polished HR / corporate team lead. Meeting-speak and business jargon ('circle back', 'touch base', 'bandwidth', 'on my radar', 'loop you in'). Upbeat and professional, never crude. Insults become diplomatic meeting-speak.",
+};
+
+export function normalizeEnglishCrew(raw: unknown): EnglishCrew | null {
+  if (typeof raw !== "string") return null;
+  const key = raw.trim().toLowerCase().replace(/[^a-z]/g, "");
+  const map: Record<string, EnglishCrew> = {
+    bodiehale: "bodieHale", bodie: "bodieHale",
+    juniepell: "juniePell", junie: "juniePell",
+    pearl: "pearl",
+    sloanemerritt: "sloaneMerritt", sloane: "sloaneMerritt",
+  };
+  return map[key] ?? null;
+}
+
+/** Extra system guidance: return the plain translation AND an in-character rendering. */
+export function crewPersonaAddendum(crew: EnglishCrew): string {
+  return `
+
+In-character rendering (required):
+The English will be spoken by this character:
+${ENGLISH_CREW_STYLE[crew]}
+
+Return JSON with keys: translation (plain, accurate English), personaLine (the SAME meaning spoken by the character), dialect, notes.
+personaLine rules:
+- Keep the exact meaning, every name, number, item, place, and the question/command/statement form. A question stays a question. Never drop or add a request.
+- Render it fully in the character's voice and word choice — not the plain translation with a tag glued on, and never a generic stock line.
+- One or two short spoken sentences. Punchy and natural for speech. No stage directions except the allowed tag noted above. No slurs.`;
+}
