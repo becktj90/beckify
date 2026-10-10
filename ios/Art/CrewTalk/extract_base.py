@@ -10,6 +10,10 @@ SIZE = 96
 THRESH = {"crewSloaneMerritt": 5}
 def load(name):
     d = XC / f"{name}.imageset"
+    if not d.exists():  # portrait not on this branch yet: CREW_PORTRAIT_DIR=/path/with/<name>.jpg
+        import os
+        d = pathlib.Path(os.environ.get("CREW_PORTRAIT_DIR", d))
+        return Image.open(next(p for p in d.iterdir() if p.stem == name)).convert("RGB")
     return Image.open(next(p for p in d.iterdir() if p.suffix in (".png", ".jpg"))).convert("RGB")
 def mask(im, thr=26):
     # Background is a smooth navy gradient. Estimate it per row from the empty side margins,
@@ -52,7 +56,10 @@ def base(name, box=None, thr=26):
     return out, bbox
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
-    for n in ["crewBodieHale","crewTitoSolano","crewLupitaReyes","crewJuniePell","crewPearl","crewSloaneMerritt"]:
+    only = sys.argv[1:]
+    for n in ["crewBodieHale","crewTitoSolano","crewLupitaReyes","crewJuniePell","crewPearl","crewSloaneMerritt","crewDreLacey"]:
+        if only and n not in only:
+            continue
         thr = THRESH.get(n, 26)
         b, bbox = base(n, None, thr); b.save(OUT / f"{n}.png")
         t, _ = base(n + "Talk", bbox, thr); t.save(OUT / f"{n}Talk.png")

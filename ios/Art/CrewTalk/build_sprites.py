@@ -14,7 +14,7 @@ ROOT = HERE.parents[1]
 XC = ROOT / "Beckify/Assets.xcassets"
 S = 96
 COLUMNS = 8
-CREW = ["crewBodieHale", "crewTitoSolano", "crewLupitaReyes", "crewJuniePell", "crewPearl", "crewSloaneMerritt"]
+CREW = ["crewBodieHale", "crewTitoSolano", "crewLupitaReyes", "crewJuniePell", "crewPearl", "crewSloaneMerritt", "crewDreLacey"]
 CYAN = (64, 224, 255, 255)
 # Hand-placed mouth pixel (x, y) on each 96x96 base and talk pose. Edit here if a base is redrawn.
 MOUTH = {
@@ -24,6 +24,7 @@ MOUTH = {
     "crewJuniePell": ((45, 25), (49, 25)),
     "crewPearl": ((47, 16), (47, 17)),
     "crewSloaneMerritt": ((48, 16), (46, 16)),
+    "crewDreLacey": ((48, 19), (49, 17)),
 }
 MOUTH_DARK = (46, 14, 18, 255)
 MOUTH_IN = (150, 52, 58, 255)
