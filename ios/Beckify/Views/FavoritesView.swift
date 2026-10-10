@@ -84,12 +84,12 @@ private struct FavoriteRowLabel: View {
             IconWell(toolID: tool.id, size: 44)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 8) {
-                    Text(tool.title)
+                    Text(L(tool.title))
                         .font(.headline)
                         .foregroundStyle(Theme.foreground)
                     HomeAreaBadge(area: area)
                 }
-                Text(tool.subtitle)
+                Text(L(tool.subtitle))
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
