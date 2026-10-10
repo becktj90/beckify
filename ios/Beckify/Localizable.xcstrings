@@ -1162,6 +1162,16 @@
         }
       }
     },
+    "Receptacles per Circuit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomacorrientes por circuito"
+          }
+        }
+      }
+    },
     "Reference Library": {
       "localizations": {
         "es": {

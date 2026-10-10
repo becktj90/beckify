@@ -425,6 +425,7 @@ extension GlyphKind {
         case .fieldPosition: return .fieldPosition
         case .deviceHealth: return .deviceHealth
         case .receptacleSelector: return .receptacleSelector
+        case .receptacleCircuit: return .receptacleSelector
         case .reactance: return .reactance
         case .powerFactor: return .powerFactor
         case .shortCircuit: return .shortCircuit

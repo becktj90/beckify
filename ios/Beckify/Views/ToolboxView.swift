@@ -193,6 +193,7 @@ struct CalculatorHostView: View {
             case .wireAmpacity: WireAmpacityView()
             case .flexibleCable: FlexibleCableAmpacityView()
             case .receptacleSelector: ReceptacleSelectorView()
+            case .receptacleCircuit: ReceptacleCircuitView()
             case .voltageDivider: VoltageDividerView()
             case .seriesParallel: SeriesParallelView()
             case .resistorColor: ResistorColorView()

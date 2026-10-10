@@ -163,6 +163,7 @@ public enum ElectricalCodeSupport {
         "motorFLA",
         "transformer",
         "necCircuit",
+        "receptacleCircuit",
         "conductorCost",
         "loadWorksheet",
         "motorNameplate",
@@ -235,6 +236,8 @@ public enum ElectricalCodeSupport {
             return "Protection is NEC 450.3(B). AS/NZS transformer protection is not in this tool."
         case "necCircuit":
             return "This pass is NEC ampacity, voltage drop, and OCPD. It does not become an AS/NZS circuit calc. Use Voltage Drop for the AS/NZS resistance path."
+        case "receptacleCircuit":
+            return "Counts cite NEC 220.14(I), 210.21(B)(3), and 240.4(D) for NEMA 5-20R on 120 V. AS/NZS socket-outlet rules are not in this tool."
         case "conductorCost":
             return "Sizes and ampacity are NEC. The ranking does not switch to AS/NZS 3008."
         case "loadWorksheet":
