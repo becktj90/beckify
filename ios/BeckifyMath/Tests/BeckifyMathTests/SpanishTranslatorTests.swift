@@ -1308,4 +1308,21 @@ final class SpanishTranslatorTests: XCTestCase {
             )
         }
     }
+
+    func testSpanishToEnglishRequestCarriesEnglishCrewOnly() throws {
+        let body = SpanishTranslatorAPI.requestBody(text: "Hola", sourceLanguage: "es", targetLanguage: "en", crew: .pearl)
+        XCTAssertEqual(body["crew"] as? String, "pearl")
+        let tito = SpanishTranslatorAPI.requestBody(text: "Hi", crew: .titoSolano)
+        XCTAssertNil(tito["crew"])
+        XCTAssertNil(SpanishTranslatorAPI.requestBody(text: "Hi")["crew"])
+    }
+
+    func testSpanishToEnglishHasNoStockHelperLine() {
+        for crew in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt] {
+            XCTAssertEqual(
+                SpanishTranslatorAPI.dialectHelperLine(crew: crew, direction: .spanishToEnglish, english: "Thanks, Trevor.", spanish: "Gracias Trevor.", fallback: "Gracias Trevor."),
+                "", crew.rawValue
+            )
+        }
+    }
 }

@@ -610,9 +610,10 @@ public enum SpanishTranslatorAPI {
         text: String,
         sourceLanguage: String = "en",
         targetLanguage: String = "es",
-        voiceMode: SpanishVoiceMode = .jobsite
+        voiceMode: SpanishVoiceMode = .jobsite,
+        crew: CrewTalkMember? = nil
     ) -> [String: Any] {
-        [
+        var body: [String: Any] = [
             "task": task,
             "text": text,
             "sourceText": text,
@@ -622,20 +623,36 @@ public enum SpanishTranslatorAPI {
             "voiceMode": voiceMode.apiValue,
             "mode": voiceMode.apiValue,
         ]
+        // Spanish -> English: the server renders the meaning in this helper's voice.
+        if let crew, crew.speakLanguage == "en" { body["crew"] = crew.rawValue }
+        return body
+    }
+
+    /// English line shown and spoken for Spanish -> English: the server's in-character
+    /// rendering when present, else the plain translation. Never a canned stock line.
+    public static func englishResultLine(draft: SpanishTranslationDraft, crew: CrewTalkMember) -> String {
+        if crew.speakLanguage == "en",
+           let persona = draft.personaLine?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !persona.isEmpty {
+            return persona
+        }
+        return draft.translation
     }
 
     public static func requestJSON(
         text: String,
         sourceLanguage: String = "en",
         targetLanguage: String = "es",
-        voiceMode: SpanishVoiceMode = .jobsite
+        voiceMode: SpanishVoiceMode = .jobsite,
+        crew: CrewTalkMember? = nil
     ) throws -> Data {
         try JSONSerialization.data(
             withJSONObject: requestBody(
                 text: text,
                 sourceLanguage: sourceLanguage,
                 targetLanguage: targetLanguage,
-                voiceMode: voiceMode
+                voiceMode: voiceMode,
+                crew: crew
             ),
             options: []
         )
@@ -1118,6 +1135,9 @@ public enum SpanishTranslatorAPI {
         fallback: String
     ) -> String {
         if crew.speakLanguage == "es" { return "" }
+        // Spanish -> English: the main line is already in character (server). No
+        // local template / stock line underneath it.
+        if direction.listensInSpanish { return "" }
         let flavor = lineForCrew(crew: crew, english: english, spanish: spanish, fallback: fallback)
         let spoken = spokenAnswerForDock(
             crew: crew,

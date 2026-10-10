@@ -9,6 +9,8 @@ import {
   translateSystemPrompt,
   translateTargetLanguage,
   translateUserPrompt,
+  crewPersonaSystemPrompt,
+  normalizeEnglishCrew,
 } from "../prompts/translatePrompt.js";
 import { observeRouteTiming } from "../lib/logger.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
@@ -24,6 +26,7 @@ interface TranslateBody {
   voiceMode?: unknown;
   mode?: unknown;
   style?: unknown;
+  crew?: unknown;
 }
 
 const router: IRouter = Router();
@@ -59,6 +62,8 @@ router.post("/translate", async (req, res) => {
   }
 
   const voiceMode = normalizeTranslateVoiceMode(body.voiceMode ?? body.mode ?? body.style ?? body.dialect);
+
+  const personaCrew = direction === "es-to-en" ? normalizeEnglishCrew(body.crew) : null;
 
   const clientKey = getClientKey(req);
   const textCharge = chargeBudget("text", clientKey, 1);
@@ -103,11 +108,11 @@ router.post("/translate", async (req, res) => {
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
       body: JSON.stringify({
         model,
-        temperature: 0.75,
+        temperature: personaCrew ? 0.6 : 0.75,
         response_format: { type: "json_object" },
         max_tokens: Math.min(TRANSLATE_MAX_OUTPUT_TOKENS, textMaxOutputTokens()),
         messages: [
-          { role: "system", content: translateSystemPrompt(voiceMode, direction) },
+          { role: "system", content: personaCrew ? crewPersonaSystemPrompt(personaCrew) : translateSystemPrompt(voiceMode, direction) },
           { role: "user", content: translateUserPrompt(sourceText, sourceLanguage, voiceMode, direction) },
         ],
       }),
@@ -156,6 +161,7 @@ router.post("/translate", async (req, res) => {
       sourceText,
       translation: parsed.translation,
       notes: parsed.notes || undefined,
+      ...(personaCrew && parsed.personaLine ? { personaLine: parsed.personaLine, personaCrew } : {}),
     });
   } catch (error) {
     if (error instanceof OutputTruncatedError) {
@@ -213,7 +219,7 @@ function asShortString(raw: unknown, fallback: string): string {
 
 function parseTranslateJSON(
   content: string,
-): { translation: string; dialect: string; notes: string } | null {
+): { translation: string; dialect: string; notes: string; personaLine: string } | null {
   try {
     const trimmed = content.trim();
     const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -226,7 +232,8 @@ function parseTranslateJSON(
     if (!translation) return null;
     const dialect = typeof obj.dialect === "string" ? obj.dialect.trim().slice(0, 64) : "";
     const notes = typeof obj.notes === "string" ? obj.notes.trim().slice(0, 240) : "";
-    return { translation, dialect, notes };
+    const personaLine = typeof obj.personaLine === "string" ? obj.personaLine.trim().slice(0, 600) : "";
+    return { translation, dialect, notes, personaLine };
   } catch {
     return null;
   }
