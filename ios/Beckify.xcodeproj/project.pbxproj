@@ -30,6 +30,7 @@
 		BECF00000000000000000020 /* JobsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000001F /* JobsView.swift */; };
 		BECF00000000000000000022 /* ToolboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000021 /* ToolboxView.swift */; };
 		BECF00000000000000000024 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000023 /* Assets.xcassets */; };
+		BECF0000000000000000A10B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000A10A /* Localizable.xcstrings */; };
 		BECF00000000000000000026 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000025 /* PrivacyInfo.xcprivacy */; };
 		BECF00000000000000000029 /* BeckifyMath in Frameworks */ = {isa = PBXBuildFile; productRef = BECF00000000000000000028 /* BeckifyMath */; };
 		BECF00000000000000000042 /* WiFiStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000041 /* WiFiStatusView.swift */; };
@@ -184,6 +185,7 @@
 		BECF0000000000000000001F /* JobsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobsView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000021 /* ToolboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolboxView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000023 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BECF0000000000000000A10A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		BECF00000000000000000025 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BECF00000000000000000027 /* Beckify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Beckify.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BECF00000000000000000041 /* WiFiStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiStatusView.swift; sourceTree = "<group>"; };
@@ -422,6 +424,7 @@
 				BECF000000000000000000B3 /* Vision */,
 				BECF00000000000000000040 /* Sensors */,
 				BECF00000000000000000023 /* Assets.xcassets */,
+				BECF0000000000000000A10A /* Localizable.xcstrings */,
 				BECF00000000000000000025 /* PrivacyInfo.xcprivacy */,
 				BECF00000000000000000101 /* SwitchgearLogicLabWeb */,
 			);
@@ -722,6 +725,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				es,
 				Base,
 			);
 			mainGroup = BECF0000000000000000002B;
@@ -748,6 +752,7 @@
 			files = (
 				BECF00000000000000000024 /* Assets.xcassets in Resources */,
 				BECF00000000000000000026 /* PrivacyInfo.xcprivacy in Resources */,
+				BECF0000000000000000A10B /* Localizable.xcstrings in Resources */,
 				BECF00000000000000000100 /* SwitchgearLogicLabWeb in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

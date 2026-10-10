@@ -6,6 +6,7 @@ import BeckifyMath
 struct BeckifyApp: App {
     @StateObject private var jobs = JobStore()
     @StateObject private var favorites = FavoritesStore()
+    @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.system.rawValue
 
     var body: some Scene {
         WindowGroup {
@@ -13,7 +14,11 @@ struct BeckifyApp: App {
                 RootView()
                     .environmentObject(jobs)
                     .environmentObject(favorites)
+                    // Rebuild the tree so String-backed titles (tools, shelves)
+                    // pick up the new language immediately.
+                    .id(languageRaw)
             }
+            .environment(\.locale, (AppLanguage(rawValue: languageRaw) ?? .system).locale)
         }
     }
 }
@@ -75,7 +80,7 @@ struct RootView: View {
             toolboxArea = .field
             tab = .toolbox
         }
-        .alert("Update available", isPresented: Binding(
+        .alert(Text("Update available"), isPresented: Binding(
             get: { updateCheck.availableVersion != nil },
             set: { if !$0 { updateCheck.dismiss() } }
         )) {
@@ -171,4 +176,58 @@ final class AppUpdateCheck: ObservableObject {
     }
 
     func dismiss() { availableVersion = nil }
+}
+
+// MARK: - App language
+
+/// In-app language override (Settings → Language). System follows iOS.
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case system
+    case english = "en"
+    case spanish = "es"
+
+    static let storageKey = "beckify.appLanguage"
+    var id: String { rawValue }
+
+    /// Shown in its own language so it is findable from either one.
+    var pickerLabel: LocalizedStringKey {
+        switch self {
+        case .system: return "System"
+        case .english: return "English"
+        case .spanish: return "Español"
+        }
+    }
+
+    var locale: Locale {
+        switch self {
+        case .system: return .autoupdatingCurrent
+        case .english: return Locale(identifier: "en")
+        case .spanish: return Locale(identifier: "es")
+        }
+    }
+
+    static var current: AppLanguage {
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: storageKey) ?? "") ?? .system
+    }
+
+    /// Bundle for the effective language; nil means use Bundle.main as-is.
+    fileprivate static func bundle() -> Bundle? {
+        let code: String
+        switch current {
+        case .system: return nil
+        case .english: code = "en"
+        case .spanish: code = "es"
+        }
+        guard let path = Bundle.main.path(forResource: code, ofType: "lproj") else {
+            return code == "en" ? .main : nil
+        }
+        return Bundle(path: path)
+    }
+}
+
+/// Localizes a String-backed UI label (tool titles, shelf names) through the
+/// String Catalog, honoring the in-app language override.
+func L(_ english: String) -> String {
+    let bundle = AppLanguage.bundle() ?? .main
+    return bundle.localizedString(forKey: english, value: english, table: nil)
 }

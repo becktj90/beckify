@@ -48,6 +48,7 @@ struct SettingsView: View {
     @AppStorage(ToolboxPreferenceKey.electricalCode) private var codeRaw = ElectricalCode.nec.rawValue
     @AppStorage(ToolboxPreferenceKey.preferredUnits) private var unitsRaw = PreferredUnitSystem.followCode.rawValue
     @AppStorage(ToolboxPreferenceKey.appearance) private var appearanceRaw = ToolboxAppearance.system.rawValue
+    @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.system.rawValue
 
     private var code: ElectricalCode {
         ElectricalCode(rawValue: codeRaw) ?? .nec
@@ -59,11 +60,11 @@ struct SettingsView: View {
                 Section {
                     Picker("Electrical code", selection: codeBinding) {
                         ForEach(ElectricalCode.allCases, id: \.self) { item in
-                            Text(item.displayName).tag(item)
+                            Text(L(item.displayName)).tag(item)
                         }
                     }
                     .accessibilityIdentifier("electricalCodePicker")
-                    Text(code.detail)
+                    Text(L(code.detail))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } header: {
@@ -85,7 +86,7 @@ struct SettingsView: View {
                 Section {
                     Picker("Length", selection: unitsBinding) {
                         ForEach(PreferredUnitSystem.allCases, id: \.self) { item in
-                            Text(item.displayName).tag(item)
+                            Text(L(item.displayName)).tag(item)
                         }
                     }
                 } header: {
@@ -95,9 +96,22 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Picker("Language", selection: $languageRaw) {
+                        ForEach(AppLanguage.allCases) { item in
+                            Text(item.pickerLabel).tag(item.rawValue)
+                        }
+                    }
+                    .accessibilityIdentifier("languagePicker")
+                } header: {
+                    Text("Language")
+                } footer: {
+                    Text("System follows this iPhone or iPad. Calculator math and Crew Talk translation do not change.")
+                }
+
+                Section {
                     Picker("Appearance", selection: appearanceBinding) {
                         ForEach(ToolboxAppearance.allCases) { item in
-                            Text(item.displayName).tag(item)
+                            Text(L(item.displayName)).tag(item)
                         }
                     }
                 } header: {
