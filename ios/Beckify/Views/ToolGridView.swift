@@ -56,6 +56,7 @@ struct ToolGridView: View {
                         homeHeader
                             .opacity(appeared || reduceMotion ? 1 : 0)
                             .offset(y: appeared || reduceMotion ? 0 : 10)
+                        crewTalkFeaturedCard
                         // Cold start: hide Recents entirely. Do not seed fake
                         // tools or leave an empty strip for App Store shots.
                         if !recents.tools.isEmpty {
@@ -194,6 +195,49 @@ struct ToolGridView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(homeArea.headline). \(homeArea.blurb)")
         .accessibilityIdentifier("homeHeader")
+    }
+
+    // MARK: - Featured: Crew Talk
+
+    /// One-tap Crew Talk entry near the top of home, in both areas.
+    @ViewBuilder
+    private var crewTalkFeaturedCard: some View {
+        if let tool = ToolboxCatalog.tools.first(where: { $0.id == .spanishTranslator }) {
+            NavigationLink(value: tool.id) {
+                HStack(spacing: Theme.Space.sm) {
+                    IconWell(toolID: tool.id, size: 52, circular: true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("FEATURED")
+                            .font(Theme.TypeRole.sectionLabel)
+                            .tracking(1.0)
+                            .foregroundStyle(Theme.muted)
+                        Text(tool.title)
+                            .font(.headline)
+                            .foregroundStyle(Theme.foreground)
+                        Text("Translate English ↔ Spanish on the job.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                        .accessibilityHidden(true)
+                }
+                .padding(Theme.Space.sm)
+                .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+                .glassCard()
+            }
+            .buttonStyle(ToolTileButtonStyle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Featured: \(tool.title)")
+            .accessibilityHint("Opens Crew Talk to translate English and Spanish.")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("homeFeaturedCrewTalk")
+            .opacity(appeared || reduceMotion ? 1 : 0)
+            .offset(y: appeared || reduceMotion ? 0 : 10)
+        }
     }
 
     // MARK: - Strips & sections

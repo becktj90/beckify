@@ -1035,7 +1035,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 297;
+				CURRENT_PROJECT_VERSION = 298;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1052,7 +1052,7 @@
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_FILE = Beckify/Info.plist;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1079,7 +1079,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 297;
+				CURRENT_PROJECT_VERSION = 298;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1096,7 +1096,7 @@
 				INFOPLIST_KEY_NSMotionUsageDescription = "Beckify uses the barometer and motion sensors for field notes: pressure and relative altitude in Barometer, plus Bubble Level / plumb, Magnetometer heading, g-Force Snapshot, Stillness Anomaly Watch, Coupled Vibration, and optional Solar Design Wizard panel aim. Readings stay on this device and are not uploaded. Design aid only — not a calibrated instrument, vibration pickup, or surveyed elevation.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Trevor Beck";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_FILE = Beckify/Info.plist;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
