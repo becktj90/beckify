@@ -56,3 +56,14 @@ for (const word of banned) {
 }
 
 console.log("crew-talk-speak.test.cjs: ok");
+
+// Tito nonverbal cues: eleven_v3 performs [coughs]; OpenAI fallback never reads brackets aloud.
+assert.match(speakPrompt, /export function stripAudioTags/);
+assert.match(speakRoute, /synthesizeOpenAI\(stripAudioTags\(text\)/);
+assert.match(speakPrompt, /never read the brackets aloud/);
+{
+  const m = speakPrompt.match(/return text\.replace\((\/.*?\/g), ""\)/);
+  assert.ok(m, "stripAudioTags regex present");
+  const re = eval(m[1]);
+  assert.equal("[coughs] ¡Mira, asere! Corta eso.".replace(re, "").replace(/\s+/g, " ").trim(), "¡Mira, asere! Corta eso.");
+}

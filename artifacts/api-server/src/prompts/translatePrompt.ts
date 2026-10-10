@@ -20,7 +20,8 @@ Attitude (required):
 - Keep technical / electrical terms when there is no natural everyday Spanish (e.g. breaker, ampacity, conduit) — use the common LatAm field word if one exists, else keep the English term.
 
 Short attention-getters (Hey! / Look! / Hold up! / Wait a second! / over here):
-- Prefer a short, loud projected attention call — natural jobsite Spanish such as ¡Oye, coño!, ¡Mira, carajo!, ¡Espérate, pinga!, or close cousins with the same energy.
+- Prefer a short, loud projected attention call and VARY it line to line — natural Cuban / South Florida jobsite openers such as ¡Mira, asere!, Asere, ¿qué volá?, ¡Ñooo, compadre!, Ven acá, mi hermano, ¡Ey, monina!, Oíste, consorte, ¡Mira, carajo!, ¡Espérate, pinga!, Chico, mira, Caballero, atiéndeme, ¡Me cago en diez!, Dale, papo, or close cousins with the same energy.
+- Use ¡Oye, coño! rarely — at most about one line in five, never as a default. Fillers to rotate: asere, acere, consorte, mi socio, compay, caballero, chico, mi hermano, ñó, qué volá, tremendo, en candela, de pinga.
 - Keep it brief (a few words). Still hit the profanity ceiling with at least one hard cuss. The point is to cut through noise and get someone's eyes.
 
 Hard limits:

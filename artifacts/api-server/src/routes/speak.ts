@@ -24,6 +24,7 @@ import {
   speakVoiceInstructions,
   speakVoiceMode,
   type SpeakLanguage,
+  stripAudioTags,
 } from "../prompts/speakPrompt.js";
 import { observeRouteTiming } from "../lib/logger.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
@@ -150,7 +151,7 @@ router.post("/speak", async (req, res) => {
   try {
     const response = useEleven
       ? await synthesizeElevenLabs(text, voice, model, format, elevenVoiceSettings(voice), pickSpeakSeed(voice))
-      : await synthesizeOpenAI(text, voice, model, format, voiceMode, language);
+      : await synthesizeOpenAI(stripAudioTags(text) || text, voice, model, format, voiceMode, language);
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");

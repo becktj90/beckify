@@ -1107,6 +1107,17 @@ public enum SpanishTranslatorAPI {
         spanish: String,
         fallback: String
     ) -> String {
+        let answer = spokenAnswerForDockBase(crew: crew, direction: direction, english: english, spanish: spanish, fallback: fallback)
+        return crew == .titoSolano ? TitoVoiceVariety.apply(answer) : answer
+    }
+
+    private static func spokenAnswerForDockBase(
+        crew: CrewTalkMember,
+        direction: SpanishTranslateDirection,
+        english: String,
+        spanish: String,
+        fallback: String
+    ) -> String {
         let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
         let spanishLine = spanish.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackLine = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1139,7 +1150,7 @@ public enum SpanishTranslatorAPI {
         // local template / stock line underneath it.
         if direction.listensInSpanish { return "" }
         let flavor = lineForCrew(crew: crew, english: english, spanish: spanish, fallback: fallback)
-        let spoken = spokenAnswerForDock(
+        let spoken = spokenAnswerForDockBase(
             crew: crew,
             direction: direction,
             english: english,
@@ -1154,6 +1165,17 @@ public enum SpanishTranslatorAPI {
     /// Never the raw text field. English helpers speak their rewrite even when the
     /// dock's big line is still the typed sentence (translation not back yet).
     public static func lineToSpeak(
+        crew: CrewTalkMember,
+        direction: SpanishTranslateDirection,
+        english: String,
+        spanish: String,
+        fallback: String
+    ) -> String {
+        let line = lineToSpeakBase(crew: crew, direction: direction, english: english, spanish: spanish, fallback: fallback)
+        return crew == .titoSolano ? TitoVoiceVariety.apply(line) : line
+    }
+
+    private static func lineToSpeakBase(
         crew: CrewTalkMember,
         direction: SpanishTranslateDirection,
         english: String,
@@ -1176,7 +1198,7 @@ public enum SpanishTranslatorAPI {
             fallback: fallback
         )
         if !helper.isEmpty { return helper }
-        let dock = spokenAnswerForDock(
+        let dock = spokenAnswerForDockBase(
             crew: crew,
             direction: direction,
             english: english,

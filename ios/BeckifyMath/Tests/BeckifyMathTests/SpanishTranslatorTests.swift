@@ -2,6 +2,17 @@ import XCTest
 @testable import BeckifyMath
 
 final class SpanishTranslatorTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        // These tests pin exact Tito templates; TitoVoiceVarietyTests covers the variety layer.
+        TitoVoiceVariety.isEnabled = false
+    }
+
+    override func tearDown() {
+        TitoVoiceVariety.isEnabled = true
+        super.tearDown()
+    }
+
     func testTranslateURLDefaultsToApiBeckify() {
         let url = SpanishTranslatorAPI.defaultTranslateURL()
         XCTAssertEqual(url?.absoluteString, "https://api.beckify.com/api/translate")
