@@ -1140,6 +1140,14 @@ public enum SpanishTranslatorAPI {
         spanish: String,
         fallback: String
     ) -> String {
+        // Spanish -> English: the Spanish speaker's words must come out as the
+        // translated English line. The persona rephrase stays on screen only;
+        // speaking it replaced the translation with a canned helper line
+        // ("...easy does it", "when you have a moment...").
+        if direction.listensInSpanish && crew.speakLanguage != "es" {
+            let englishLine = english.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !englishLine.isEmpty { return englishLine }
+        }
         let helper = dialectHelperLine(
             crew: crew,
             direction: direction,

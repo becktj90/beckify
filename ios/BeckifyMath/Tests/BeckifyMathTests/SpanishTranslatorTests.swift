@@ -1293,4 +1293,19 @@ final class SpanishTranslatorTests: XCTestCase {
     }
 
 
+
+    func testSpanishToEnglishSpeaksTranslationNotPersonaLine() {
+        let english = "Thanks, Trevor. You need anything from the store?"
+        let spanish = "Gracias Trevor. ¿Necesitabas algo de la tienda?"
+        for crew in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt] {
+            XCTAssertEqual(
+                SpanishTranslatorAPI.lineToSpeak(crew: crew, direction: .spanishToEnglish, english: english, spanish: spanish, fallback: spanish),
+                english, crew.rawValue
+            )
+            XCTAssertEqual(
+                SpanishTranslatorAPI.speakLanguageForLineToSpeak(crew: crew, direction: .spanishToEnglish, english: english, spanish: spanish, fallback: spanish),
+                "en", crew.rawValue
+            )
+        }
+    }
 }
