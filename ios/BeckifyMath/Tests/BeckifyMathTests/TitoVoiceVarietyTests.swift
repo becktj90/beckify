@@ -42,15 +42,44 @@ final class TitoVoiceVarietyTests: XCTestCase {
         XCTAssertGreaterThan(outs.count, 6)
     }
 
-    func testNonverbalRoughlyOneInFive() {
-        let tagged = corpus(300).filter { TitoVoiceVariety.vary($0, previousKeptOye: false).line.contains("[") }.count
-        XCTAssertGreaterThan(tagged, 25)
-        XCTAssertLessThan(tagged, 110)
+    private func tags(_ line: String) -> [Range<String.Index>] {
+        var out: [Range<String.Index>] = []
+        var start = line.startIndex
+        while let r = line.range(of: #"\[[^\]]{1,24}\]"#, options: .regularExpression, range: start..<line.endIndex) {
+            out.append(r); start = r.upperBound
+        }
+        return out
+    }
+
+    func testSmokersCoughRoughlyOneInThreeAtPausesMaxTwo() {
+        let lines = (0..<300).map { "¡Asere, pásame el cable \($0), coño! Dale, comemierda. Que esto no se hace solo." }
+        let outs = lines.map { TitoVoiceVariety.vary($0, previousKeptOye: false).line }
+        let tagged = outs.filter { !tags($0).isEmpty }
+        XCTAssertGreaterThan(tagged.count, 70, "about 1 in 3")
+        XCTAssertLessThan(tagged.count, 130, "about 1 in 3")
+        XCTAssertTrue(outs.contains { tags($0).count == 2 }, "some lines get a second cough")
+        let allowed: Set<String> = ["[coughs]", "[clears throat]", "[coughs heavily]", "[wheezes]"]
+        for out in tagged {
+            let found = tags(out)
+            XCTAssertLessThanOrEqual(found.count, 2, out)
+            for r in found {
+                XCTAssertTrue(allowed.contains(String(out[r])), out)
+                if r.lowerBound != out.startIndex {
+                    let before = out[..<r.lowerBound].trimmingCharacters(in: .whitespaces)
+                    XCTAssertTrue(".!?".contains(before.last ?? " "), "tag not at a pause: \(out)")
+                }
+            }
+            XCTAssertEqual(CrewDialectRewrite.displayText(out), CrewDialectRewrite.displayText(out).replacingOccurrences(of: "[", with: ""))
+        }
+        let mostlyPlain = tagged.flatMap { o in tags(o).map { String(o[$0]) } }
+        let common = mostlyPlain.filter { $0 == "[coughs]" || $0 == "[clears throat]" }.count
+        XCTAssertGreaterThan(common * 2, mostlyPlain.count, "mostly [coughs] / [clears throat]")
     }
 
     func testTagsStrippedForDisplay() {
         XCTAssertEqual(CrewDialectRewrite.displayText("[coughs] ¡Mira, asere! Corta eso."), "¡Mira, asere! Corta eso.")
         XCTAssertEqual(CrewDialectRewrite.displayText("[clears throat] Dale, papo, sube."), "Dale, papo, sube.")
+        XCTAssertEqual(CrewDialectRewrite.displayText("¡Asere, coño! [coughs heavily] Dale. [wheezes] Ya."), "¡Asere, coño! Dale. Ya.")
         for line in corpus(100) {
             let out = TitoVoiceVariety.vary(line, previousKeptOye: false).line
             XCTAssertFalse(CrewDialectRewrite.displayText(out).contains("["))

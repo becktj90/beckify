@@ -157,7 +157,7 @@ struct SpanishTranslatorView: View {
     }
 
     /// D1: the picker and stored helper stay on this direction's roster.
-    /// English → Spanish is Tito and Lupita. Spanish → English is Bodie, Junie, Pearl, Sloane.
+    /// English → Spanish is Tito, Lupita, and Humberto. Spanish → English is Bodie, Junie, Pearl, Sloane.
     private func alignCrewWithDirectionRoster(_ next: SpanishTranslateDirection? = nil) {
         let way = next ?? direction
         let roster = CrewTalkMember.roster(for: way)
@@ -1860,7 +1860,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             sourceLanguage: direction.sourceLanguage,
             targetLanguage: direction.targetLanguage,
             voiceMode: voiceMode,
-            crew: direction.listensInSpanish ? crew : nil
+            crew: (direction.listensInSpanish || crew == .humbertoArismendi) ? crew : nil
         )
         let auth = SpanishTranslatorAPI.authorizationToken(customEndpoint: customEndpoint, token: token)
         do {
