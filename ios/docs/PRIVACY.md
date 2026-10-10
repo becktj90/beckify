@@ -64,6 +64,8 @@ Named **Saved Jobs** are lightweight on-device notes (bench or field snapshots o
 
 **Share link** on Voltage Drop or Conduit Fill, after you calculate, can POST a contractor or company name and that result snapshot to `https://api.beckify.com/api/share`. The API returns a `https://beckify.com/share/…` page you can text. Nothing is sent until you tap Share. Copy and Saved Jobs stay on this device. The hosted page is a snapshot, not another calculator.
 
+**Update check:** at most once a day, the app sends a plain GET to Apple's public `https://itunes.apple.com/lookup?id=6807908745` to read the current App Store version number. No account, device, location, or usage data is added to that request, and nothing is stored beyond the time of the last check on this device. If a newer version is listed, you see Update / Later; offline or failed checks are silent.
+
 Last-used calculator and sensor form values (the numbers and picker choices in each tool) also stay in on-device `UserDefaults` so a tool reopens where you left it. They are not uploaded and are not a projects product. Cable Ladder stores the same kind of on-device form values (tray size, cable rows, and the optional phase-color legend). It does not add a permission. Switchgear Logic Lab may autosave the current offline project JSON in on-device `UserDefaults` (and export JSON / CSV / HTML only when you share); those review packages are not uploaded by the app.
 
 Settings choices — electrical code (NEC or AS/NZS), preferred length units, and appearance (system, light, or dark) — stay in on-device `UserDefaults` as well. They are not uploaded.

@@ -1,0 +1,1606 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "555 Timer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporizador 555"
+          }
+        }
+      }
+    },
+    "ADC / DAC & Sampling": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ADC / DAC y muestreo"
+          }
+        }
+      }
+    },
+    "Acoustic Imager": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visor acústico"
+          }
+        }
+      }
+    },
+    "Analog Design Workbench": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banco de diseño analógico"
+          }
+        }
+      }
+    },
+    "Appearance": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apariencia"
+          }
+        }
+      }
+    },
+    "BLE Scanner": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escáner BLE"
+          }
+        }
+      }
+    },
+    "Barometer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Barómetro"
+          }
+        }
+      }
+    },
+    "Basics": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Básicos"
+          }
+        }
+      }
+    },
+    "Basics, bench, references.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Básicos, banco y referencias."
+          }
+        }
+      }
+    },
+    "Battery Bank Sizing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensionado de banco de baterías"
+          }
+        }
+      }
+    },
+    "Battery Pack Designer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diseñador de paquetes de baterías"
+          }
+        }
+      }
+    },
+    "Beckify %@ is on the App Store. You have %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beckify %@ ya está en el App Store. Tienes la %@."
+          }
+        }
+      }
+    },
+    "Browse Field": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver Campo"
+          }
+        }
+      }
+    },
+    "Bubble Level": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nivel de burbuja"
+          }
+        }
+      }
+    },
+    "Build & Design": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Construcción y diseño"
+          }
+        }
+      }
+    },
+    "Cable Ladder": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bandeja portacables"
+          }
+        }
+      }
+    },
+    "Cable Schedule Generator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generador de cédula de cables"
+          }
+        }
+      }
+    },
+    "Cellular Path": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruta celular"
+          }
+        }
+      }
+    },
+    "Circular Mils": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circular mils"
+          }
+        }
+      }
+    },
+    "Conductor Cost Optimizer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimizador de costo de conductor"
+          }
+        }
+      }
+    },
+    "Conduit Fill": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llenado de tubería"
+          }
+        }
+      }
+    },
+    "Control Strategies": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estrategias de control"
+          }
+        }
+      }
+    },
+    "Control Systems": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistemas de control"
+          }
+        }
+      }
+    },
+    "Controls": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controles"
+          }
+        }
+      }
+    },
+    "Coupled Vibration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibración acoplada"
+          }
+        }
+      }
+    },
+    "Crew & Paperwork": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuadrilla y papeleo"
+          }
+        }
+      }
+    },
+    "Crew Talk": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crew Talk"
+          }
+        }
+      }
+    },
+    "Dark": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oscuro"
+          }
+        }
+      }
+    },
+    "Default is NEC (US). Tools without an AS/NZS table keep the NEC result and say so. They do not relabel NEC numbers as AS/NZS.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El predeterminado es NEC (EE. UU.). Las herramientas sin tabla AS/NZS mantienen el resultado NEC y lo indican. No reetiquetan cifras NEC como AS/NZS."
+          }
+        }
+      }
+    },
+    "Delete job": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar trabajo"
+          }
+        }
+      }
+    },
+    "Design aid": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayuda de diseño"
+          }
+        }
+      }
+    },
+    "Device Health": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado del dispositivo"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo"
+          }
+        }
+      }
+    },
+    "E-Bike Torque / RPM": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Par / RPM de e-bike"
+          }
+        }
+      }
+    },
+    "E-Bus / Rack Current": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corriente de bus / rack"
+          }
+        }
+      }
+    },
+    "EM Fields": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Campos EM"
+          }
+        }
+      }
+    },
+    "EMP / EMC Shielding": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blindaje EMP / EMC"
+          }
+        }
+      }
+    },
+    "Electrical code": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código eléctrico"
+          }
+        }
+      }
+    },
+    "Electronics": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Electrónica"
+          }
+        }
+      }
+    },
+    "Electronics Lab": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laboratorio de electrónica"
+          }
+        }
+      }
+    },
+    "English": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
+        }
+      }
+    },
+    "Equipment Grounding": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puesta a tierra de equipos"
+          }
+        }
+      }
+    },
+    "Español": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Español"
+          }
+        }
+      }
+    },
+    "Export saved notes…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar notas guardadas…"
+          }
+        }
+      }
+    },
+    "FEATURED": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DESTACADO"
+          }
+        }
+      }
+    },
+    "Favorites": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favoritos"
+          }
+        }
+      }
+    },
+    "Featured: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destacado: %@"
+          }
+        }
+      }
+    },
+    "Fiber Link / NA": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enlace de fibra / NA"
+          }
+        }
+      }
+    },
+    "Field": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Campo"
+          }
+        }
+      }
+    },
+    "Field EE Toolbox": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herramientas eléctricas de campo"
+          }
+        }
+      }
+    },
+    "Flexible Cable Ampacity": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ampacidad de cable flexible"
+          }
+        }
+      }
+    },
+    "Follow code uses feet on NEC Voltage Drop and metres on the AS/NZS path. Conductor identity stays with the code: AWG for NEC, mm² for AS/NZS. Switching units does not convert a number you already typed.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Según el código usa pies en Caída de tensión NEC y metros en AS/NZS. El calibre sigue al código: AWG para NEC, mm² para AS/NZS. Cambiar unidades no convierte un número ya escrito."
+          }
+        }
+      }
+    },
+    "Follow electrical code": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Según el código eléctrico"
+          }
+        }
+      }
+    },
+    "Frequency / LC": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frecuencia / LC"
+          }
+        }
+      }
+    },
+    "Gaussian Beam": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haz gaussiano"
+          }
+        }
+      }
+    },
+    "Harmonics (THD)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Armónicos (THD)"
+          }
+        }
+      }
+    },
+    "Heater Design Wizard": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistente de diseño de calentadores"
+          }
+        }
+      }
+    },
+    "IEC 60364, the Canadian Electrical Code, and BS 7671 are named here so a later build can add them. They are not selectable.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IEC 60364, el Código Eléctrico Canadiense y BS 7671 aparecen aquí para que una versión futura los agregue. No se pueden seleccionar."
+          }
+        }
+      }
+    },
+    "IS Loop Verifier": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificador de lazo IS"
+          }
+        }
+      }
+    },
+    "Imperial (feet)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imperial (pies)"
+          }
+        }
+      }
+    },
+    "Import or export saved notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar o exportar notas guardadas"
+          }
+        }
+      }
+    },
+    "Import saved notes…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar notas guardadas…"
+          }
+        }
+      }
+    },
+    "Instrumentation Amp": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amplificador de instrumentación"
+          }
+        }
+      }
+    },
+    "Instruments": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instrumentos"
+          }
+        }
+      }
+    },
+    "Jobs": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trabajos"
+          }
+        }
+      }
+    },
+    "Jobsite": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obra"
+          }
+        }
+      }
+    },
+    "Jobsite calcs and instruments.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cálculos e instrumentos de obra."
+          }
+        }
+      }
+    },
+    "LED / RC": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LED / RC"
+          }
+        }
+      }
+    },
+    "Language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma"
+          }
+        }
+      }
+    },
+    "Later": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más tarde"
+          }
+        }
+      }
+    },
+    "Length": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Longitud"
+          }
+        }
+      }
+    },
+    "Light": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claro"
+          }
+        }
+      }
+    },
+    "Linear / LDO Regulator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regulador lineal / LDO"
+          }
+        }
+      }
+    },
+    "Load & Demand Factors": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factores de carga y demanda"
+          }
+        }
+      }
+    },
+    "Load Calculation Worksheet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoja de cálculo de carga"
+          }
+        }
+      }
+    },
+    "Magnetic Circuit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circuito magnético"
+          }
+        }
+      }
+    },
+    "Magnetics & Fields": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnetismo y campos"
+          }
+        }
+      }
+    },
+    "Magnetics Lab": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laboratorio de magnetismo"
+          }
+        }
+      }
+    },
+    "Magnetometer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnetómetro"
+          }
+        }
+      }
+    },
+    "Math & Data": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matemáticas y datos"
+          }
+        }
+      }
+    },
+    "Metric (metres)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Métrico (metros)"
+          }
+        }
+      }
+    },
+    "Modbus Address": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirección Modbus"
+          }
+        }
+      }
+    },
+    "Motor FLA Tables": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tablas de corriente de motor (FLA)"
+          }
+        }
+      }
+    },
+    "Motor Nameplate Analyzer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizador de placa de motor"
+          }
+        }
+      }
+    },
+    "Motor Nameplate OCR": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OCR de placa de motor"
+          }
+        }
+      }
+    },
+    "Motor Speed & Torque": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocidad y par del motor"
+          }
+        }
+      }
+    },
+    "Motors": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motores"
+          }
+        }
+      }
+    },
+    "NEC Circuit Calculator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculadora de circuitos NEC"
+          }
+        }
+      }
+    },
+    "NFPA 70, National Electrical Code. Default for this app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NFPA 70, Código Eléctrico Nacional. Predeterminado en esta app."
+          }
+        }
+      }
+    },
+    "Nickel Strip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tira de níquel"
+          }
+        }
+      }
+    },
+    "No field notes yet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay notas de campo"
+          }
+        }
+      }
+    },
+    "No pinned tools yet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay herramientas fijadas"
+          }
+        }
+      }
+    },
+    "Noise & SNR": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruido y SNR"
+          }
+        }
+      }
+    },
+    "Noise Meter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medidor de ruido"
+          }
+        }
+      }
+    },
+    "Number Base Converter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversor de bases numéricas"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Ohm's Law": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ley de Ohm"
+          }
+        }
+      }
+    },
+    "Optional.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opcional."
+          }
+        }
+      }
+    },
+    "Optional. Calculators, copy, and saved jobs stay free. Apple processes the payment.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opcional. Las calculadoras, copiar y los trabajos guardados siguen siendo gratis. Apple procesa el pago."
+          }
+        }
+      }
+    },
+    "PLC Timer Preset": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset de temporizador PLC"
+          }
+        }
+      }
+    },
+    "Panel Directory": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directorio de tablero"
+          }
+        }
+      }
+    },
+    "Phasors & Impedance": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fasores e impedancia"
+          }
+        }
+      }
+    },
+    "Pin tools from a shelf or search — including Crew Talk — for one-tap access here and on home.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fija herramientas desde un estante o la búsqueda —incluido Crew Talk— para abrirlas con un toque aquí y en el inicio."
+          }
+        }
+      }
+    },
+    "Pinned": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fijadas"
+          }
+        }
+      }
+    },
+    "Position": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición"
+          }
+        }
+      }
+    },
+    "Power": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potencia"
+          }
+        }
+      }
+    },
+    "Power & AC": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potencia y CA"
+          }
+        }
+      }
+    },
+    "Power Factor Correction": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corrección del factor de potencia"
+          }
+        }
+      }
+    },
+    "Power Wizard": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistente de potencia"
+          }
+        }
+      }
+    },
+    "Quick sum": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suma rápida"
+          }
+        }
+      }
+    },
+    "RF & Optics": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RF y óptica"
+          }
+        }
+      }
+    },
+    "RF Power & Link": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potencia y enlace RF"
+          }
+        }
+      }
+    },
+    "Range Estimator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimador de autonomía"
+          }
+        }
+      }
+    },
+    "Reactance & Resonance": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reactancia y resonancia"
+          }
+        }
+      }
+    },
+    "Recent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recientes"
+          }
+        }
+      }
+    },
+    "Receptacle Selector": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selector de tomacorrientes"
+          }
+        }
+      }
+    },
+    "Reference Library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biblioteca de referencia"
+          }
+        }
+      }
+    },
+    "Resistor Color Code": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código de colores de resistencias"
+          }
+        }
+      }
+    },
+    "Results are a design aid. They are not a PE stamp, an AEE stamp, a permit, or a substitute for the NEC, AS/NZS 3000, or AS/NZS 3008. Confirm the current standard and the authority having jurisdiction.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los resultados son una ayuda de diseño. No sustituyen el sello de un ingeniero (PE/AEE), un permiso, ni el NEC, AS/NZS 3000 o AS/NZS 3008. Confirma la norma vigente y la autoridad competente."
+          }
+        }
+      }
+    },
+    "RigScope": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RigScope"
+          }
+        }
+      }
+    },
+    "Run a Field calc, save an on-device note, or import notes from a Beckify archive. Exported files stay wherever you choose to save them.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haz un cálculo de Campo, guarda una nota en el dispositivo o importa notas de un archivo de Beckify. Los archivos exportados quedan donde decidas guardarlos."
+          }
+        }
+      }
+    },
+    "SHELVES": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ESTANTES"
+          }
+        }
+      }
+    },
+    "Search tools…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar herramientas…"
+          }
+        }
+      }
+    },
+    "Semiconductor I-V": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curva I-V de semiconductores"
+          }
+        }
+      }
+    },
+    "Series / Parallel": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serie / paralelo"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes"
+          }
+        }
+      }
+    },
+    "Short-Circuit Current": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corriente de cortocircuito"
+          }
+        }
+      }
+    },
+    "Signal Scaling": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escalado de señal"
+          }
+        }
+      }
+    },
+    "Solar Design Wizard": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistente de diseño solar"
+          }
+        }
+      }
+    },
+    "Solenoid Design Wizard": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistente de diseño de solenoides"
+          }
+        }
+      }
+    },
+    "Sprocket Ratio Designer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diseñador de relación de piñones"
+          }
+        }
+      }
+    },
+    "Statistics": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estadística"
+          }
+        }
+      }
+    },
+    "Stillness Anomaly Watch": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vigía de anomalías en reposo"
+          }
+        }
+      }
+    },
+    "Switchgear Logic Lab": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laboratorio lógico de tableros"
+          }
+        }
+      }
+    },
+    "System": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistema"
+          }
+        }
+      }
+    },
+    "System follows this iPhone or iPad. Beckify does not force dark mode unless you pick Dark here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistema sigue este iPhone o iPad. Beckify no fuerza el modo oscuro a menos que elijas Oscuro aquí."
+          }
+        }
+      }
+    },
+    "System follows this iPhone or iPad. Calculator math and Crew Talk translation do not change.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistema sigue este iPhone o iPad. Los cálculos y la traducción de Crew Talk no cambian."
+          }
+        }
+      }
+    },
+    "Tap-Changer Calculator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculadora de cambiador de tomas"
+          }
+        }
+      }
+    },
+    "Three-Phase Power": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potencia trifásica"
+          }
+        }
+      }
+    },
+    "Tip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propina"
+          }
+        }
+      }
+    },
+    "Tito, Lupita, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tito, Lupita, Bodie, Junie, Pearl o Sloane. La persona, la frase y Hablar."
+          }
+        }
+      }
+    },
+    "Toolbox": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herramientas"
+          }
+        }
+      }
+    },
+    "Toolkit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caja de herramientas"
+          }
+        }
+      }
+    },
+    "Transfer notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transferir notas"
+          }
+        }
+      }
+    },
+    "Transformer Sizing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensionado de transformador"
+          }
+        }
+      }
+    },
+    "Transient Circuits": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circuitos transitorios"
+          }
+        }
+      }
+    },
+    "Translate English ↔ Spanish on the job.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduce inglés ↔ español en la obra."
+          }
+        }
+      }
+    },
+    "UL 508A Panel Lab": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laboratorio de tableros UL 508A"
+          }
+        }
+      }
+    },
+    "UPS / On-site Power": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UPS / energía en sitio"
+          }
+        }
+      }
+    },
+    "Unit Converter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversor de unidades"
+          }
+        }
+      }
+    },
+    "Units": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unidades"
+          }
+        }
+      }
+    },
+    "Update": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar"
+          }
+        }
+      }
+    },
+    "Update available": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualización disponible"
+          }
+        }
+      }
+    },
+    "Voltage Divider": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Divisor de tensión"
+          }
+        }
+      }
+    },
+    "Voltage Drop": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caída de tensión"
+          }
+        }
+      }
+    },
+    "Wi-Fi Path": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruta Wi-Fi"
+          }
+        }
+      }
+    },
+    "Wire & Cable": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cables y conductores"
+          }
+        }
+      }
+    },
+    "Wire Length Estimator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimador de longitud de cable"
+          }
+        }
+      }
+    },
+    "Wire Size & Ampacity": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calibre y ampacidad"
+          }
+        }
+      }
+    },
+    "g-Force Snapshot": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captura de fuerza g"
+          }
+        }
+      }
+    }
+  }
+}

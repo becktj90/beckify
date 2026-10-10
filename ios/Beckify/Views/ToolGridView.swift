@@ -56,6 +56,7 @@ struct ToolGridView: View {
                         homeHeader
                             .opacity(appeared || reduceMotion ? 1 : 0)
                             .offset(y: appeared || reduceMotion ? 0 : 10)
+                        crewTalkFeaturedCard
                         // Cold start: hide Recents entirely. Do not seed fake
                         // tools or leave an empty strip for App Store shots.
                         if !recents.tools.isEmpty {
@@ -154,8 +155,8 @@ struct ToolGridView: View {
 
     private var stickyAreaPicker: some View {
         Picker("Home area", selection: $homeArea) {
-            Text(ToolHomeArea.field.title).tag(ToolHomeArea.field)
-            Text(ToolHomeArea.toolkit.title).tag(ToolHomeArea.toolkit)
+            Text(L(ToolHomeArea.field.title)).tag(ToolHomeArea.field)
+            Text(L(ToolHomeArea.toolkit.title)).tag(ToolHomeArea.toolkit)
         }
         .segmentedControlStyle()
         .padding(.horizontal, 18)
@@ -169,12 +170,12 @@ struct ToolGridView: View {
 
     private var homeHeader: some View {
         HStack(alignment: .center, spacing: 10) {
-            Text(homeArea.headline)
+            Text(L(homeArea.headline))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.white)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            Text(homeArea.blurb)
+            Text(L(homeArea.blurb))
                 .font(.caption2)
                 .foregroundStyle(Color.white.opacity(0.72))
                 .fixedSize(horizontal: false, vertical: true)
@@ -192,8 +193,51 @@ struct ToolGridView: View {
                 )
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(homeArea.headline). \(homeArea.blurb)")
+        .accessibilityLabel("\(L(homeArea.headline)). \(L(homeArea.blurb))")
         .accessibilityIdentifier("homeHeader")
+    }
+
+    // MARK: - Featured: Crew Talk
+
+    /// One-tap Crew Talk entry near the top of home, in both areas.
+    @ViewBuilder
+    private var crewTalkFeaturedCard: some View {
+        if let tool = ToolboxCatalog.tools.first(where: { $0.id == .spanishTranslator }) {
+            NavigationLink(value: tool.id) {
+                HStack(spacing: Theme.Space.sm) {
+                    IconWell(toolID: tool.id, size: 52, circular: true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("FEATURED")
+                            .font(Theme.TypeRole.sectionLabel)
+                            .tracking(1.0)
+                            .foregroundStyle(Theme.muted)
+                        Text(L(tool.title))
+                            .font(.headline)
+                            .foregroundStyle(Theme.foreground)
+                        Text("Translate English ↔ Spanish on the job.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                        .accessibilityHidden(true)
+                }
+                .padding(Theme.Space.sm)
+                .frame(maxWidth: .infinity, minHeight: Theme.touchTarget, alignment: .leading)
+                .glassCard()
+            }
+            .buttonStyle(ToolTileButtonStyle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Featured: \(L(tool.title))"))
+            .accessibilityHint("Opens Crew Talk to translate English and Spanish.")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("homeFeaturedCrewTalk")
+            .opacity(appeared || reduceMotion ? 1 : 0)
+            .offset(y: appeared || reduceMotion ? 0 : 10)
+        }
     }
 
     // MARK: - Strips & sections
@@ -244,7 +288,7 @@ struct ToolGridView: View {
         let tools = searchResults.filter { ToolboxCatalog.area(of: $0.id) == area }
         if !tools.isEmpty {
             ToolCategoryGrid(
-                title: area.title,
+                title: L(area.title),
                 tools: tools,
                 columns: columns,
                 showAreaBadge: true
@@ -260,7 +304,7 @@ struct ToolGridView: View {
         pinContextMenu: Bool = false
     ) -> some View {
         let strip = VStack(alignment: .leading, spacing: Theme.Space.xxs) {
-            Text(title.uppercased())
+            Text(L(title).uppercased())
                 .font(Theme.TypeRole.sectionLabel)
                 .tracking(1.0)
                 .foregroundStyle(Theme.muted)
@@ -302,7 +346,7 @@ struct ToolGridView: View {
                         radius: 10,
                         opacity: 0.2
                     )
-                Text(tool.title)
+                Text(L(tool.title))
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
@@ -313,9 +357,9 @@ struct ToolGridView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(
-            accessibilityNamePrefix.map { "\($0), \(tool.title)" } ?? tool.title
+            accessibilityNamePrefix.map { "\($0), \(L(tool.title))" } ?? L(tool.title)
         )
-        .accessibilityHint(tool.subtitle)
+        .accessibilityHint(L(tool.subtitle))
         .contextMenu {
             if pinContextMenu {
                 Button {
@@ -352,7 +396,7 @@ struct ToolShelfScreen: View {
     var body: some View {
         ScrollView {
             ToolCategoryGrid(
-                title: shelf.title,
+                title: L(shelf.title),
                 tools: tools,
                 columns: columns,
                 showAreaBadge: false,
@@ -368,7 +412,7 @@ struct ToolShelfScreen: View {
                 AmbientGlowOrbs()
             }
         }
-        .navigationTitle(shelf.title)
+        .navigationTitle(L(shelf.title))
         .supportLegacyBackSwipe()
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -404,7 +448,7 @@ struct ToolCategoryGrid: View {
                     Capsule(style: .continuous)
                         .fill(Theme.accent.opacity(0.85))
                         .frame(width: 3, height: 12)
-                    Text(title.uppercased())
+                    Text(L(title).uppercased())
                         .font(Theme.TypeRole.sectionLabel)
                         .tracking(1.0)
                         .foregroundStyle(Theme.muted)
@@ -482,7 +526,7 @@ private struct ShelfCard: View {
             .frame(width: ShelfPreviewFan.slotWidth, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(shelf.title)
+                Text(L(shelf.title))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .fixedSize(horizontal: false, vertical: true)
@@ -561,7 +605,7 @@ struct ToolTile: View {
             VStack(spacing: 3) {
                 // No line limit and a vertical fixedSize: the text takes the lines it needs, so a long
                 // name like "Heater Design Wizard" wraps instead of ending in an ellipsis.
-                Text(tool.title)
+                Text(L(tool.title))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
@@ -569,7 +613,7 @@ struct ToolTile: View {
                 if showArea {
                     HomeAreaBadge(area: area)
                 }
-                Text(tool.subtitle)
+                Text(L(tool.subtitle))
                     .font(.caption2)
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
@@ -588,7 +632,7 @@ struct ToolTile: View {
         .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(showArea ? "\(tool.title), \(area.title)" : tool.title)
-        .accessibilityHint(tool.subtitle)
+        .accessibilityHint(L(tool.subtitle))
         .accessibilityIdentifier("toolTile.\(tool.id.rawValue)")
     }
 }

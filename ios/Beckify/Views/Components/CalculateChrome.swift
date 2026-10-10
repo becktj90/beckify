@@ -337,7 +337,7 @@ struct ToolIdentityHeader: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(tool.title)
+                Text(L(tool.title))
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .accessibilityAddTraits(.isHeader)

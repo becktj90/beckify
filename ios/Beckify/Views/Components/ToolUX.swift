@@ -438,12 +438,12 @@ struct ToolInfoSheet: View {
                         IconWell(toolID: toolID, size: 44)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(tool.title)
+                            Text(L(tool.title))
                                 .font(.title3.weight(.semibold))
                                 .foregroundStyle(Theme.foreground)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityAddTraits(.isHeader)
-                            Text(tool.subtitle)
+                            Text(L(tool.subtitle))
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.muted)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -604,7 +604,7 @@ struct RelatedToolsSection: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     IconWell(toolID: tool.id, size: 22, selected: true)
-                                    Text(tool.title)
+                                    Text(L(tool.title))
                                         .font(.caption2.weight(.medium))
                                         .foregroundStyle(Theme.muted)
                                         .lineLimit(1)
