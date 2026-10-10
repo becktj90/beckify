@@ -68,7 +68,7 @@ Named **Saved Jobs** are lightweight on-device notes (bench or field snapshots o
 
 Last-used calculator and sensor form values (the numbers and picker choices in each tool) also stay in on-device `UserDefaults` so a tool reopens where you left it. They are not uploaded and are not a projects product. Cable Ladder stores the same kind of on-device form values (tray size, cable rows, and the optional phase-color legend). It does not add a permission. Switchgear Logic Lab may autosave the current offline project JSON in on-device `UserDefaults` (and export JSON / CSV / HTML only when you share); those review packages are not uploaded by the app.
 
-Settings choices — electrical code (NEC or AS/NZS), preferred length units, and appearance (system, light, or dark) — stay in on-device `UserDefaults` as well. They are not uploaded.
+Settings choices — electrical code (NEC or AS/NZS), preferred length units, appearance (system, light, or dark), and Language (System, English, or Español) — stay in on-device `UserDefaults` as well. They are not uploaded.
 
 ## Children’s privacy
 

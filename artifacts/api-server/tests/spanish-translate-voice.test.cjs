@@ -107,3 +107,7 @@ assert.match(speak, /if \(mode === "deepSouth"\) return SPEAK_DEEP_SOUTH_VOICE_I
 }
 
 console.log("spanish-translate-voice.test.cjs: ok");
+
+// Tito should not lean on "¡Oye, coño!" every line.
+assert.match(translate, /Use ¡Oye, coño! rarely/);
+assert.match(translate, /asere/);

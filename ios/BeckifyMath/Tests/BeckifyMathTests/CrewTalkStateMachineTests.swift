@@ -16,6 +16,17 @@ struct CrewTalkSpeakPlan: Equatable {
 }
 
 final class CrewTalkStateMachineTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        // These tests pin exact Tito templates; TitoVoiceVarietyTests covers the variety layer.
+        TitoVoiceVariety.isEnabled = false
+    }
+
+    override func tearDown() {
+        TitoVoiceVariety.isEnabled = true
+        super.tearDown()
+    }
+
     private func step(_ state: CrewTalkState, _ event: CrewTalkEvent) -> CrewTalkTransition {
         CrewTalkStateMachine.reduce(state, event)
     }

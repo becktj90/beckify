@@ -18,7 +18,7 @@ export const SPEAK_DEFAULT_MODEL = "gpt-4o-mini-tts";
 
 export const SPEAK_MAX_INPUT_CHARS = 500;
 
-export const SPEAK_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied Spanish text exactly, in the voice of a fictional older Cuban and South American tradesman whose voice sounds weathered by fifty years of cigarettes and hard jobsite work. Deep, chesty male register; coarse gravel, dry rasp, husky vocal fry at phrase endings, and slightly uneven breath. Hilarious in the way a real old hand is hilarious: deadpan, skeptical, a dry bite on the stressed word, short deliberate phrases, never slapstick and never a cartoon. Cuban-American rhythm with South American warmth when the line asks for it — a believable working man, not a costume and not an impression of any real person. Project across a noisy site without screaming. The rasp must never swallow a word; electrical terms, numbers, units, and warnings stay crisp. Deliver profanity already in the text naturally — do not beep, sanitize, skip, or soften it. Do not add words, jokes, coughs, cigarette sounds, laughs, threats, or criminal claims. Do not swap words into slang that is not already written. No slurs and no ethnicity mockery. Preserve the text and its meaning; only the delivery changes.`;
+export const SPEAK_JOBSITE_VOICE_INSTRUCTIONS = `Read the supplied Spanish text exactly, in the voice of a fictional older Cuban and South American tradesman whose voice sounds weathered by fifty years of cigarettes and hard jobsite work. Deep, chesty male register; coarse gravel, dry rasp, husky vocal fry at phrase endings, and slightly uneven breath. Hilarious in the way a real old hand is hilarious: deadpan, skeptical, a dry bite on the stressed word, short deliberate phrases, never slapstick and never a cartoon. Cuban-American rhythm with South American warmth when the line asks for it — a believable working man, not a costume and not an impression of any real person. Project across a noisy site without screaming. The rasp must never swallow a word; electrical terms, numbers, units, and warnings stay crisp. Deliver profanity already in the text naturally — do not beep, sanitize, skip, or soften it. Do not add words, jokes, coughs, cigarette sounds, laughs, threats, or criminal claims. If the text already carries a bracketed sound cue such as [coughs] or [clears throat], perform it as a short natural sound and never read the brackets aloud. Do not swap words into slang that is not already written. No slurs and no ethnicity mockery. Preserve the text and its meaning; only the delivery changes.`;
 
 export const SPEAK_CLEAN_VOICE_INSTRUCTIONS = `Speak like a polished Cuban / South Florida woman — warm, elegant, clear, and kind. Soft feminine Cuban-American Florida Spanish cadence with graceful confidence. Project enough to be heard, but never yell like a jobsite. Refined and welcoming — not crude, not sarcastic, not a cartoon, not Castilian Spain, not a mocking caricature accent. Do not invent swearing; if the text is already clean, keep it clean and musical. Never invent hate slurs. Pace is clear and unhurried, still lively and warm.`;
 
@@ -225,4 +225,9 @@ export function resolveElevenLabsVoiceId(voice: unknown): string | null {
 /** Any requested model other than eleven_v3 is coerced to eleven_v3. */
 export function resolveElevenLabsModel(_model: unknown): string {
   return ELEVENLABS_TTS_MODEL;
+}
+
+/** ElevenLabs v3 audio tags ([coughs], [chuckles]...). Performed by eleven_v3; stripped for any other provider. */
+export function stripAudioTags(text: string): string {
+  return text.replace(/\[[^\]]{1,24}\]/g, "").replace(/\s+/g, " ").trim();
 }

@@ -4,6 +4,17 @@ import XCTest
 /// WP-102. A template must not flip polarity, negation, or question-ness,
 /// and keyword hits are whole words on folded text.
 final class CrewDialectRewriteSafetyTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        // These tests pin exact Tito templates; TitoVoiceVarietyTests covers the variety layer.
+        TitoVoiceVariety.isEnabled = false
+    }
+
+    override func tearDown() {
+        TitoVoiceVariety.isEnabled = true
+        super.tearDown()
+    }
+
     private let unsafePower = [
         "Turn the power back on",
         "Don't kill the power",
