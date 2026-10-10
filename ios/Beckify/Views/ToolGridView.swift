@@ -563,6 +563,7 @@ private struct ShelfCard: View {
         case .magnetics: return "Cores, solenoids, flux, and EM fields."
         case .instruments: return "RF, mic, motion, RigScope…"
         case .crew: return "Crew Talk, schedules, tables…"
+        case .codeSafety: return "NFPA 780 lightning, hazardous locations…"
         case .basics: return "Ohm's Law, divider, RC, units…"
         case .electronics: return "Lab, op-amp workbench, noise, regulators…"
         case .rfOptics: return "RF link, fiber, laser beams."

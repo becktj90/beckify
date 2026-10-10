@@ -19,6 +19,7 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
     case magnetics
     case instruments
     case crew
+    case codeSafety
     // Toolkit
     case basics
     case electronics
@@ -28,7 +29,7 @@ public enum ToolShelfKind: String, CaseIterable, Sendable, Hashable {
 
     public var homeArea: ToolHomeArea {
         switch self {
-        case .jobsite, .wiring, .motors, .power, .controls, .magnetics, .instruments, .crew: return .field
+        case .jobsite, .wiring, .motors, .power, .controls, .magnetics, .instruments, .crew, .codeSafety: return .field
         case .basics, .electronics, .rfOptics, .build, .math: return .toolkit
         }
     }
@@ -111,6 +112,7 @@ public enum ToolHomeAreaPolicy {
             "deviceHealth",
         ]),
         (.crew, ["spanishTranslator", "panelDirectory", "loadWorksheet", "cableSchedule", "referenceLibrary"]),
+        (.codeSafety, ["lightningProtection", "hazardousLocations"]),
         (.basics, [
             "ohmsLaw", "voltageDivider", "seriesParallel", "resistorColor",
             "ledRC", "frequencyWave", "unitConverter", "timer555",

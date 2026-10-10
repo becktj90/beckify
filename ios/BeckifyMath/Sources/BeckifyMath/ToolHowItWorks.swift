@@ -634,6 +634,24 @@ public enum ToolHowItWorksCatalog {
                 "2023 NEC section numbers only. Local amendments and the AHJ govern.",
             ]
         ),
+        "lightningProtection": ToolHowItWorks(
+            summary: "NFPA 780 wizard: rolling-sphere zone for a mast, roof class, strike-device spacing, down-conductor count, Class I/II, plus Ch. 4, 7, 8 cards.",
+            context: "Laying out or checking a lightning protection system on a building or tank.",
+            bullets: [
+                "150 ft sphere for ordinary structures, 100 ft for flammable-vapor and explosives structures.",
+                "Counts are a planning estimate for a plain rectangle; corners, dormers, and roof units add devices.",
+                "NFPA 780-2023 section numbers only, in our own words. The adopted edition and the AHJ govern.",
+            ]
+        ),
+        "hazardousLocations": ToolHowItWorks(
+            summary: "Classify a hazardous location (Class/Division/Group or Zone), pick a T-code from autoignition temperature, and see allowed protection and seal rules.",
+            context: "Sorting out a classified area, equipment marking, or conduit seals. Includes an Article 490 card.",
+            bullets: [
+                "Material, how often it is present, and group map to Class I–III, Div 1/2, Zone 0/1/2 or 20/21/22.",
+                "T-code must not exceed the autoignition temperature in °C.",
+                "2023 NEC section numbers only, in our own words. Area classification is an engineering call; the AHJ governs.",
+            ]
+        ),
         "loadWorksheet": ToolHowItWorks(
             summary: "NEC 220.42 lighting demand plus motor and continuous VA totals.",
             context: "Service / feeder worksheet from lighting VA and added loads.",

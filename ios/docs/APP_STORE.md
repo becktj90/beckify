@@ -116,6 +116,11 @@ Bench:
 • Battery Pack Designer — series/parallel pack planning from cell ratings or a voltage/current target (design aid; verify datasheet, BMS, and fusing before you build — not a weld cert). Use Battery Bank Sizing (Field → Power) for usable DoD and runtime
 • Nickel Strip — strip cross-section to planning continuous and short-pulse current (derate for alloy, path, and welds)
 
+Code & Safety (Field):
+
+• Lightning Protection — NFPA 780 (2023) wizard: rolling-sphere cross-section for a mast or air terminal (150 ft sphere for ordinary structures, 100 ft for flammable-vapor and explosives structures), cone zones for low buildings, roof class from pitch and span, strike-device spacing (20 ft, or 25 ft for 24 in devices), a 50 ft field grid on wide flat roofs, down-conductor count (at least two, about 100 ft average spacing), Class I vs Class II materials at 75 ft, grounding electrodes, and the bonding-distance concept. Reference cards for Ch. 4 (general requirements), Ch. 7 (flammable vapors, gases, and liquids: tanks, floating-roof shunts, bonding), and Ch. 8 (explosives). Section numbers only, in plain words; the adopted edition and the AHJ govern. Planning estimate, not a stamped design.
+• Hazardous Locations — NEC 500–506 guide: classification wizard (gas/vapor, dust, or fibers; how often present; Group A–G) to Class I/II/III, Division 1/2 and Zone 0/1/2 or 20/21/22 with the matching Zone group, T-code lookup from autoignition temperature, a protection-technique table (XP, dust-ignitionproof, purged/pressurized, intrinsic safety ia/ib/ic, nonincendive, increased safety "e", flameproof "d", encapsulation, n, and more) with where each is allowed, a wiring-method and seal summary (501.10, 501.15 seals within 18 in, boundary seals), and a separate Article 490 card for equipment over 1000 V (not a hazardous-locations article). Section numbers only; area classification is an engineering call and the AHJ governs.
+
 Reference:
 
 • Reference Library — NEMA, IP ratings, conductor colors, hazardous areas, insulation, torque, conduit, and standard sizes
@@ -146,12 +151,14 @@ Search tools… (try “switchgear”, “room & rig”, “setup check”, “e
 This app is a design aid. It is not a PE stamp, an AEE stamp, a permit, an inspection, a calibrated instrument, or a substitute for the National Electrical Code, AS/NZS 3000, AS/NZS 3008, or a qualified engineer.
 
 **Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular
+electrical,NEC,ampacity,THD,UPS,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,NFPA 780,hazloc
 
 **App Store languages:** English (primary) and Spanish (Mexico/Spain). Build **298** adds an in-app Spanish UI for the main chrome and tool names; tool subtitles, calculator screens, and long help text are still English. List Spanish as a supported language in Connect, but keep the App Store description in English until a Spanish listing is written.
 
 **What's New (draft for next Connect upload — 1.0.6 build 303):**
-Build **303** (tip / next Archive): New Field tool, Receptacles per Circuit, next to Receptacle Selector. It tells you how many NEMA 5-20R receptacles one 120 V branch circuit can carry — 13 on 20 A for commercial work at 180 VA each (NEC 220.14(I)), or 10 when treated as continuous at 80 %. Dwellings have no NEC count limit, so it shows a common-practice range and checks your planned load against 80 % of the circuit. A voltage-drop strip shows what the last receptacle sees for your wire size and run length. It also flags a 5-20R on a 15 A circuit and wire under 12 AWG copper on 20 A. In Spanish it is Tomacorrientes por circuito. Free calculators; optional Settings tip IAP; no ads.
+Build **304** (tip / next Archive): New Code & Safety shelf on Field with two tools. Lightning Protection walks an NFPA 780 layout — rolling-sphere zone for a mast with a cross-section drawing, roof class, strike-device spacing, down-conductor count, Class I/II materials — plus Ch. 4, 7, and 8 reference cards. Hazardous Locations classifies an area (Class/Division/Group or Zone), picks a T-code from autoignition temperature, shows which protection methods are allowed, summarizes wiring and seal rules, and adds an Article 490 (over 1000 V) card. Both cite section numbers only and say the edition and AHJ govern. Spanish tool names included. Free calculators; optional Settings tip IAP; no ads.
+
+Build **303**: New Field tool, Receptacles per Circuit, next to Receptacle Selector. It tells you how many NEMA 5-20R receptacles one 120 V branch circuit can carry — 13 on 20 A for commercial work at 180 VA each (NEC 220.14(I)), or 10 when treated as continuous at 80 %. Dwellings have no NEC count limit, so it shows a common-practice range and checks your planned load against 80 % of the circuit. A voltage-drop strip shows what the last receptacle sees for your wire size and run length. It also flags a 5-20R on a 15 A circuit and wire under 12 AWG copper on 20 A. In Spanish it is Tomacorrientes por circuito. Free calculators; optional Settings tip IAP; no ads.
 
 Build **302**: Crew Talk characters are now animated pixel art. Each one idles, talks with real mouth shapes while their voice plays, and gestures on longer lines. A new Make clip button (next to Copy and Share audio) turns the spoken line into a short square video: the character talking for exactly as long as the recording, the line as a caption, and the same voice. Copy it and paste into Messages, or share it. Clips are made only when you ask and stay on your phone.
 

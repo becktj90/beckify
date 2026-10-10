@@ -158,7 +158,9 @@ public enum ToolCalculationPolicy {
             "phasorImpedance",
             "magneticsLab",
             "emFields",
-            "statistics":
+            "statistics",
+            "lightningProtection",
+            "hazardousLocations":
             return .live
 
         case
@@ -206,6 +208,7 @@ public enum ToolCalculationPolicy {
         "magneticsLab", "emFields", "statistics",
         "spanishTranslator",
         "switchgearLogicLab",
+        "lightningProtection", "hazardousLocations",
     ]
 
     public static var liveToolIDs: [String] {

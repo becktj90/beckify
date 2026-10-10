@@ -70,6 +70,8 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case empEmc
     case necCircuit
     case receptacleCircuit
+    case lightningProtection
+    case hazardousLocations
     case loadWorksheet
     case cableSchedule
     case solenoidDesign
@@ -162,6 +164,7 @@ extension ToolShelfKind {
         case .magnetics: return "Magnetics & Fields"
         case .instruments: return "Instruments"
         case .crew: return "Crew & Paperwork"
+        case .codeSafety: return "Code & Safety"
         case .basics: return "Basics"
         case .electronics: return "Electronics"
         case .rfOptics: return "RF & Optics"
@@ -182,7 +185,7 @@ extension ToolShelfKind {
         case .power, .magnetics: return .power
         case .controls: return .controls
         case .instruments: return .sensors
-        case .crew: return .reference
+        case .crew, .codeSafety: return .reference
         case .basics, .electronics, .rfOptics, .build: return .homework
         case .math: return .analysis
         }
@@ -745,6 +748,30 @@ enum ToolboxCatalog {
             synonyms: ["nema", "ip rating", "enclosure", "conductor color", "wire color", "hazardous", "classified", "insulation", "thhn", "torque", "bolt", "conduit", "fittings", "standard sizes", "reference", "table"]
         ),
         ToolDefinition(
+            id: .lightningProtection,
+            kind: .calculator,
+            title: "Lightning Protection",
+            subtitle: "NFPA 780 wizard: rolling sphere zone, roof layout, down conductors, Class I/II, and Ch. 4, 7, 8 references.",
+            symbol: "bolt.shield",
+            synonyms: [
+                "nfpa 780", "780", "lightning", "lightning protection", "lps", "rolling sphere", "air terminal",
+                "strike termination", "down conductor", "zone of protection", "ground ring", "class ii materials",
+                "tank", "floating roof", "shunt", "explosives", "magazine", "bonding distance",
+            ]
+        ),
+        ToolDefinition(
+            id: .hazardousLocations,
+            kind: .calculator,
+            title: "Hazardous Locations",
+            subtitle: "NEC 500–506 Class/Division/Zone wizard, T-code vs autoignition, protection methods, seals, and an Art. 490 card.",
+            symbol: "flame",
+            synonyms: [
+                "hazardous", "classified", "hazloc", "class i", "division 1", "division 2", "zone 0", "zone 1", "zone 2",
+                "zone 20", "zone 21", "zone 22", "group d", "t code", "t-code", "autoignition", "explosionproof", "xp",
+                "intrinsically safe", "nonincendive", "increased safety", "seal", "seal off", "501.15", "490", "medium voltage",
+            ]
+        ),
+        ToolDefinition(
             id: .spanishTranslator,
             kind: .sensor,
             title: "Crew Talk",
@@ -1127,6 +1154,7 @@ enum ToolboxCatalog {
         ],
         .reference: [
             .referenceLibrary, .spanishTranslator, .panelDirectory, .loadWorksheet, .cableSchedule,
+            .lightningProtection, .hazardousLocations,
         ],
     ]
 
@@ -1267,5 +1295,7 @@ enum ToolboxCatalog {
         .magneticsLab: [.emFields, .transformer, .solenoidDesign, .magneticCircuit],
         .emFields: [.magneticsLab, .magnetometer, .solenoidDesign],
         .statistics: [.noiseSNR, .unitConverter, .harmonicsTHD],
+        .lightningProtection: [.hazardousLocations, .equipmentGround, .referenceLibrary],
+        .hazardousLocations: [.lightningProtection, .isLoopVerifier, .referenceLibrary, .conduitFill],
     ]
 }

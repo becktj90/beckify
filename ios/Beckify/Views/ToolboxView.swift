@@ -246,6 +246,8 @@ struct CalculatorHostView: View {
             case .heaterDesign: HeaterDesignView()
             case .empEmc: EMPEMCView()
             case .necCircuit: NECCircuitView()
+            case .lightningProtection: LightningProtectionView()
+            case .hazardousLocations: HazardousLocationsView()
             case .loadWorksheet: LoadWorksheetView()
             case .cableSchedule: CableScheduleView()
             case .solenoidDesign: SolenoidDesignView()

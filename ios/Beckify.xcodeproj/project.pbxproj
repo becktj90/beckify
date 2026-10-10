@@ -60,6 +60,8 @@
 		BECF00000000000000000060 /* LEDRCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF0000000000000000005F /* LEDRCView.swift */; };
 		BECF00000000000000000062 /* ReceptacleSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000061 /* ReceptacleSelectorView.swift */; };
 		BECF52050000000000000002 /* ReceptacleCircuitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF52050000000000000001 /* ReceptacleCircuitView.swift */; };
+		BECF52060000000000000002 /* LightningProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF52060000000000000001 /* LightningProtectionView.swift */; };
+		BECF52060000000000000004 /* HazardousLocationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF52060000000000000003 /* HazardousLocationsView.swift */; };
 		BECF00000000000000000064 /* ToolInputStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000063 /* ToolInputStore.swift */; };
 		BECF00000000000000000066 /* ToolUX.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000065 /* ToolUX.swift */; };
 		BECF00000000000000000068 /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECF00000000000000000067 /* FavoritesStore.swift */; };
@@ -216,6 +218,8 @@
 		BECF0000000000000000005F /* LEDRCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LEDRCView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000061 /* ReceptacleSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceptacleSelectorView.swift; sourceTree = "<group>"; };
 		BECF52050000000000000001 /* ReceptacleCircuitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceptacleCircuitView.swift; sourceTree = "<group>"; };
+		BECF52060000000000000001 /* LightningProtectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightningProtectionView.swift; sourceTree = "<group>"; };
+		BECF52060000000000000003 /* HazardousLocationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardousLocationsView.swift; sourceTree = "<group>"; };
 		BECF00000000000000000063 /* ToolInputStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolInputStore.swift; sourceTree = "<group>"; };
 		BECF00000000000000000065 /* ToolUX.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolUX.swift; sourceTree = "<group>"; };
 		BECF00000000000000000067 /* FavoritesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStore.swift; sourceTree = "<group>"; };
@@ -525,6 +529,8 @@
 				BECF0000000000000000005F /* LEDRCView.swift */,
 				BECF00000000000000000061 /* ReceptacleSelectorView.swift */,
 				BECF52050000000000000001 /* ReceptacleCircuitView.swift */,
+				BECF52060000000000000001 /* LightningProtectionView.swift */,
+				BECF52060000000000000003 /* HazardousLocationsView.swift */,
 				BECF0000000000000000006F /* FieldCalculatorViews.swift */,
 				BECF0000000000000000007F /* FacilityCalculatorViews.swift */,
 				BECF00000000000000000071 /* ControlsCalculatorViews.swift */,
@@ -849,6 +855,8 @@
 				BECF00000000000000000060 /* LEDRCView.swift in Sources */,
 				BECF00000000000000000062 /* ReceptacleSelectorView.swift in Sources */,
 				BECF52050000000000000002 /* ReceptacleCircuitView.swift in Sources */,
+				BECF52060000000000000002 /* LightningProtectionView.swift in Sources */,
+				BECF52060000000000000004 /* HazardousLocationsView.swift in Sources */,
 				BECF00000000000000000064 /* ToolInputStore.swift in Sources */,
 				BECF00000000000000000066 /* ToolUX.swift in Sources */,
 				BECF00000000000000000068 /* FavoritesStore.swift in Sources */,
