@@ -15,6 +15,7 @@ enum CrewDialectRewrite {
         case .juniePell: return junie(raw)
         case .pearl: return pearl(raw)
         case .sloaneMerritt: return sloane(raw)
+        case .dreLacey: return dre(raw)
         }
     }
 
@@ -397,6 +398,58 @@ enum CrewDialectRewrite {
         }
         return guarded(line, raw: trimmed, fallback: fallback)
     }
+
+    // MARK: - Dre
+
+    /// East Oakland / Bay Area slang, loud and profane (Trevor-approved): hella, finna, blood,
+    /// bruh, fo shizzle, yadadamean, you feel me, the Town, slappin', mob, sick wid it, scrilla,
+    /// go dumb, it's a wrap. Swearing lands on the situation or the listener, never a group.
+    /// Natural phrasing, not caricature spelling, no real person.
+    static func dre(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        if let known = dreKnown[fold(trimmed)] { return known }
+        let cleaned = scrub(trimmed)
+        guard !cleaned.isEmpty else { return "Ay, blood, tell me what the fuck you need, fo shizzle." }
+        let fallback = "Ay, bruh, run that back, what's the play, blood. Fo shizzle."
+        let line: String
+        switch CrewRewriteGuard.intent(trimmed) {
+        case .cutPower:
+            line = "Ay, blood, cut the motherfuckin' power first, fo shizzle. Shit's live, bruh, we ain't goin' dumb today."
+        case .conduit:
+            line = "Bruh, toss me that conduit real quick, mob. Hella quick, you feel me."
+        case .ladder:
+            line = "Ay, blood, scoot that damn ladder over and lock it in. Fo shizzle, it's all good in the hood."
+        case .head:
+            line = "Watch the dome, bruh, that shit up there is hella low. Keep it tight, blood."
+        case .wire:
+            line = "Ay, blood, more motherfuckin' wire, that's hella important. Mob, we finna be done by lunch."
+        case .mess:
+            line = "Bruh, whoever left this bullshit mess, clean that shit up. The Town don't play like that."
+        case .feeder:
+            line = "Ay, blood, quit choppin' it up and pull that damn feeder before lunch. Go hard in the paint, bruh."
+        case .breaker:
+            line = "Blood, leave that motherfuckin' breaker alone for real. Keep your hands off it, fo shizzle."
+        case .racks:
+            line = "Bruh, them racks lookin' hella nasty. Clean that shit, then it's a wrap."
+        case .hold:
+            line = "Ay, hold this for me real quick, blood. Steady, playa, fo shizzle."
+        case .compliment:
+            line = "Bruh, that shit slaps, you went dumb on it. Sick wid it, blood."
+        case .greeting:
+            line = "Ay, what's good, blood. The Town in the building, fo shizzle."
+        case .free:
+            line = "Ay, blood, handle \(voicedWords(cleaned)), hella quick. Fo shizzle, you feel me."
+        case nil:
+            line = fallback
+        }
+        return guarded(line, raw: trimmed, fallback: fallback)
+    }
+
+    private static let dreKnown: [String: String] = [
+        "bring more wire": "[laughs] Ay, blood, bring me some more motherfuckin' wire, that's hella important, fo shizzle! Quit bullshittin', we finna be done by lunch, you feel me? It's all good in the hood.",
+        "we need more wire": "[laughs] Ay, blood, bring me some more motherfuckin' wire, that's hella important, fo shizzle! Quit bullshittin', we finna be done by lunch, you feel me? It's all good in the hood.",
+    ]
 
     // MARK: - Tito
 

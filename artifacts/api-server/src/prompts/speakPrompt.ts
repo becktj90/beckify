@@ -184,6 +184,7 @@ export const CREW_TALK_ELEVEN_VOICES = {
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
   lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr",
   humbertoArismendi: "IvXILleF0UhlyqiuUo87",
+  dreLacey: "MAPMuGNkK84YjEK5kMBn",
 } as const;
 
 /** Deterministic ElevenLabs seed for Sloane Merritt. Other crew voices omit seed. */

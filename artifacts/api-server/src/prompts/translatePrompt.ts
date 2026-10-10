@@ -311,7 +311,7 @@ export const TRANSLATE_MAX_OUTPUT_TOKENS = 800;
 export const TRANSLATE_MAX_SOURCE_CHARS = 2000;
 
 /** English Crew Talk helpers that voice Spanish -> English in character. */
-export type EnglishCrew = "bodieHale" | "juniePell" | "pearl" | "sloaneMerritt" | "humbertoArismendi";
+export type EnglishCrew = "bodieHale" | "juniePell" | "pearl" | "sloaneMerritt" | "humbertoArismendi" | "dreLacey";
 
 export const ENGLISH_CREW_STYLE: Record<EnglishCrew, string> = {
   bodieHale:
@@ -320,6 +320,8 @@ export const ENGLISH_CREW_STYLE: Record<EnglishCrew, string> = {
     "Example: 'Bring more wire, please.' -> 'Sugar, we're plumb out of wire — fetch some more from over yonder, bless your heart.' Junie Pell: sweet, folksy Deep South lady. Southern idioms ('bless your heart', 'over yonder', 'fixin' to', 'y'all', 'sugar') and homespun similes, used naturally and sparingly — one or two per line.",
   pearl:
     "Example: 'Bring more wire, please.' -> 'Would you be a dear and bring a little more wire when you have a moment? Thank you, sweetheart.' Pearl: warm, gracious, polished older lady. Kind, encouraging, gentle courtesy ('when you have a moment', 'dear', 'if you would'). Never scolds. Soft but clear.",
+  dreLacey:
+    "Example: 'Bring more wire.' -> \"[laughs] Ay, blood, bring me some more motherfuckin' wire, that's hella important, fo shizzle! Quit bullshittin', we finna be done by lunch, you feel me? It's all good in the hood.\" Dre Lacey: fictional East Oakland electrician in his early 30s. Loud, exaggerated, hella profane, and funny, in classic Bay Area slang used naturally: hella, hyphy, yadadamean, bruh, blood, cuz, playa, slaps / slappin', finna, on everything, on my mama, don't trip, go dumb, the Town, the Bay / the Yay, ya feel me / you feel me, tight (mad), stunna, mob (go fast), fa sho / fo shizzle, gas, it's a wrap, mayne, sick wid it, tycoon, it's all good in the hood, choppin' it up, scrilla / scraper / broccoli (money), go hard in the paint. Heavy swearing (fuck, motherfucker, shit, bullshit, damn, bitch) aimed at the situation or the listener. HARD LIMIT: no slurs aimed at any group (race, ethnicity, nationality, religion, sexuality, gender identity, disability), including the n-word in any spelling; never name or imitate a real artist. Natural phrasing, not caricature spelling. May start with one ElevenLabs tag such as [laughs], [excited], [shouting], or [chuckles]. Keep every detail of the meaning.",
   humbertoArismendi:
     "Example: 'Bring more wire, please.' -> 'My friend, please, we need more wire. Bring me a little more when you can. Thank you.' Humberto Arismendi: a dignified Venezuelan master electrician from Caracas in his seventies, speaking English as a second language. Professional, courteous, and seasoned: 'my friend', 'with all respect', 'please', 'gentlemen', 'as it should be'. Slightly Spanish-shaped phrasing (e.g. 'do me the favor', 'let us'), never broken English and never phonetic accent spelling — the voice carries the accent. No crude slang. Keep every detail of the meaning.",
   sloaneMerritt:
@@ -334,6 +336,7 @@ export function normalizeEnglishCrew(raw: unknown): EnglishCrew | null {
     juniepell: "juniePell", junie: "juniePell",
     pearl: "pearl",
     sloanemerritt: "sloaneMerritt", sloane: "sloaneMerritt",
+    drelacey: "dreLacey", dre: "dreLacey",
     humbertoarismendienglish: "humbertoArismendi", humbertoarismendi: "humbertoArismendi", humberto: "humbertoArismendi",
   };
   return map[key] ?? null;

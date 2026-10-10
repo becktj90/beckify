@@ -816,11 +816,11 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "English ↔ Spanish with Tito Solano, Lupita Reyes, Humberto Arismendi, Bodie Hale, Junie Pell, Pearl, or Sloane Merritt. Their 16-bit sprite stays up and bobs while audio plays.",
+            summary: "English ↔ Spanish with Tito Solano, Lupita Reyes, Humberto Arismendi, Bodie Hale, Junie Pell, Pearl, Sloane Merritt, or Dre Lacey. Their 16-bit sprite stays up and bobs while audio plays.",
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
-                "Tito, Lupita, and Humberto speak Spanish. Bodie, Junie, Pearl, Sloane, and Humberto speak English. Speak plays their line, never the raw text field.",
+                "Tito, Lupita, and Humberto speak Spanish. Bodie, Junie, Pearl, Sloane, Humberto, and Dre speak English. Speak plays their line, never the raw text field.",
                 "The dock shows the other language. Cuban, Mexican, and Venezuelan Spanish included.",
                 "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]

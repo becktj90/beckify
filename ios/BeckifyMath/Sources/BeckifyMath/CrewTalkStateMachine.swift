@@ -479,7 +479,7 @@ extension CrewTalkMember {
         case .englishToSpanish:
             return [.titoSolano, .lupitaReyes, .humbertoArismendi].filter(\.isReleased)
         case .spanishToEnglish:
-            return [.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish]
+            return [.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish, .dreLacey]
         }
     }
 

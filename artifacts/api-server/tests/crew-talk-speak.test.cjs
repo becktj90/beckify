@@ -70,3 +70,6 @@ assert.match(speakPrompt, /never read the brackets aloud/);
 
 // Humberto Arismendi (Venezuelan, Caracas; speaks both directions) voice is allowlisted.
 assert.match(speakPrompt, /humbertoArismendi: "IvXILleF0UhlyqiuUo87"/);
+
+// Dre Lacey (East Oakland, ES->EN) voice is allowlisted.
+assert.match(speakPrompt, /dreLacey: "MAPMuGNkK84YjEK5kMBn"/);

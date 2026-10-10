@@ -155,3 +155,13 @@ console.log("translate-direction.test.cjs: ok");
   assert.match(tp, /Never Venezuelan politeness markers/);
   assert.match(tp, /Never Cuban jobsite words/);
 }
+
+// Dre Lacey: ES -> EN in Bay slang, profane, never group slurs, never a real artist.
+{
+  const tp = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "src", "prompts", "translatePrompt.ts"), "utf8");
+  assert.match(tp, /dreLacey:\s*\n\s*"Example/);
+  assert.match(tp, /drelacey: "dreLacey"/);
+  assert.match(tp, /fo shizzle/);
+  assert.match(tp, /no slurs aimed at any group/);
+  assert.doesNotMatch(tp, /E-40/);
+}
