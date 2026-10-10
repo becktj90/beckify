@@ -114,32 +114,130 @@ struct RootView: View {
 
 // MARK: - Launch splash
 
-/// Continues the native UILaunchScreen (LaunchLogo on LaunchBackground) for a
-/// brief fade into the root view. No artificial wait: the logo starts fading
-/// as soon as the first frame is up. With Reduce Motion it is skipped.
+/// Continues the native UILaunchScreen (LaunchLogo on LaunchBackground) with a
+/// short branded beat: a faint Penrose (P3) tiling fades in behind the logo while
+/// one or two damped ripples spread out from the center like a rock dropped in a
+/// pond, then the whole splash cross-fades into home. The root view is built
+/// underneath in parallel, so nothing waits on the splash. Tap to skip.
+/// Reduce Motion: static tiling, no ripples, short hold.
 private struct LaunchSplashContainer<Content: View>: View {
     @ViewBuilder var content: Content
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showSplash = true
 
+    /// Timing (seconds). Total ≈ hold + fade = 1.5 s (0.7 s with Reduce Motion).
+    static var hold: Double { 1.2 }
+    static var fade: Double { 0.3 }
+    static var reducedHold: Double { 0.5 }
+    static var reducedFade: Double { 0.2 }
+
     var body: some View {
         ZStack {
             content
-            if showSplash && !reduceMotion {
-                ZStack {
-                    Color("LaunchBackground").ignoresSafeArea()
-                    Image("LaunchLogo")
-                        .accessibilityHidden(true)
-                }
-                .transition(.opacity)
-                .allowsHitTesting(false)
+            if showSplash {
+                LaunchSplashView(animated: !reduceMotion)
+                    .transition(.opacity)
+                    .contentShape(Rectangle())
+                    .onTapGesture { dismiss(fade: 0.2) }
+                    .accessibilityElement()
+                    .accessibilityLabel("Beckify")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityHint("Skips the intro")
+                    .zIndex(1)
             }
         }
         .task {
             guard showSplash else { return }
-            if reduceMotion { showSplash = false; return }
-            withAnimation(.easeOut(duration: 0.35)) { showSplash = false }
+            let hold = reduceMotion ? Self.reducedHold : Self.hold
+            try? await Task.sleep(for: .seconds(hold))
+            dismiss(fade: reduceMotion ? Self.reducedFade : Self.fade)
         }
+    }
+
+    private func dismiss(fade: Double) {
+        guard showSplash else { return }
+        withAnimation(.easeInOut(duration: fade)) { showSplash = false }
+    }
+}
+
+/// Penrose tiling generated once (off the main thread) in unit coordinates and
+/// cached for every later use; scaled to the screen with a transform.
+private enum PenroseSplashCache {
+    static let unitPath: Path = {
+        var path = Path()
+        for s in PenroseTiling.segments(radius: 1, depth: 6) {
+            path.move(to: CGPoint(x: s.p.x, y: s.p.y))
+            path.addLine(to: CGPoint(x: s.q.x, y: s.q.y))
+        }
+        return path
+    }()
+}
+
+private struct LaunchSplashView: View {
+    let animated: Bool
+    @State private var tiling: Path?
+    @State private var start = Date()
+    @State private var logoIn = false
+
+    private let accent = Color(red: 0.545, green: 0.482, blue: 1.0)
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = geo.size
+            let radius = (size.width * size.width + size.height * size.height).squareRoot() / 2 * 1.05
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let path = tiling?.applying(CGAffineTransform(translationX: center.x, y: center.y).scaledBy(x: radius, y: radius))
+
+            ZStack {
+                Color("LaunchBackground")
+                if let path {
+                    // Static, faint line work (drawn once, not per frame).
+                    path.stroke(Color.white.opacity(0.07), lineWidth: 0.5)
+                        .transition(.opacity)
+                    if animated {
+                        TimelineView(.animation) { timeline in
+                            let t = timeline.date.timeIntervalSince(start)
+                            ripple(path: path, center: center, radius: radius, t: t)
+                        }
+                        .allowsHitTesting(false)
+                    }
+                }
+                Image("LaunchLogo")
+                    .scaleEffect(logoIn || !animated ? 1 : 0.96)
+                    .opacity(logoIn || !animated ? 1 : 0.85)
+                    .position(center)
+            }
+        }
+        .ignoresSafeArea()
+        .task {
+            // Build (or reuse) the cached tiling off the main actor.
+            let path = await Task.detached(priority: .userInitiated) { PenroseSplashCache.unitPath }.value
+            start = Date()
+            withAnimation(.easeOut(duration: animated ? 0.3 : 0.15)) { tiling = path }
+            if animated { withAnimation(.easeOut(duration: 0.45)) { logoIn = true } }
+        }
+    }
+
+    /// Accent-tinted copy of the tiling, lit by a radial gradient whose stops are
+    /// sampled from a damped radial sine (PondRipple), with a slight outward push.
+    private func ripple(path: Path, center: CGPoint, radius: CGFloat, t: Double) -> some View {
+        let maxR = Double(radius)
+        let samples = 48
+        var stops: [Gradient.Stop] = []
+        var peak = 0.0
+        for i in 0...samples {
+            let f = Double(i) / Double(samples)
+            let a = PondRipple.amplitude(r: f * maxR, t: t)
+            peak = max(peak, a)
+            stops.append(.init(color: accent.opacity(0.55 * a), location: f))
+        }
+        return Canvas { ctx, _ in
+            ctx.stroke(path,
+                       with: .radialGradient(Gradient(stops: stops), center: center, startRadius: 0, endRadius: radius),
+                       lineWidth: 0.9)
+        }
+        .scaleEffect(1 + 0.01 * peak, anchor: UnitPoint(x: 0.5, y: 0.5))
+        .drawingGroup()
     }
 }
 
