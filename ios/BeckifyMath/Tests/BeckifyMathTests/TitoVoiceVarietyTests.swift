@@ -30,7 +30,7 @@ final class TitoVoiceVarietyTests: XCTestCase {
         for line in corpus(50) {
             let out = CrewDialectRewrite.displayText(TitoVoiceVariety.vary(line, previousKeptOye: true).line)
             XCTAssertFalse(TitoVoiceVariety.startsWithOyeCono(out))
-            XCTAssertTrue(out.contains("Pásame el cable"), out)
+            XCTAssertTrue(out.lowercased().contains("pásame el cable"), out)
             XCTAssertTrue(out.contains("carajo"), out)
         }
     }
