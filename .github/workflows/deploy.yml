@@ -70,10 +70,8 @@ jobs:
         env:
           TDR_API_BASE_URL: ${{ vars.TDR_API_BASE_URL }}
 
-      - name: Add CNAME and SPA fallback
-        run: |
-          echo "beckify.com" > artifacts/beckify/dist/public/CNAME
-          cp artifacts/beckify/dist/public/index.html artifacts/beckify/dist/public/404.html
+      - name: Add CNAME and verify real 404 page
+        run: bash artifacts/beckify/scripts/finalize-gh-pages.sh
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
