@@ -489,11 +489,26 @@ struct CrewTalkSprite: View {
         return Pose(mouthOpen: false, lift: CGFloat(breath) * 0.8, squash: 1 + CGFloat(breath) * 0.018)
     }
 
+    /// Pre-made pixel sheet for this character (asset catalog). Nil falls back to the two portraits.
+    private var sheet: CrewSpriteLibrary.Sheet? { CrewSpriteLibrary.shared.sheet(for: crew) }
+
+    @ViewBuilder
+    private func moving(at t: TimeInterval) -> some View {
+        if let sheet {
+            // The sheet carries its own bob and mouth shapes; just pick the frame.
+            let anim = sheet.spec.animation(isTalking ? .talk : .idle)
+            sheetSprite(sheet, frame: anim?.frame(at: t) ?? 0)
+        } else {
+            let pose = pose(at: t)
+            sprite(mouthOpen: pose.mouthOpen)
+                .scaleEffect(x: 1, y: pose.squash, anchor: .bottom)
+                .offset(y: -pose.lift)
+        }
+    }
+
     private func animated(at t: TimeInterval) -> some View {
-        let pose = pose(at: t)
-        return sprite(mouthOpen: pose.mouthOpen)
-            .scaleEffect(x: 1, y: pose.squash, anchor: .bottom)
-            .offset(y: -pose.lift)
+        let lift = sheet == nil ? pose(at: t).lift : 0
+        return moving(at: t)
             .keyframeAnimator(initialValue: CGFloat(0), trigger: hopTick) { content, hop in
                 content.offset(y: -hop)
             } keyframes: { _ in
@@ -504,11 +519,20 @@ struct CrewTalkSprite: View {
                     CubicKeyframe(0, duration: 0.08)
                 }
             }
-            .background(alignment: .bottom) { shadow(lift: pose.lift) }
+            .background(alignment: .bottom) { shadow(lift: lift) }
+    }
+
+    @ViewBuilder
+    private func stillSprite(mouthOpen: Bool) -> some View {
+        if let sheet, let anim = sheet.spec.animation(mouthOpen ? .talk : .idle) {
+            sheetSprite(sheet, frame: anim.frames[min(mouthOpen ? 2 : 0, anim.frames.count - 1)])
+        } else {
+            sprite(mouthOpen: mouthOpen)
+        }
     }
 
     private func still(mouthOpen: Bool) -> some View {
-        sprite(mouthOpen: mouthOpen)
+        stillSprite(mouthOpen: mouthOpen)
             .background(alignment: .bottom) { shadow(lift: 0) }
     }
 
@@ -519,6 +543,23 @@ struct CrewTalkSprite: View {
             .frame(width: height * 0.55 * (1 - min(lift / max(height, 1), 0.3)), height: max(height * 0.07, 3))
             .offset(y: 2)
             .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func sheetSprite(_ sheet: CrewSpriteLibrary.Sheet, frame: Int) -> some View {
+        if let image = sheet.frame(frame) {
+            Image(decorative: image, scale: 1)
+                .interpolation(.none)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .frame(height: height)
+                .transaction { transaction in
+                    transaction.animation = nil
+                }
+        } else {
+            sprite(mouthOpen: false)
+        }
     }
 
     private func sprite(mouthOpen: Bool) -> some View {

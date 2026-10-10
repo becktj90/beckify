@@ -25,6 +25,10 @@ struct SpanishTranslatorView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// Height of this destination above the tab bar. Only used to decide when the header goes compact.
     @State private var layoutHeight: CGFloat = 900
+    /// Video clip of the current line (pixel character + voice). Built only when asked.
+    @State private var clipBusy = false
+    @State private var clipNotice: String?
+    @State private var clipShare: CrewClipShare?
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -77,6 +81,13 @@ struct SpanishTranslatorView: View {
             direction: engine.onDeviceDirection
         ) { result in
             engine.handleOnDeviceResult(result)
+        }
+        .sheet(item: $clipShare) { item in
+            ActivityShareSheet(items: [item.url])
+                .presentationDetents([.medium, .large])
+        }
+        .onChange(of: engine.translatedAudioURL) { _, _ in
+            clipNotice = nil
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
@@ -194,6 +205,58 @@ struct SpanishTranslatorView: View {
             spanish: pair.spanish,
             fallback: pair.fallback
         )
+    }
+
+    /// One button: makes a short video of the character saying this line, then copies or shares it.
+    private func clipMenu(audioURL: URL) -> some View {
+        Menu {
+            Button {
+                makeClip(audioURL: audioURL, share: false)
+            } label: {
+                Label("Copy video clip", systemImage: "doc.on.doc")
+            }
+            Button {
+                makeClip(audioURL: audioURL, share: true)
+            } label: {
+                Label("Share video clip", systemImage: "square.and.arrow.up")
+            }
+        } label: {
+            Group {
+                if clipBusy {
+                    ProgressView()
+                } else {
+                    Image(systemName: "film")
+                }
+            }
+            .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+        }
+        .buttonStyle(.bordered)
+        .disabled(clipBusy)
+        .accessibilityLabel("Make clip")
+        .accessibilityHint("Video of \(crew.firstName) saying this line, for Messages")
+        .accessibilityIdentifier("spanishTranslator.makeClip")
+    }
+
+    private func makeClip(audioURL: URL, share: Bool) {
+        let line = dockSpeakLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        let who = crew
+        clipBusy = true
+        clipNotice = "Making clip…"
+        Task { @MainActor in
+            defer { clipBusy = false }
+            do {
+                let url = try await CrewTalkClipBuilder.shared.clip(crew: who, line: line, audioURL: audioURL)
+                if share {
+                    clipNotice = nil
+                    clipShare = CrewClipShare(url: url)
+                } else {
+                    try CrewTalkClipBuilder.copyToPasteboard(url)
+                    clipNotice = "Clip copied. Open Messages and paste."
+                }
+            } catch {
+                clipNotice = (error as? LocalizedError)?.errorDescription ?? "Couldn’t make the clip. Try again."
+            }
+        }
     }
 
     /// Speak string: dialect / other-language / rewrite on screen, never the raw field.
@@ -344,6 +407,7 @@ struct SpanishTranslatorView: View {
                     .buttonStyle(.bordered)
                     .accessibilityLabel("Share audio")
                     .accessibilityIdentifier("spanishTranslator.shareAudio")
+                    clipMenu(audioURL: audioURL)
                 }
             }
             if engine.phase == .preparingVoice, engine.canSpeakWithDeviceVoice {
@@ -361,6 +425,12 @@ struct SpanishTranslatorView: View {
                 Text(notice)
                     .font(.footnote)
                     .foregroundStyle(Theme.warn)
+            }
+            if let clipNotice {
+                Text(clipNotice)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+                    .accessibilityIdentifier("spanishTranslator.clipNotice")
             }
         }
         .padding(Theme.Space.md)
@@ -1956,4 +2026,10 @@ private final class TranslatorAudioExporter: @unchecked Sendable {
             if let result { completion(result) }
         }
     }
+}
+
+/// Finished clip handed to the share sheet.
+struct CrewClipShare: Identifiable {
+    let id = UUID()
+    let url: URL
 }
