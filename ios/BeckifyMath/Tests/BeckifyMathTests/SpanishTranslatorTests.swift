@@ -554,7 +554,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertTrue(CrewTalkMember.lupitaReyes.prefersFemaleDeviceVoice)
         XCTAssertEqual(CrewTalkMember.parse("lupita"), .lupitaReyes)
 
-        XCTAssertEqual(CrewTalkMember.juniePell.voiceID, "tdK8noxHGTBqk6F18tbZ")
+        XCTAssertEqual(CrewTalkMember.juniePell.voiceID, "m2X69O7Xomk9219qo0Gy")
         XCTAssertEqual(CrewTalkMember.speakModel, "eleven_v3")
         XCTAssertEqual(CrewTalkMember.bodieHale.speakLanguage, "en")
         XCTAssertEqual(CrewTalkMember.titoSolano.speakLanguage, "es")
@@ -591,7 +591,7 @@ final class SpanishTranslatorTests: XCTestCase {
         XCTAssertEqual(bodie["model"] as? String, "eleven_v3")
         let junie = try SpanishTranslatorAPI.speakRequestJSON(text: "Leave that breaker be.", crew: .juniePell)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: junie) as? [String: Any])
-        XCTAssertEqual(object["voice"] as? String, "tdK8noxHGTBqk6F18tbZ")
+        XCTAssertEqual(object["voice"] as? String, "m2X69O7Xomk9219qo0Gy")
         XCTAssertEqual(object["model"] as? String, "eleven_v3")
         XCTAssertEqual(object["stability"] as? Double ?? -1, CrewTalkMember.junieSpeakStability, accuracy: 0.001)
         XCTAssertEqual(object["similarity_boost"] as? Double ?? -1, CrewTalkMember.junieSpeakSimilarity, accuracy: 0.001)
@@ -1438,5 +1438,22 @@ final class SpanishTranslatorTests: XCTestCase {
             XCTAssertFalse(SpanishTranslatorAPI.displayText(out).contains("["), out)
         }
         XCTAssertLessThan(sighs * 5, total, "[sighs] stays rare")
+    }
+    func testJunieTagsAboutOneInThreeStripped() {
+        TitoVoiceVariety.isEnabled = true
+        defer { TitoVoiceVariety.isEnabled = false }
+        XCTAssertEqual(CrewTalkMember.juniePell.voiceID, "m2X69O7Xomk9219qo0Gy")
+        let allowed: Set<String> = ["[cackles]", "[chuckles]", "[sighs]", "[clears throat]"]
+        let outs = (0..<300).map { TitoVoiceVariety.junie("Sugar, tote me \($0) more wire. I'm fixin' to finish.") }
+        let tagged = outs.filter { !tagRanges($0).isEmpty }
+        XCTAssertGreaterThan(tagged.count, 70)
+        XCTAssertLessThan(tagged.count, 130)
+        for out in tagged {
+            let found = tagRanges(out)
+            XCTAssertLessThanOrEqual(found.count, 2, out)
+            XCTAssertEqual(found.first?.lowerBound, out.startIndex, out)
+            for r in found { XCTAssertTrue(allowed.contains(String(out[r])), out) }
+            XCTAssertFalse(SpanishTranslatorAPI.displayText(out).contains("["), out)
+        }
     }
 }

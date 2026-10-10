@@ -174,39 +174,43 @@ enum CrewDialectRewrite {
 
     // MARK: - Junie
 
+    /// Ornery old moonshiner from swamp country: thick backwoods speech (y'all, fixin' to,
+    /// might could, reckon, yonder, a mess of, I swanee, Lord have mercy, tote, holler,
+    /// young'un, plumb wore out, madder than a wet hen). Mild cussing only (damn, hell,
+    /// dadgum, son of a gun). Proud and funny: no group slurs, nothing that mocks poverty.
     static func junie(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
         let cleaned = scrub(trimmed)
         let line: String
-        let fallback = "Bless your heart, say that once more in plain words and I'll tend to it."
+        let fallback = "Lord have mercy, young'un, say that once more plain and I'll tend to it directly."
         switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
-            line = "That power needs to come off, bless your heart. Don't get your knickers in a knot."
+            line = "Young'un, cut off the light at the box, the power too, 'fore you go actin' a fool. I swanee, I ain't totin' you to the doctor."
         case .conduit:
-            line = "That conduit belongs over yonder in a working hand. It'll fit better than a sock on a rooster."
+            line = "Sugar, tote that conduit over here directly. I reckon it'll fit finer than frog hair."
         case .ladder:
-            line = "That ladder needs to slide a fur piece. Don't take any wooden nickels while it moves."
+            line = "Scoot that dadgum ladder over yonder a piece and set it firm. Lord have mercy, it's wobblin' like a drunk at the still."
         case .head:
-            line = "Mind the clearance above you. I'm nervous as a long-tailed cat in a room full of rocking chairs."
+            line = "Mind your head up yonder, young'un. Crack that noggin and I'll be madder than a wet hen."
         case .wire:
-            line = "We're shy on wire, and more has to come from over yonder. Bless your heart."
+            line = "[cackles] Sugar, tote me a mess more of that wire from over yonder, and don't dawdle. I'm fixin' to finish this 'fore supper, Lord willin'."
         case .mess:
-            line = "Well I'll be Sam Browned — this mess needs setting right. Bless your heart, let's own it."
+            line = "Lord have mercy, this mess is ugly as homemade sin. Y'all clean it up 'fore I holler."
         case .feeder:
-            line = "That feeder has to land before lunch. Don't get your knickers in a knot — we'll beat the cows home."
+            line = "Hush up and pull that feeder in 'fore dinner, y'all. I'm plumb wore out waitin' 'til the cows come home."
         case .breaker:
-            line = "Leave that breaker be, over yonder. Heavens to Betsy, it stays off."
+            line = "Leave that breaker be, sugar. I swanee, touch it and I'll learn you somethin'."
         case .racks:
-            line = "Those racks need a real clean, bless your heart. We'll set them right over yonder."
+            line = "Them racks is dirtier than a crick bottom. Y'all might could clean 'em directly."
         case .hold:
-            line = "Keep a gentle hold on this for a moment, and don't get your knickers in a knot."
+            line = "Hold this steady for me, sugar. Steady as a jar of shine, now."
         case .compliment:
-            line = "Bless your heart, you've got a real gift for this. Slick as a ribbon on an ice cube."
+            line = "Well I'll be, young'un, that's finer than frog hair. Bless your heart, you done good."
         case .greeting:
-            line = "Hey there, bless your heart. Good to see you over yonder."
+            line = "Well hey there, sugar. Come on in, I'm just fixin' to check the still."
         case .free:
-            line = "Listen here — \(voicedWords(cleaned)), over yonder. Bless your heart."
+            line = "Listen here, y'all, \(voicedWords(cleaned)), over yonder directly. Lord willin'."
         case nil:
             line = fallback
         }

@@ -181,12 +181,36 @@ public enum TitoVoiceVariety {
         return text
     }
 
+    /// Junie's spoken-only tags: about one line in three, at the start, at most one more
+    /// between sentences.
+    public static let junieOneIn = 3
+    public static let junieTags: [String] = ["[cackles]", "[cackles]", "[chuckles]", "[sighs]", "[clears throat]"]
+
+    public static func junie(_ line: String) -> String {
+        var text = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isEnabled, !text.isEmpty,
+              text.range(of: #"\[[^\]]{1,24}\]"#, options: .regularExpression) == nil else { return line }
+        let h = stableHash(text + "#junie")
+        guard h % UInt64(junieOneIn) == 0 else { return text }
+        var inserts: [(Int, String)] = [(0, junieTags[Int((h / 7) % UInt64(junieTags.count))])]
+        if (h / 5) % 4 == 0, let last = sentenceBreaks(text).last {
+            inserts.append((text.distance(from: text.startIndex, to: last), junieTags[Int((h / 13) % UInt64(junieTags.count))]))
+        }
+        var chars = Array(text)
+        for (offset, tag) in inserts.sorted(by: { $0.0 > $1.0 }) {
+            chars.insert(contentsOf: Array(tag + " "), at: offset)
+        }
+        text = String(chars)
+        return text
+    }
+
     /// Crew Talk hook for every helper: Tito variety, Humberto's rare chuckle, everyone else unchanged.
     public static func voiced(crew: CrewTalkMember, _ line: String) -> String {
         switch crew {
         case .titoSolano: return apply(line)
         case .humbertoArismendi, .humbertoArismendiEnglish: return humberto(line)
         case .dreLacey: return dre(line)
+        case .juniePell: return junie(line)
         default: return line
         }
     }

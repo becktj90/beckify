@@ -294,4 +294,23 @@ final class CrewDialectRewriteSafetyTests: XCTestCase {
             }
         }
     }
+    func testJunieBackwoodsGoldenVocabularyAndLimits() {
+        XCTAssertEqual(CrewDialectRewrite.junie("Bring more wire."), "[cackles] Sugar, tote me a mess more of that wire from over yonder, and don't dawdle. I'm fixin' to finish this 'fore supper, Lord willin'.")
+        XCTAssertEqual(CrewDialectRewrite.displayText(CrewDialectRewrite.junie("Bring more wire.")).hasPrefix("Sugar, tote"), true)
+        let woods = ["y'all", "fixin' to", "might could", "reckon", "yonder", "a mess", "i swanee", "lord have mercy",
+                     "bless your heart", "ain't", "directly", "learn you", "tote", "holler", "young'un", "sugar",
+                     "hush up", "actin' a fool", "plumb wore out", "homemade sin", "wet hen", "frog hair",
+                     "cows come home", "crick", "shine", "still", "dadgum", "lord willin'"]
+        let banned = Self.groupSlurs + ["redneck", "hillbilly", "white trash", "trailer trash", "inbred", "hick",
+                                        "fuck", "shit", "motherfucker", "bitch"]
+        for ask in ["Kill the power.", "Hand me that conduit.", "Move the ladder.", "Watch your head.", "Bring more wire.",
+                    "Someone left this mess.", "Leave the breaker alone.", "Clean those racks.", "Hold this.", "Nice work.",
+                    "Stop talking and get that feeder in before lunch", "you faggot kill the power"] {
+            let line = CrewDialectRewrite.junie(ask).lowercased()
+            XCTAssertTrue(woods.contains { line.contains($0) }, "\(ask) -> \(line)")
+            for word in banned {
+                XCTAssertFalse(hasMarker(line, [word]), "\(word) in Junie line: \(line)")
+            }
+        }
+    }
 }

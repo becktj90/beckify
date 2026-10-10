@@ -21,7 +21,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     /// Playback model sent to `/api/speak`. The key stays on the server.
     public static let speakModel = "eleven_v3"
     /// ElevenLabs `/api/speak` settings for Junie only. Thick, slow, barely-straight delivery.
-    /// The key stays on the server. Voice id stays `tdK8noxHGTBqk6F18tbZ`.
+    /// The key stays on the server. Voice id stays `m2X69O7Xomk9219qo0Gy`.
     public static let junieSpeakStability = 0.15
     public static let junieSpeakSimilarity = 0.72
     public static let junieSpeakStyle = 1.0
@@ -61,7 +61,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return "goyf4sY4AqSvMIeO1hb5"
         case .lupitaReyes: return "iGXRQ0smdhSFlb6iV1Pr"
         case .humbertoArismendi, .humbertoArismendiEnglish: return "IvXILleF0UhlyqiuUo87"
-        case .juniePell: return "tdK8noxHGTBqk6F18tbZ"
+        case .juniePell: return "m2X69O7Xomk9219qo0Gy"
         case .pearl: return "xDnrPZyqSbomyfOcnNpu"
         case .sloaneMerritt: return "qMmZtYs7EKOOIm0u211n"
         case .dreLacey: return "MAPMuGNkK84YjEK5kMBn"
@@ -103,7 +103,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .lupitaReyes: return "Mexican Spanish, Jalisco and Mexico City. Warm diminutives, light asides."
         case .humbertoArismendi: return "Caracas Venezuelan Spanish. Seasoned, courteous, and polished."
         case .humbertoArismendiEnglish: return "Courteous English with a thick Venezuelan accent. Seasoned and polished."
-        case .juniePell: return "Rural Alabama English. Slow, low, and kind."
+        case .juniePell: return "Ornery backwoods moonshiner from swamp country. Thick, proud, and funny."
         case .pearl: return "Warm English. Softens a blunt ask and still makes it."
         case .sloaneMerritt: return "A polished HR lead who turns a blunt ask into a meeting."
         case .dreLacey: return "East Oakland Bay slang. Loud, profane, and hella funny."

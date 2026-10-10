@@ -165,3 +165,10 @@ console.log("translate-direction.test.cjs: ok");
   assert.match(tp, /no slurs aimed at any group/);
   assert.doesNotMatch(tp, /E-40/);
 }
+
+// Junie Pell: backwoods moonshiner restyle.
+{
+  const tp = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "src", "prompts", "translatePrompt.ts"), "utf8");
+  assert.match(tp, /juniePell:\s*\n\s*"Example: 'Bring more wire\.' -> \\"\[cackles\] Sugar, tote me a mess more/);
+  assert.match(tp, /nothing that mocks poverty/);
+}

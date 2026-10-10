@@ -152,7 +152,7 @@ export const CASSIAN_ELEVEN_VOICE_SETTINGS = {
 export const ELEVENLABS_TTS_MODEL = "eleven_v3";
 
 /** Junie Pell only. Thick, slow delivery on the existing voice id. */
-export const JUNIE_PELL_VOICE_ID = "tdK8noxHGTBqk6F18tbZ";
+export const JUNIE_PELL_VOICE_ID = "m2X69O7Xomk9219qo0Gy";
 
 export const JUNIE_ELEVEN_VOICE_SETTINGS = {
   stability: 0.15,
@@ -179,7 +179,7 @@ export const BODIE_ELEVEN_VOICE_SETTINGS = {
 export const CREW_TALK_ELEVEN_VOICES = {
   bodieHale: "XVO6RhOYU9ZEKHFXrx6b",
   titoSolano: "goyf4sY4AqSvMIeO1hb5",
-  juniePell: "tdK8noxHGTBqk6F18tbZ",
+  juniePell: "m2X69O7Xomk9219qo0Gy",
   pearl: "xDnrPZyqSbomyfOcnNpu",
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
   lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr",
