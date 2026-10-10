@@ -9,7 +9,7 @@ import {
   translateSystemPrompt,
   translateTargetLanguage,
   translateUserPrompt,
-  crewPersonaAddendum,
+  crewPersonaSystemPrompt,
   normalizeEnglishCrew,
 } from "../prompts/translatePrompt.js";
 import { observeRouteTiming } from "../lib/logger.js";
@@ -108,11 +108,11 @@ router.post("/translate", async (req, res) => {
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
       body: JSON.stringify({
         model,
-        temperature: 0.75,
+        temperature: personaCrew ? 0.6 : 0.75,
         response_format: { type: "json_object" },
         max_tokens: Math.min(TRANSLATE_MAX_OUTPUT_TOKENS, textMaxOutputTokens()),
         messages: [
-          { role: "system", content: translateSystemPrompt(voiceMode, direction) + (personaCrew ? crewPersonaAddendum(personaCrew) : "") },
+          { role: "system", content: personaCrew ? crewPersonaSystemPrompt(personaCrew) : translateSystemPrompt(voiceMode, direction) },
           { role: "user", content: translateUserPrompt(sourceText, sourceLanguage, voiceMode, direction) },
         ],
       }),
