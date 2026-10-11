@@ -349,8 +349,8 @@ assert.match(config, /JACKLYN_BONUS = 2800/);
 assert.match(config, /SPLASH_PENALTY = 1200/);
 assert.match(sequence, /PACE\.MECO/);
 assert.match(sequence, /SEP ZONE then SEPARATE/);
-assert.match(arcadeHtml, /beat=haven/);
-assert.match(arcadeHtml, /beat=sep/);
+// ?beat= QA flags are documented in ENGINE.md only (dropped from player-facing help)
+assert.doesNotMatch(arcadeHtml, /\?beat=/);
 assert.match(engineDoc, /beat=haven/);
 assert.match(engineDoc, /legacy alias/);
 assert.doesNotMatch(arcadeHtml, /Blue Origin|New Glenn|Jacklyn|LC-36|BE-4/);
