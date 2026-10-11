@@ -71,6 +71,10 @@ struct NoiseMeterView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                Text(spectrum.windowKind.summary)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                 SpectrumPlot(bands: shownBands, footnote: spectrumFootnote)
                     .padding(.top, 8)
                 Button(frozenBands == nil ? "Freeze" : "Live") { toggleFreeze() }
