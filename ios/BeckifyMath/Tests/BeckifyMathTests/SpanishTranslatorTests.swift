@@ -540,7 +540,7 @@ final class SpanishTranslatorTests: XCTestCase {
 
 
     func testCrewTalkMembersAndSpeakBody() throws {
-        XCTAssertEqual(CrewTalkMember.allCases.count, 6)
+        XCTAssertEqual(CrewTalkMember.allCases.count, 8)
         XCTAssertEqual(CrewTalkMember.parse(nil), .titoSolano)
         XCTAssertEqual(CrewTalkMember.parse("bodie"), .bodieHale)
         XCTAssertEqual(CrewTalkMember.parse("Junie Pell"), .juniePell)
@@ -1042,7 +1042,7 @@ final class SpanishTranslatorTests: XCTestCase {
 
     private func assertTitoHitsProfanityCeiling(_ line: String, file: StaticString = #filePath, lineNumber: UInt = #line) {
         let folded = line.folding(options: .diacriticInsensitive, locale: Locale(identifier: "es")).lowercased()
-        let markers = ["cono", "carajo", "mierda", "pinga", "joder", "cabron", "puta"]
+        let markers = ["cono", "carajo", "mierda", "pinga", "joder", "cabron", "puta", "cojones", "me cago", "singao", "guanajo", "estupido", "mamalanga"]
         let hits = markers.filter { folded.contains($0) }
         XCTAssertGreaterThanOrEqual(hits.count, 2, "Tito line should hit the profanity ceiling, got \(line)", file: file, line: lineNumber)
         let banned = ["nigger", "nigga", "spic", "chink", "kike", "faggot", "wetback", "retard"]
@@ -1308,7 +1308,7 @@ final class SpanishTranslatorTests: XCTestCase {
     func testSpanishToEnglishSpeaksTranslationNotPersonaLine() {
         let english = "Thanks, Trevor. You need anything from the store?"
         let spanish = "Gracias Trevor. ¿Necesitabas algo de la tienda?"
-        for crew in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt] {
+        for crew in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish] {
             XCTAssertEqual(
                 SpanishTranslatorAPI.lineToSpeak(crew: crew, direction: .spanishToEnglish, english: english, spanish: spanish, fallback: spanish),
                 english, crew.rawValue
@@ -1329,11 +1329,62 @@ final class SpanishTranslatorTests: XCTestCase {
     }
 
     func testSpanishToEnglishHasNoStockHelperLine() {
-        for crew in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt] {
+        for crew in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish] {
             XCTAssertEqual(
                 SpanishTranslatorAPI.dialectHelperLine(crew: crew, direction: .spanishToEnglish, english: "Thanks, Trevor.", spanish: "Gracias Trevor.", fallback: "Gracias Trevor."),
                 "", crew.rawValue
             )
+        }
+    }
+    func testHumbertoSpeaksBothDirectionsAsOnePerson() {
+        let es = CrewTalkMember.humbertoArismendi
+        let en = CrewTalkMember.humbertoArismendiEnglish
+        for h in [es, en] {
+            XCTAssertEqual(h.displayName, "Humberto Arismendi")
+            XCTAssertEqual(h.firstName, "Humberto")
+            XCTAssertEqual(h.voiceID, "IvXILleF0UhlyqiuUo87")
+            XCTAssertEqual(h.portraitAssetName, "crewHumbertoArismendi")
+            XCTAssertEqual(h.talkAssetName, "crewHumbertoArismendiTalk")
+            XCTAssertFalse(h.prefersFemaleDeviceVoice)
+            XCTAssertTrue(h.isReleased)
+            XCTAssertTrue(h.blurb.contains("Venezuelan"))
+        }
+        XCTAssertEqual(es.speakLanguage, "es")
+        XCTAssertEqual(en.speakLanguage, "en")
+        XCTAssertTrue(CrewTalkMember.roster(for: .englishToSpanish).contains(es))
+        XCTAssertFalse(CrewTalkMember.roster(for: .englishToSpanish).contains(en))
+        XCTAssertTrue(CrewTalkMember.roster(for: .spanishToEnglish).contains(en))
+        XCTAssertFalse(CrewTalkMember.roster(for: .spanishToEnglish).contains(es))
+        XCTAssertEqual(CrewTalkMember.parse("humberto"), es)
+        XCTAssertEqual(CrewTalkMember.parse("Humberto Arismendi"), es)
+        XCTAssertEqual(CrewTalkMember.parse(en.rawValue), en)
+    }
+
+    func testHumbertoRequestBodiesForEachDirection() {
+        XCTAssertEqual(SpanishTranslatorAPI.translateVoiceMode(requested: .jobsite, crew: .humbertoArismendi), .clean)
+        let enToEs = SpanishTranslatorAPI.requestBody(text: "Hand me the tape", crew: .humbertoArismendi)
+        XCTAssertEqual(enToEs["crew"] as? String, "humbertoArismendi")
+        let esToEn = SpanishTranslatorAPI.requestBody(text: "Hola", sourceLanguage: "es", targetLanguage: "en", crew: .humbertoArismendiEnglish)
+        XCTAssertEqual(esToEn["crew"] as? String, "humbertoArismendiEnglish")
+        XCTAssertNil(SpanishTranslatorAPI.requestBody(text: "Hi", crew: .titoSolano)["crew"])
+    }
+
+    func testHumbertoEnglishPersonaLineIsTheEnglishResult() {
+        var draft = SpanishTranslationDraft(translation: "Bring more wire.", dialect: "english_jobsite")
+        draft.personaLine = "My friend, please, we need more wire. Bring me a little more. Thank you."
+        XCTAssertEqual(SpanishTranslatorAPI.englishResultLine(draft: draft, crew: .humbertoArismendiEnglish), draft.personaLine)
+    }
+
+    func testHumbertoNonverbalIsRareAndStripped() {
+        TitoVoiceVariety.isEnabled = true
+        defer { TitoVoiceVariety.isEnabled = false }
+        let lines = (0..<400).map { "Por favor, páseme la cinta número \($0)." }
+        let tagged = lines.map { TitoVoiceVariety.humberto($0) }.filter { $0.contains("[") }
+        XCTAssertGreaterThan(tagged.count, 10)
+        XCTAssertLessThan(tagged.count, 80)
+        for line in tagged {
+            XCTAssertTrue(line.hasSuffix("]"), "tag goes after the ask: \(line)")
+            XCTAssertFalse(SpanishTranslatorAPI.displayText(line).contains("["))
         }
     }
 }

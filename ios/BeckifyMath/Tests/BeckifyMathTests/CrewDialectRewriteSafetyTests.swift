@@ -177,4 +177,97 @@ final class CrewDialectRewriteSafetyTests: XCTestCase {
         }
     }
 
+    func testHumbertoIsPolishedCaracasSpanishAndCourteousEnglish() {
+        let crude = ["coño", "carajo", "mierda", "pinga", "verga", "cabrón", "arrech", "fuck", "shit", "asere", "güey"]
+        let rejected = CrewDialectRewrite.humberto("Don't kill the power")
+        XCTAssertFalse(rejected.lowercased().contains("corte"), rejected)
+        XCTAssertEqual(CrewDialectRewrite.humberto("Can you explain the load calc for panel B tomorrow"), "")
+        let samples = [
+            ("Kill the power.", "corriente", "power"),
+            ("Hand me that conduit.", "conduit", "conduit"),
+            ("Move the ladder.", "escalera", "ladder"),
+            ("Watch your head.", "cabeza", "head"),
+            ("We need more wire.", "cable", "wire"),
+            ("Someone left this mess.", "desorden", "mess"),
+        ]
+        for (raw, es, en) in samples {
+            let spanish = CrewDialectRewrite.humberto(raw).lowercased()
+            let english = CrewDialectRewrite.humbertoEnglish(raw).lowercased()
+            XCTAssertTrue(spanish.contains(es), "\(raw) -> \(spanish)")
+            XCTAssertTrue(english.contains(en), "\(raw) -> \(english)")
+            XCTAssertTrue((Self.humbertoMarkers + ["cuidado"]).contains { spanish.contains($0) }, spanish)
+            XCTAssertTrue(["please", "my friend", "with all respect", "careful"].contains { english.contains($0) }, english)
+            for word in crude {
+                XCTAssertFalse(spanish.contains(word), "\(word) in \(spanish)")
+                XCTAssertFalse(english.contains(word), "\(word) in \(english)")
+            }
+        }
+    }
+    static let titoMarkers = ["asere", "acere", "qué bolá", "qué vola", "chico", "mi hermano", "pinga", "cojones",
+                              "coño", "me cago en", "singao", "comemierda", "candela", "jeva", "fula", "guagua",
+                              "jamar", "pinchando", "tremendo", "oyiste", "dale"]
+    static let humbertoMarkers = ["mi estimado", "caballero", "con todo respeto", "hágame el favor", "por favor",
+                                  "chamo", "pana", "chévere", "vale", "me explico", "si dios quiere", "a la orden",
+                                  "epa", "bueno pues"]
+
+    private func hasMarker(_ line: String, _ markers: [String]) -> Bool {
+        let l = line.lowercased()
+        return markers.contains { m in
+            l.range(of: "\\b" + NSRegularExpression.escapedPattern(for: m) + "\\b", options: .regularExpression) != nil
+        }
+    }
+
+    func testGoldenBringMoreWire() {
+        XCTAssertEqual(CrewDialectRewrite.tito("Bring more wire."), "¡Asere, tráeme más cable, coño! ¿Qué tú haces parado ahí, comemierda? ¡Dale, que esto no se hace solo, me cago en tu madre!")
+        XCTAssertEqual(CrewDialectRewrite.tito("We need more wire."), "¡Asere, tráeme más cable, coño! ¿Qué tú haces parado ahí, comemierda? ¡Dale, que esto no se hace solo, me cago en tu madre!")
+        XCTAssertEqual(CrewDialectRewrite.humberto("We need more wire."), "Mi estimado, hágame el favor de traerme un poquito más de cable. Gracias, caballero.")
+    }
+
+    func testTitoAndHumbertoNeverBorrowEachOthersWords() {
+        let asks = ["Kill the power.", "Hand me that conduit.", "Move the ladder.", "Watch your head.", "We need more wire.",
+                    "Who left this mess?", "Leave the breaker alone.", "Clean those racks.", "Hold this.", "Nice work.",
+                    "Stop talking and get that feeder in before lunch", "hola"]
+        var titoCount = 0, humbertoCount = 0
+        for ask in asks {
+            let tito = CrewDialectRewrite.tito(ask)
+            if !tito.isEmpty {
+                titoCount += 1
+                XCTAssertTrue(hasMarker(tito, Self.titoMarkers), "Tito lacks Cuban marker: \(tito)")
+                XCTAssertFalse(hasMarker(tito, Self.humbertoMarkers), "Tito used Humberto's words: \(tito)")
+            }
+            let humberto = CrewDialectRewrite.humberto(ask)
+            if !humberto.isEmpty {
+                humbertoCount += 1
+                XCTAssertTrue(hasMarker(humberto, Self.humbertoMarkers), "Humberto lacks Caracas marker: \(humberto)")
+                XCTAssertFalse(hasMarker(humberto, Self.titoMarkers), "Humberto used Tito's words: \(humberto)")
+            }
+        }
+        XCTAssertGreaterThan(titoCount, 5)
+        XCTAssertGreaterThan(humbertoCount, 5)
+        for opener in TitoVoiceVariety.openers {
+            XCTAssertFalse(hasMarker(opener, Self.humbertoMarkers), "Tito opener uses Humberto's words: \(opener)")
+        }
+    }
+    /// Tito insults the person and his work, never a group. Spanish and English slur terms.
+    static let groupSlurs = ["maricón", "maricon", "marica", "pato", "negro", "negra", "chino", "china", "sudaca",
+                             "mongólico", "retrasado", "judío", "faggot", "fag", "nigger", "nigga", "chink", "spic",
+                             "retard", "kike", "wetback", "dyke", "tranny"]
+
+    func testTitoNeverUsesGroupSlurs() {
+        let asks = ["Kill the power.", "Hand me that conduit.", "Move the ladder.", "Watch your head.", "Bring more wire.",
+                    "We need more wire.", "Who left this mess?", "Leave the breaker alone.", "Clean those racks.",
+                    "Hold this.", "Nice work.", "Stop talking and get that feeder in before lunch", "hola",
+                    "you faggot kill the power", "move the ladder you spic", "corta la corriente"]
+        var lines = asks.map { CrewDialectRewrite.tito($0) }
+        lines += TitoVoiceVariety.openers
+        lines += asks.map { TitoVoiceVariety.vary("¡Oye, coño! " + CrewDialectRewrite.tito($0), previousKeptOye: true).line }
+        for line in lines where !line.isEmpty {
+            for slur in Self.groupSlurs {
+                XCTAssertFalse(hasMarker(line, [slur]), "group slur \(slur) in Tito line: \(line)")
+            }
+        }
+        // Still heavy: personal insults land on the listener.
+        let heavy = ["comemierda", "cabrón", "hijo de puta", "singao", "guanajo", "estúpido", "mamalanga", "me cago en"]
+        XCTAssertTrue(heavy.contains { CrewDialectRewrite.tito("Bring more wire.").lowercased().contains($0) })
+    }
 }

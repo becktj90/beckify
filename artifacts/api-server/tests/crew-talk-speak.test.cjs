@@ -67,3 +67,6 @@ assert.match(speakPrompt, /never read the brackets aloud/);
   const re = eval(m[1]);
   assert.equal("[coughs] ¡Mira, asere! Corta eso.".replace(re, "").replace(/\s+/g, " ").trim(), "¡Mira, asere! Corta eso.");
 }
+
+// Humberto Arismendi (Venezuelan, Caracas; speaks both directions) voice is allowlisted.
+assert.match(speakPrompt, /humbertoArismendi: "IvXILleF0UhlyqiuUo87"/);

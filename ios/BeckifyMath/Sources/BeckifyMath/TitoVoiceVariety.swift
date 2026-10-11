@@ -5,8 +5,9 @@ import Foundation
 /// - "Oye/Óyeme, coño" as an opener survives only about one line in five, and never on
 ///   two back-to-back lines. Otherwise it is swapped for a rotating Cuban / South Florida
 ///   jobsite opener. Profanity stays at his ceiling.
-/// - About one line in five gets an ElevenLabs v3 audio tag up front ([coughs],
-///   [clears throat], [chuckles], [sighs]). `CrewDialectRewrite.displayText` strips the tag
+/// - About one line in three gets a smoker's cough as ElevenLabs v3 audio tags ([coughs],
+///   [clears throat], now and then [coughs heavily] or [wheezes]) at a natural pause:
+///   line start or between sentences, at most two per line. `CrewDialectRewrite.displayText` strips the tag
 ///   for the screen, copy, share and Apple speech; `/api/speak` gets it so the voice performs it.
 ///
 /// Choices are a stable hash of the line, so SwiftUI re-reading the same line gets the
@@ -20,27 +21,31 @@ public enum TitoVoiceVariety {
         "¡Ey, monina!",
         "Acere, escúchame,",
         "¡Mira, cabrón!",
-        "¡Coñooo, caballero!",
+        "¡Coñooo, asere!",
         "Oíste, consorte,",
         "¡Pinga, compay!",
         "Dale, papo,",
         "Chico, mira,",
         "¡Mi socio!",
-        "Caballero, atiéndeme,",
+        "¡Oyiste, acere!",
+        "Chico, esto está en candela,",
+        "Asere, atiéndeme,",
         "¡Me cago en diez!",
         "Asere, no te me hagas el bobo,",
-        "¡Qué clase de lío, caballero!",
+        "¡Qué clase de lío, mi hermano!",
         "Óyelo bien, mi ambia,",
     ]
 
     /// Tags eleven_v3 performs. Cough is weighted: he smoked for fifty years.
     public static let nonverbalTags: [String] = [
-        "[coughs]", "[coughs]", "[clears throat]", "[chuckles]", "[sighs]",
+        "[coughs]", "[coughs]", "[coughs]", "[clears throat]", "[clears throat]", "[coughs heavily]", "[wheezes]",
     ]
+    /// Most lines that get a cough get one; about one in four of those gets a second.
+    public static let maxNonverbalPerLine = 2
 
     /// Roughly 1 in N lines keeps the classic opener / gets a nonverbal tag.
     public static let oyeKeepOneIn = 5
-    public static let nonverbalOneIn = 5
+    public static let nonverbalOneIn = 3
 
     private static let oyePattern = #"^\s*¡?\s*(oye|óyeme|oyeme)\s*,?\s*coño\s*[!,.]*\s*"#
 
@@ -93,9 +98,41 @@ public enum TitoVoiceVariety {
         let hasTag = text.range(of: #"\[[^\]]{1,24}\]"#, options: .regularExpression) != nil
         let t = stableHash(text + "#nv")
         if !hasTag && t % UInt64(nonverbalOneIn) == 0 {
-            text = nonverbalTags[Int((t / 11) % UInt64(nonverbalTags.count))] + " " + text
+            let first = nonverbalTags[Int((t / 11) % UInt64(nonverbalTags.count))]
+            let pauses = sentenceBreaks(text)
+            // First tag: line start, or the first sentence break when there is one and the hash says so.
+            var inserts: [(String.Index, String)] = []
+            if !pauses.isEmpty && (t / 3) % 2 == 0 {
+                inserts.append((pauses[0], first))
+            } else {
+                inserts.append((text.startIndex, first))
+            }
+            if maxNonverbalPerLine > 1 && (t / 5) % 4 == 0, let last = pauses.last, last != inserts[0].0 {
+                inserts.append((last, nonverbalTags[Int((t / 17) % UInt64(nonverbalTags.count))]))
+            }
+            var chars = Array(text)
+            let offsets = inserts.map { (text.distance(from: text.startIndex, to: $0.0), $0.1) }
+            for (offset, tag) in offsets.sorted(by: { $0.0 > $1.0 }) {
+                chars.insert(contentsOf: Array(tag + " "), at: offset)
+            }
+            text = String(chars)
         }
         return (text, kept)
+    }
+
+    /// Indices just after ". ", "! " or "? " — natural pauses between sentences.
+    static func sentenceBreaks(_ text: String) -> [String.Index] {
+        var out: [String.Index] = []
+        var i = text.startIndex
+        while i < text.endIndex {
+            let next = text.index(after: i)
+            if ".!?".contains(text[i]), next < text.endIndex, text[next] == " " {
+                let after = text.index(after: next)
+                if after < text.endIndex { out.append(after) }
+            }
+            i = next
+        }
+        return out
     }
 
     /// FNV-1a; Swift's Hasher is seeded per launch.
@@ -103,5 +140,27 @@ public enum TitoVoiceVariety {
         var h: UInt64 = 0xcbf29ce484222325
         for b in s.utf8 { h ^= UInt64(b); h = h &* 0x100000001b3 }
         return h
+    }
+
+    /// Humberto's rare touch: about one line in ten ends with a quiet chuckle or throat clear, after the ask.
+    public static let humbertoNonverbalOneIn = 10
+    public static let humbertoTags: [String] = ["[chuckles]", "[clears throat]"]
+
+    public static func humberto(_ line: String) -> String {
+        let text = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isEnabled, !text.isEmpty,
+              text.range(of: #"\[[^\]]{1,24}\]"#, options: .regularExpression) == nil else { return line }
+        let h = stableHash(text + "#humberto")
+        guard h % UInt64(humbertoNonverbalOneIn) == 0 else { return text }
+        return text + " " + humbertoTags[Int((h / 13) % UInt64(humbertoTags.count))]
+    }
+
+    /// Crew Talk hook for every helper: Tito variety, Humberto's rare chuckle, everyone else unchanged.
+    public static func voiced(crew: CrewTalkMember, _ line: String) -> String {
+        switch crew {
+        case .titoSolano: return apply(line)
+        case .humbertoArismendi, .humbertoArismendiEnglish: return humberto(line)
+        default: return line
+        }
     }
 }

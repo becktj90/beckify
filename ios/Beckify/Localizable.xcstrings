@@ -1442,12 +1442,12 @@
         }
       }
     },
-    "Tito, Lupita, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.": {
+    "Tito, Lupita, Humberto, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tito, Lupita, Bodie, Junie, Pearl o Sloane. La persona, la frase y Hablar."
+            "value": "Tito, Lupita, Humberto, Bodie, Junie, Pearl o Sloane. La persona, la frase y Hablar."
           }
         }
       }

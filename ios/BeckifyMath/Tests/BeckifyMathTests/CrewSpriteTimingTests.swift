@@ -12,7 +12,7 @@ final class CrewSpriteTimingTests: XCTestCase {
     func testEveryCrewMemberShipsAConsistentSheet() throws {
         // Helpers added later fall back to their two portraits until a sheet is exported,
         // so only the shipped roster is required here.
-        let shipped: Set<String> = ["bodieHale", "titoSolano", "lupitaReyes", "juniePell", "pearl", "sloaneMerritt", "dreLacey"]
+        let shipped: Set<String> = ["bodieHale", "titoSolano", "lupitaReyes", "juniePell", "pearl", "sloaneMerritt", "dreLacey", "humbertoArismendi", "humbertoArismendiEnglish"]
         for crew in CrewTalkMember.allCases where shipped.contains(crew.rawValue) {
             let spec = try shippedSpec(crew)
             XCTAssertTrue(spec.isConsistent, "\(crew) sheet")

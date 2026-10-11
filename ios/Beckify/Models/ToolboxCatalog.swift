@@ -775,9 +775,9 @@ enum ToolboxCatalog {
             id: .spanishTranslator,
             kind: .sensor,
             title: "Crew Talk",
-            subtitle: "Tito, Lupita, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.",
+            subtitle: "Tito, Lupita, Humberto, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.",
             symbol: "character.bubble",
-            synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "pearl", "sloane merritt", "sloane", "bodie", "tito", "lupita reyes", "lupita", "junie"]
+            synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "pearl", "sloane merritt", "sloane", "bodie", "tito", "lupita reyes", "lupita", "junie", "humberto arismendi", "humberto", "venezuelan", "venezolano"]
         ),
         ToolDefinition(
             id: .magneticCircuit,

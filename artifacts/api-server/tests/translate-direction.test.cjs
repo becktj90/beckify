@@ -131,3 +131,27 @@ assert.equal(translateFallbackDialect("ja-to-en", "jobsite"), "english_jobsite")
 assert.equal(translateFallbackDialect("en-to-es", "jobsite"), "cuban_florida_jobsite");
 
 console.log("translate-direction.test.cjs: ok");
+
+// Humberto: English -> Spanish in Caracas Venezuelan Spanish when crew=humbertoArismendi.
+{
+  const fs2 = require("node:fs"); const path2 = require("node:path");
+  const tp = fs2.readFileSync(path2.join(__dirname, "..", "src", "prompts", "translatePrompt.ts"), "utf8");
+  const tr = fs2.readFileSync(path2.join(__dirname, "..", "src", "routes", "translate.ts"), "utf8");
+  assert.match(tp, /TRANSLATE_VENEZUELAN_SYSTEM_PROMPT/);
+  assert.match(tp, /con todo respeto/);
+  assert.match(tp, /humbertoArismendi:\s*\n\s*"Example/);
+  assert.match(tp, /humbertoarismendienglish: "humbertoArismendi"/);
+  assert.match(tp, /NOT Cuban/);
+  assert.match(tr, /direction === "en-to-es" \? normalizeSpanishCrew\(body\.crew\)/);
+  assert.match(tr, /spanishCrew === "humbertoArismendi" \? TRANSLATE_VENEZUELAN_SYSTEM_PROMPT/);
+}
+
+// Tito and Humberto keep their own vocabularies.
+{
+  const tp = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "src", "prompts", "translatePrompt.ts"), "utf8");
+  assert.match(tp, /Asere, tráeme más cable, coño! ¿Qué tú haces parado ahí, comemierda\?/);
+  assert.match(tp, /no maricón, pato, negro or chino/);
+  assert.match(tp, /Mi estimado, hágame el favor de traerme un poquito más de cable\. Gracias, caballero\./);
+  assert.match(tp, /Never Venezuelan politeness markers/);
+  assert.match(tp, /Never Cuban jobsite words/);
+}

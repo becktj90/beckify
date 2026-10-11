@@ -5,6 +5,11 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     case bodieHale
     case titoSolano
     case lupitaReyes
+    /// Humberto Arismendi, English -> Spanish: polished Caracas Venezuelan Spanish.
+    case humbertoArismendi
+    /// The same Humberto for Spanish -> English: full meaning in courteous English with a
+    /// thick Venezuelan accent. Separate case so each roster keeps one speak language.
+    case humbertoArismendiEnglish
     case juniePell
     case pearl
     /// ElevenLabs seed Cos locked for this voice: 50505. Speak client does not POST seed yet (route has no seed field).
@@ -25,6 +30,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "Bodie Hale"
         case .titoSolano: return "Tito Solano"
         case .lupitaReyes: return "Lupita Reyes"
+        case .humbertoArismendi, .humbertoArismendiEnglish: return "Humberto Arismendi"
         case .juniePell: return "Junie Pell"
         case .pearl: return "Pearl"
         case .sloaneMerritt: return "Sloane Merritt"
@@ -37,6 +43,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "Bodie"
         case .titoSolano: return "Tito"
         case .lupitaReyes: return "Lupita"
+        case .humbertoArismendi, .humbertoArismendiEnglish: return "Humberto"
         case .juniePell: return "Junie"
         case .pearl: return "Pearl"
         case .sloaneMerritt: return "Sloane"
@@ -49,6 +56,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "XVO6RhOYU9ZEKHFXrx6b"
         case .titoSolano: return "goyf4sY4AqSvMIeO1hb5"
         case .lupitaReyes: return "iGXRQ0smdhSFlb6iV1Pr"
+        case .humbertoArismendi, .humbertoArismendiEnglish: return "IvXILleF0UhlyqiuUo87"
         case .juniePell: return "tdK8noxHGTBqk6F18tbZ"
         case .pearl: return "xDnrPZyqSbomyfOcnNpu"
         case .sloaneMerritt: return "qMmZtYs7EKOOIm0u211n"
@@ -61,6 +69,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "crewBodieHale"
         case .titoSolano: return "crewTitoSolano"
         case .lupitaReyes: return "crewLupitaReyes"
+        case .humbertoArismendi, .humbertoArismendiEnglish: return "crewHumbertoArismendi"
         case .juniePell: return "crewJuniePell"
         case .pearl: return "crewPearl"
         case .sloaneMerritt: return "crewSloaneMerritt"
@@ -73,6 +82,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "crewBodieHaleTalk"
         case .titoSolano: return "crewTitoSolanoTalk"
         case .lupitaReyes: return "crewLupitaReyesTalk"
+        case .humbertoArismendi, .humbertoArismendiEnglish: return "crewHumbertoArismendiTalk"
         case .juniePell: return "crewJuniePellTalk"
         case .pearl: return "crewPearlTalk"
         case .sloaneMerritt: return "crewSloaneMerrittTalk"
@@ -84,6 +94,8 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return "Laid-back California stoner buddy. Slow, raspy, and always laughing."
         case .titoSolano: return "Cuban jobsite Spanish. Raspy, direct, and steady."
         case .lupitaReyes: return "Mexican Spanish, Jalisco and Mexico City. Warm diminutives, light asides."
+        case .humbertoArismendi: return "Caracas Venezuelan Spanish. Seasoned, courteous, and polished."
+        case .humbertoArismendiEnglish: return "Courteous English with a thick Venezuelan accent. Seasoned and polished."
         case .juniePell: return "Rural Alabama English. Slow, low, and kind."
         case .pearl: return "Warm English. Softens a blunt ask and still makes it."
         case .sloaneMerritt: return "A polished HR lead who turns a blunt ask into a meeting."
@@ -93,15 +105,15 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     /// Language this person speaks. Tito is Spanish; Bodie and Junie are English.
     public var speakLanguage: String {
         switch self {
-        case .titoSolano, .lupitaReyes: return "es"
-        case .bodieHale, .juniePell, .pearl, .sloaneMerritt: return "en"
+        case .titoSolano, .lupitaReyes, .humbertoArismendi: return "es"
+        case .bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish: return "en"
         }
     }
 
     /// Shipped crew are on a direction roster. A hidden voice would be false.
     public var isReleased: Bool {
         switch self {
-        case .bodieHale, .titoSolano, .lupitaReyes, .juniePell, .pearl, .sloaneMerritt:
+        case .bodieHale, .titoSolano, .lupitaReyes, .humbertoArismendi, .humbertoArismendiEnglish, .juniePell, .pearl, .sloaneMerritt:
             return true
         }
     }
@@ -116,6 +128,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return 0.86
         case .titoSolano: return 0.84
         case .lupitaReyes: return 0.92
+        case .humbertoArismendi, .humbertoArismendiEnglish: return 0.86
         case .juniePell: return 0.70
         case .pearl: return 0.92
         case .sloaneMerritt: return 0.94
@@ -127,6 +140,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .bodieHale: return 0.92
         case .titoSolano: return 0.86
         case .lupitaReyes: return 1.05
+        case .humbertoArismendi, .humbertoArismendiEnglish: return 0.88
         case .juniePell: return 0.90
         case .pearl: return 1.0
         case .sloaneMerritt: return 1.0
@@ -147,6 +161,8 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case "sloanemerritt", "sloane": return .sloaneMerritt
         case "titosolano", "tito": return .titoSolano
         case "lupitareyes", "lupita": return .lupitaReyes
+        case "humbertoarismendi", "humberto": return .humbertoArismendi
+        case "humbertoarismendienglish": return .humbertoArismendiEnglish
         default: return .titoSolano
         }
     }
@@ -625,6 +641,8 @@ public enum SpanishTranslatorAPI {
         ]
         // Spanish -> English: the server renders the meaning in this helper's voice.
         if let crew, crew.speakLanguage == "en" { body["crew"] = crew.rawValue }
+        // English -> Spanish: Humberto gets polished Venezuelan (Caracas) Spanish instead of the Cuban prompt.
+        if crew == .humbertoArismendi { body["crew"] = crew?.rawValue }
         return body
     }
 
@@ -663,7 +681,9 @@ public enum SpanishTranslatorAPI {
     /// Tito's character. Lupita is Mexican Spanish with no heavy profanity, so her
     /// unmatched lines ask for the clean register instead.
     public static func translateVoiceMode(requested: SpanishVoiceMode, crew: CrewTalkMember) -> SpanishVoiceMode {
-        crew == .lupitaReyes ? .clean : requested
+        // Humberto: the server swaps in its Venezuelan prompt when `crew` is sent; without it,
+        // clean keeps Tito's Cuban profanity ceiling off his lines.
+        (crew == .lupitaReyes || crew == .humbertoArismendi) ? .clean : requested
     }
 
     /// The `fallback` slot for the dock and Speak while the person has typed a line but
@@ -1108,7 +1128,7 @@ public enum SpanishTranslatorAPI {
         fallback: String
     ) -> String {
         let answer = spokenAnswerForDockBase(crew: crew, direction: direction, english: english, spanish: spanish, fallback: fallback)
-        return crew == .titoSolano ? TitoVoiceVariety.apply(answer) : answer
+        return TitoVoiceVariety.voiced(crew: crew, answer)
     }
 
     private static func spokenAnswerForDockBase(
@@ -1172,7 +1192,7 @@ public enum SpanishTranslatorAPI {
         fallback: String
     ) -> String {
         let line = lineToSpeakBase(crew: crew, direction: direction, english: english, spanish: spanish, fallback: fallback)
-        return crew == .titoSolano ? TitoVoiceVariety.apply(line) : line
+        return TitoVoiceVariety.voiced(crew: crew, line)
     }
 
     private static func lineToSpeakBase(
