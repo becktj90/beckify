@@ -505,6 +505,7 @@ export default class MissionScene extends Phaser.Scene {
       flightTime: 0,
       landingLock: false,
       jacklynPhase: 'glide',
+      gearDeployed: false,
       jacklynReadyAt: 0,
       jacklynElapsed: 0,
       objectiveDone: false,
@@ -1371,6 +1372,7 @@ export default class MissionScene extends Phaser.Scene {
     }
     if (burnWindow && boosting && this.session.fuel > 0) {
       this.session.jacklynPhase = 'burn';
+      this.session.gearDeployed = true;
       this.session.burnLit = true;
       this.session.burnHold = clamp((this.session.burnHold || 0) + dt * 1.35, 0, 1);
       if (!this.session.burnAck) {
@@ -2561,7 +2563,33 @@ export default class MissionScene extends Phaser.Scene {
       g.lineStyle(lw, color, 0.4 * pulse);
       g.lineBetween(this.rocket.x, footY, bargeX, bargeY);
     }
-    if (this.session?.jacklynPhase === 'burn' || this.session?.jacklynPhase === 'straighten' || this.session?.jacklynPhase === 'settle') {
+    // Predicted touchdown: current-velocity projection onto the deck line.
+    // Green when the projection is on the paint, amber when it isn't — steer
+    // the diamond, not just the rocket.
+    {
+      const pvx = this.rocket.body?.velocity?.x || 0;
+      const pvy = this.rocket.body?.velocity?.y || 0;
+      const phase = this.session?.jacklynPhase;
+      const guiding = phase === 'glide' || phase === 'burn' || phase === 'straighten' || phase === 'settle';
+      const altPx = bargeY - this.rocket.y;
+      if (guiding && pvy > 0.4 && altPx > 0) {
+        const tGo = Math.min(altPx / pvy, 240);
+        const predX = this.rocket.x + pvx * tGo;
+        if (Math.abs(predX - bargeX) < 900) {
+          const predOn = Math.abs(predX - bargeX) <= (mode.landingTol + 22);
+          const pc = predOn ? 0x7dffb0 : 0xffcf5d;
+          const ps = Math.max(9, 13 / z);
+          g.lineStyle(lw, pc, 0.85 * pulse);
+          g.lineBetween(predX, bargeY - ps, predX + ps, bargeY);
+          g.lineBetween(predX + ps, bargeY, predX, bargeY + ps);
+          g.lineBetween(predX, bargeY + ps, predX - ps, bargeY);
+          g.lineBetween(predX - ps, bargeY, predX, bargeY - ps);
+          g.lineStyle(Math.max(1.4, lw * 0.6), pc, 0.35 * pulse);
+          g.lineBetween(this.rocket.x, footY, predX, bargeY);
+        }
+      }
+    }
+    if (this.session?.gearDeployed) {
       const gearY = this.rocket.y + 70;
       g.lineStyle(lw, 0x7dffb0, 0.9);
       g.lineBetween(this.rocket.x - 16, this.rocket.y + 48, this.rocket.x - 26, gearY);
@@ -2984,12 +3012,7 @@ export default class MissionScene extends Phaser.Scene {
           burnLit: Boolean(s.burnLit),
           boosting,
           landingTol: DIFFICULTY[this.settings.difficulty].landingTol,
-          gear: Boolean(
-            s.jacklynPhase === 'burn'
-            || s.jacklynPhase === 'straighten'
-            || s.jacklynPhase === 'settle'
-            || (this.jacklyn.y - this.rocket.y) < 240,
-          ),
+          gear: Boolean(s.gearDeployed),
         }).line
         : '',
       muted: this.settings.muted,
