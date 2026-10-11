@@ -82,7 +82,14 @@ final class ReviewAskStore: ObservableObject {
         armIfEligible()
     }
 
-    func recordSuccessfulCalc() {
+    /// Some tools publish several result updates per Calculate tap; a second
+    /// success within this window is the same action and is not counted again.
+    static let calcDebounce: TimeInterval = 1.5
+    private var lastCalcAt: Date?
+
+    func recordSuccessfulCalc(now: Date = Date()) {
+        if let last = lastCalcAt, now.timeIntervalSince(last) < Self.calcDebounce { return }
+        lastCalcAt = now
         successfulCalcCount += 1
         defaults.set(successfulCalcCount, forKey: Key.successfulCalcs)
         armIfEligible()
