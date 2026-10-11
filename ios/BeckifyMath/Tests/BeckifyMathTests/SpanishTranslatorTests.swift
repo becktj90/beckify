@@ -878,7 +878,7 @@ final class SpanishTranslatorTests: XCTestCase {
             XCTAssertFalse(folded.hasPrefix("im fixin to"), line)
             XCTAssertFalse(folded.hasPrefix("would you please"), line)
         }
-        XCTAssertTrue(SpanishTranslatorAPI.junieDialectRewrite(praise).lowercased().contains("gift"))
+        XCTAssertTrue(SpanishTranslatorAPI.junieDialectRewrite(praise).lowercased().contains("frog hair"))
         XCTAssertTrue(SpanishTranslatorAPI.pearlWarmRewrite(praise).lowercased().contains("gift"))
         XCTAssertTrue(SpanishTranslatorAPI.bodieDialectRewrite(praise).lowercased().contains("natural"))
         XCTAssertTrue(SpanishTranslatorAPI.sloaneCorporateRewrite(praise).lowercased().contains("strong")
