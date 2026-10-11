@@ -2,7 +2,7 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-Three more App Store products live in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast — **Kestrel Heavy** (`com.beckify.kestrelheavy`) — a native SwiftUI shell that plays the Phaser 4 arcade from a local bundle — and **Beckify Drive** (`com.beckify.drive`) — a Bluetooth LE OBD-II dashboard with a native CarPlay scene. None of them is this toolbox. See [`LookCheck/README.md`](LookCheck/README.md), [`KestrelHeavy/README.md`](KestrelHeavy/README.md), and [`BeckifyDrive/README.md`](BeckifyDrive/README.md).
+Two more App Store products live in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast — **Kestrel Heavy** (`com.beckify.kestrelheavy`) — a native SwiftUI shell that plays the Phaser 4 arcade from a local bundle — and **Beckify Drive** (`com.beckify.drive`) — a Bluetooth LE OBD-II dashboard with a native CarPlay scene. None of them is this toolbox. See [`LookCheck/README.md`](LookCheck/README.md), [`KestrelHeavy/README.md`](KestrelHeavy/README.md), and [`BeckifyDrive/README.md`](BeckifyDrive/README.md).
 
 > **Archive / Xcode Cloud:** Archive-iOS and any Xcode Cloud Archive workflow for Toolbox **must** use scheme **Beckify** (`com.beckify.toolbox`). Do **not** archive Toolbox with scheme **LookCheck** or **KestrelHeavy**. Those are separate ASC apps with their own Archive schemes. Keep Archive workflows separate. Kestrel Heavy is not a Toolbox catalog game; the website `/games/kestrel-heavy` stays.
 
