@@ -17,7 +17,7 @@ final class CrewTalkConversationTests: XCTestCase {
         XCTAssertEqual(Set(CrewTalkConversationLanguage.spanish.roster), [.titoSolano, .lupitaReyes, .humbertoArismendi])
         XCTAssertEqual(
             Set(CrewTalkConversationLanguage.english.roster),
-            [.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish]
+            [.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish, .dreLacey]
         )
         for language in CrewTalkConversationLanguage.allCases {
             for crew in language.roster {

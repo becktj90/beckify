@@ -14,12 +14,14 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     case pearl
     /// ElevenLabs seed Cos locked for this voice: 50505. Speak client does not POST seed yet (route has no seed field).
     case sloaneMerritt
+    /// Dre Lacey: Spanish -> English in heavy, profane East Oakland / Bay Area slang.
+    case dreLacey
 
     public static let storageKey = "crewTalk.member"
     /// Playback model sent to `/api/speak`. The key stays on the server.
     public static let speakModel = "eleven_v3"
     /// ElevenLabs `/api/speak` settings for Junie only. Thick, slow, barely-straight delivery.
-    /// The key stays on the server. Voice id stays `tdK8noxHGTBqk6F18tbZ`.
+    /// The key stays on the server. Voice id stays `m2X69O7Xomk9219qo0Gy`.
     public static let junieSpeakStability = 0.15
     public static let junieSpeakSimilarity = 0.72
     public static let junieSpeakStyle = 1.0
@@ -34,6 +36,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .juniePell: return "Junie Pell"
         case .pearl: return "Pearl"
         case .sloaneMerritt: return "Sloane Merritt"
+        case .dreLacey: return "Dre Lacey"
         }
     }
 
@@ -47,6 +50,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .juniePell: return "Junie"
         case .pearl: return "Pearl"
         case .sloaneMerritt: return "Sloane"
+        case .dreLacey: return "Dre"
         }
     }
 
@@ -57,9 +61,10 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .titoSolano: return "goyf4sY4AqSvMIeO1hb5"
         case .lupitaReyes: return "iGXRQ0smdhSFlb6iV1Pr"
         case .humbertoArismendi, .humbertoArismendiEnglish: return "IvXILleF0UhlyqiuUo87"
-        case .juniePell: return "tdK8noxHGTBqk6F18tbZ"
+        case .juniePell: return "m2X69O7Xomk9219qo0Gy"
         case .pearl: return "xDnrPZyqSbomyfOcnNpu"
         case .sloaneMerritt: return "qMmZtYs7EKOOIm0u211n"
+        case .dreLacey: return "MAPMuGNkK84YjEK5kMBn"
         }
     }
 
@@ -73,6 +78,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .juniePell: return "crewJuniePell"
         case .pearl: return "crewPearl"
         case .sloaneMerritt: return "crewSloaneMerritt"
+        case .dreLacey: return "crewDreLacey"
         }
     }
 
@@ -86,6 +92,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .juniePell: return "crewJuniePellTalk"
         case .pearl: return "crewPearlTalk"
         case .sloaneMerritt: return "crewSloaneMerrittTalk"
+        case .dreLacey: return "crewDreLaceyTalk"
         }
     }
 
@@ -96,9 +103,10 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .lupitaReyes: return "Mexican Spanish, Jalisco and Mexico City. Warm diminutives, light asides."
         case .humbertoArismendi: return "Caracas Venezuelan Spanish. Seasoned, courteous, and polished."
         case .humbertoArismendiEnglish: return "Courteous English with a thick Venezuelan accent. Seasoned and polished."
-        case .juniePell: return "Rural Alabama English. Slow, low, and kind."
+        case .juniePell: return "Ornery backwoods moonshiner from swamp country. Thick, proud, and funny."
         case .pearl: return "Warm English. Softens a blunt ask and still makes it."
         case .sloaneMerritt: return "A polished HR lead who turns a blunt ask into a meeting."
+        case .dreLacey: return "East Oakland Bay slang. Loud, profane, and hella funny."
         }
     }
 
@@ -106,14 +114,14 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
     public var speakLanguage: String {
         switch self {
         case .titoSolano, .lupitaReyes, .humbertoArismendi: return "es"
-        case .bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish: return "en"
+        case .bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish, .dreLacey: return "en"
         }
     }
 
     /// Shipped crew are on a direction roster. A hidden voice would be false.
     public var isReleased: Bool {
         switch self {
-        case .bodieHale, .titoSolano, .lupitaReyes, .humbertoArismendi, .humbertoArismendiEnglish, .juniePell, .pearl, .sloaneMerritt:
+        case .bodieHale, .titoSolano, .lupitaReyes, .humbertoArismendi, .humbertoArismendiEnglish, .juniePell, .pearl, .sloaneMerritt, .dreLacey:
             return true
         }
     }
@@ -132,6 +140,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .juniePell: return 0.70
         case .pearl: return 0.92
         case .sloaneMerritt: return 0.94
+        case .dreLacey: return 0.98
         }
     }
 
@@ -144,6 +153,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case .juniePell: return 0.90
         case .pearl: return 1.0
         case .sloaneMerritt: return 1.0
+        case .dreLacey: return 0.94
         }
     }
 
@@ -159,6 +169,7 @@ public enum CrewTalkMember: String, CaseIterable, Codable, Sendable {
         case "juniepell", "junie": return .juniePell
         case "pearl": return .pearl
         case "sloanemerritt", "sloane": return .sloaneMerritt
+        case "drelacey", "dre": return .dreLacey
         case "titosolano", "tito": return .titoSolano
         case "lupitareyes", "lupita": return .lupitaReyes
         case "humbertoarismendi", "humberto": return .humbertoArismendi

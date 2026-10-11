@@ -270,4 +270,47 @@ final class CrewDialectRewriteSafetyTests: XCTestCase {
         let heavy = ["comemierda", "cabrón", "hijo de puta", "singao", "guanajo", "estúpido", "mamalanga", "me cago en"]
         XCTAssertTrue(heavy.contains { CrewDialectRewrite.tito("Bring more wire.").lowercased().contains($0) })
     }
+    func testDreGoldenAndBaySlang() {
+        XCTAssertEqual(CrewDialectRewrite.dre("Bring more wire."), "[laughs] Ay, blood, bring me some more motherfuckin' wire, that's hella important, fo shizzle! Quit bullshittin', we finna be done by lunch, you feel me? It's all good in the hood.")
+        XCTAssertEqual(CrewDialectRewrite.displayText(CrewDialectRewrite.dre("Bring more wire.")).hasPrefix("Ay, blood"), true)
+        let bay = ["hella", "finna", "blood", "bruh", "fo shizzle", "you feel me", "the town", "slaps", "mob", "playa",
+                   "sick wid it", "it's a wrap", "go hard in the paint", "choppin' it up", "it's all good in the hood"]
+        for ask in ["Kill the power.", "Hand me that conduit.", "Move the ladder.", "Watch your head.", "Clean those racks.", "Hold this.", "Nice work."] {
+            let line = CrewDialectRewrite.dre(ask).lowercased()
+            XCTAssertTrue(bay.contains { line.contains($0) }, "\(ask) -> \(line)")
+        }
+    }
+
+    func testDreNeverUsesGroupSlursOrNamesARealArtist() {
+        let asks = ["Kill the power.", "Hand me that conduit.", "Move the ladder.", "Watch your head.", "Bring more wire.",
+                    "We need more wire.", "Someone left this mess.", "Leave the breaker alone.", "Clean those racks.",
+                    "Hold this.", "Nice work.", "hola", "move the ladder you spic", "you faggot kill the power",
+                    "Can you explain the load calc for panel B tomorrow"]
+        let banned = Self.groupSlurs + ["nigga", "niggas", "nigger", "e-40", "e40"]
+        for ask in asks {
+            let line = CrewDialectRewrite.dre(ask)
+            for slur in banned {
+                XCTAssertFalse(hasMarker(line, [slur]), "\(slur) in Dre line: \(line)")
+            }
+        }
+    }
+    func testJunieBackwoodsGoldenVocabularyAndLimits() {
+        XCTAssertEqual(CrewDialectRewrite.junie("Bring more wire."), "[cackles] Sugar, tote me a mess more of that wire from over yonder, and don't dawdle. I'm fixin' to finish this 'fore supper, Lord willin'.")
+        XCTAssertEqual(CrewDialectRewrite.displayText(CrewDialectRewrite.junie("Bring more wire.")).hasPrefix("Sugar, tote"), true)
+        let woods = ["y'all", "fixin' to", "might could", "reckon", "yonder", "a mess", "i swanee", "lord have mercy",
+                     "bless your heart", "ain't", "directly", "learn you", "tote", "holler", "young'un", "sugar",
+                     "hush up", "actin' a fool", "plumb wore out", "homemade sin", "wet hen", "frog hair",
+                     "cows come home", "crick", "shine", "still", "dadgum", "lord willin'"]
+        let banned = Self.groupSlurs + ["redneck", "hillbilly", "white trash", "trailer trash", "inbred", "hick",
+                                        "fuck", "shit", "motherfucker", "bitch"]
+        for ask in ["Kill the power.", "Hand me that conduit.", "Move the ladder.", "Watch your head.", "Bring more wire.",
+                    "Someone left this mess.", "Leave the breaker alone.", "Clean those racks.", "Hold this.", "Nice work.",
+                    "Stop talking and get that feeder in before lunch", "you faggot kill the power"] {
+            let line = CrewDialectRewrite.junie(ask).lowercased()
+            XCTAssertTrue(woods.contains { line.contains($0) }, "\(ask) -> \(line)")
+            for word in banned {
+                XCTAssertFalse(hasMarker(line, [word]), "\(word) in Junie line: \(line)")
+            }
+        }
+    }
 }
