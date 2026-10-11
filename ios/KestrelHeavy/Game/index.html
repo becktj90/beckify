@@ -402,7 +402,7 @@
     #atb-boost[data-label="DRAG TO STEER"],
     #atb-boost[data-label="STEER"],
     #atb-boost[data-label="GLIDE"] {
-      background: rgba(8, 10, 20, 0.45);
+      background: rgba(8, 10, 20, 0.92);
       border-color: rgba(183, 171, 255, 0.35);
       color: var(--fg);
     }
@@ -516,17 +516,15 @@
       text-overflow: ellipsis;
     }
     #ng-tape li.is-now {
-      flex: 1.55 1 0;
       background: var(--amber);
       color: #041014;
       font-weight: 800;
+      box-shadow: 0 0 10px rgba(255, 207, 93, 0.55);
     }
-    #ng-tape li.is-now::before { content: "NOW "; }
     #ng-tape li.is-next {
       color: var(--cyan);
       box-shadow: inset 0 0 0 1px var(--cyan);
     }
-    #ng-tape li.is-next::before { content: "NEXT "; }
     #ng-tape li.is-done { color: var(--go); }
     body[data-phase="MENU"] #ng-tape { display: none; }
     #ng-hints {
@@ -538,7 +536,7 @@
       z-index: 9;
       padding: 8px 14px;
       border-radius: 999px;
-      background: rgba(4,8,16,0.72);
+      background: rgba(4,8,16,0.92);
       border: 1px solid rgba(183,171,255,.45);
       color: var(--fg);
       font: 700 0.78rem/1.3 var(--font-mono);
@@ -1462,7 +1460,7 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
       </div>
       <button id="ng-sep-btn" type="button" hidden aria-label="Separate stages">SEPARATE</button>
     </div>
-    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space launches then climb stays on, P or Escape pauses, M mutes. Touch: one tap launches, then drag left/right to steer (◀ ▶ optional). After MECO, stay in the SEP ZONE and press SEPARATE, then glide onto barge Haven's paint and HOLD TO BURN — a long approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space launches then climb stays on, P or Escape pauses, M mutes. Touch: one tap launches, then drag left/right to steer (◀ ▶ optional). After MECO, stay in the SEP ZONE and press SEPARATE, then glide onto barge Haven's paint and HOLD TO BURN — a long approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
     </div>
@@ -1472,6 +1470,37 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
     window.recordGameScore = window.recordGameScore || function () { return Promise.resolve(null); };
   </script>
   <script src="./vendor/phaser.min.js"></script>
+  <script>
+  // Boot guard: if the engine or the module graph fails, show a readable card
+  // instead of a black playfield. (Pack script: do not remove.)
+  (function () {
+    function bootCard(msg) {
+      if (document.getElementById('kh-boot-error')) return;
+      var host = document.getElementById('ng-phaser-root');
+      var card = document.createElement('div');
+      card.id = 'kh-boot-error';
+      card.setAttribute('role', 'alert');
+      card.style.cssText = 'position:fixed;inset:0;display:flex;flex-direction:column;'
+        + 'align-items:center;justify-content:center;gap:10px;z-index:9999;'
+        + 'background:#05050d;color:#b7abff;font:600 15px/1.5 system-ui,sans-serif;'
+        + 'text-align:center;padding:32px;';
+      card.innerHTML = '<div style="font-size:22px;font-weight:800;letter-spacing:2px">KESTREL HEAVY</div>'
+        + '<div style="color:#8f96ad;max-width:34ch">' + msg + '</div>';
+      (host && host.parentNode ? host.parentNode : document.body).appendChild(card);
+    }
+    window.__khBootFail = function (msg) { bootCard(msg); };
+    if (!window.Phaser) {
+      bootCard('The game engine failed to load. Check your connection and reopen.');
+    }
+    window.addEventListener('error', function (e) {
+      if (window.__khBooted) return;
+      var msg = String((e && e.message) || '');
+      if (/phaser/i.test(msg) || /failed to load/i.test(msg)) {
+        bootCard('The game failed to start. Reopen to retry.');
+      }
+    }, true);
+  })();
+  </script>
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>
