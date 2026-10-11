@@ -290,6 +290,7 @@
 		BDCF00000000000000000008 /* BeckifyDrive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeckifyDrive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDCF0000000000000000001A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BDCF0000000000000000001B /* BeckifyDrive.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BeckifyDrive.entitlements; sourceTree = "<group>"; };
+		KHCF0000000000000000001B /* KestrelHeavy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KestrelHeavy.entitlements; sourceTree = "<group>"; };
 		BECFC7000000000000000003 /* CrewTalkModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewTalkModel.swift; sourceTree = "<group>"; };
 		BECFC7000000000000000005 /* CrewTalkAudioSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewTalkAudioSession.swift; sourceTree = "<group>"; };
 		BECFC7000000000000000007 /* CrewTalkSpeechCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewTalkSpeechCapture.swift; sourceTree = "<group>"; };
@@ -388,6 +389,7 @@
 				KHCF00000000000000000002 /* KestrelHeavyRootView.swift */,
 				KHCF00000000000000000003 /* KestrelHeavyGameView.swift */,
 				KHCF00000000000000000017 /* KestrelHeavySchemeHandler.swift */,
+				KHCF0000000000000000001B /* KestrelHeavy.entitlements */,
 				KHCF00000000000000000019 /* LaunchScreen.storyboard */,
 				KHCF00000000000000000004 /* Assets.xcassets */,
 				KHCF00000000000000000005 /* PrivacyInfo.xcprivacy */,
@@ -1197,6 +1199,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = KestrelHeavy/KestrelHeavy.entitlements;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
@@ -1235,6 +1238,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = KestrelHeavy/KestrelHeavy.entitlements;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
