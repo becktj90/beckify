@@ -648,15 +648,9 @@ export default class MissionScene extends Phaser.Scene {
   requestSep() {
     if (this.status !== 'SEP' || !this.session || this.session.sepDone) return;
     if (this.session.sepPhase !== 'window') return;
-    if (!this.inSepZone()) {
-      const near = this.session.sepZoneY != null
-        && Math.abs(this.rocket.y - this.session.sepZoneY) <= SEP.zoneH * 0.72;
-      if (!near) {
-        setBanner('NOT IN SEP ZONE', 'warn', 900);
-        AudioApi.play('ui', this.settings);
-        return;
-      }
-    }
+    // NOTE: position does not gate SEP — the zone graphic tracks the stack and
+    // the beat is won on ALIGN hold inside the time window. (A previous
+    // inSepZone() check here was unreachable and has been removed.)
     const aligned = this.session.sepAlignHold >= SEP.alignHold;
     this.fireSep(aligned);
   }
@@ -816,6 +810,9 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   startMission() {
+    // Kill timers from a previous flight (e.g. the resolveLanding ->
+    // finishUpper -> endMission chain) so they can't fire into the new run.
+    this.time.removeAllEvents();
     AudioApi.unlock(this.settings);
     this.voice.beginFlight();
     this.session = this.freshSession();
@@ -880,6 +877,9 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   returnToMenu() {
+    // Same as startMission: a landing-window abort must not let a stale
+    // finishUpper/endMission chain pop a summary over the menu.
+    this.time.removeAllEvents();
     this.status = 'MENU';
     this.screen = 'menu';
     this.paused = false;
@@ -1276,7 +1276,6 @@ export default class MissionScene extends Phaser.Scene {
 
     if (this.session.sepPhase === 'coast' && this.session.sepElapsed >= SEP.coastSec) {
       this.session.sepPhase = 'window';
-      this.session.sepNeedRelease = this.inputState.boostHeld;
       this.inputState.boostBufferedUntil = 0;
       this.inputState.boostUntil = 0;
       this.session.sepZoneY = this.rocket.y;
@@ -1286,7 +1285,6 @@ export default class MissionScene extends Phaser.Scene {
 
     if (this.session.sepPhase === 'window' && !this.session.sepDone) {
       this.session.sepZoneY = this.rocket.y;
-      if (this.session.sepNeedRelease && !this.inputState.boostHeld) this.session.sepNeedRelease = false;
       if (this.session.sepElapsed >= SEP.lateSec && !this.session.sepLate) {
         this.session.sepLate = true;
         setBanner('SEP LATE — still press SEPARATE', 'warn', 2200);
@@ -1516,7 +1514,6 @@ export default class MissionScene extends Phaser.Scene {
       AudioApi.play('meco', this.settings);
     }
     if (beat.juice === 'ignition') {
-      AudioApi.play('countdown', this.settings);
       if (!this.settings.reducedMotion) this.cameras.main.shake(280, 0.008);
       this.flashPad(0.4);
       flashIgnite();
@@ -1695,6 +1692,10 @@ export default class MissionScene extends Phaser.Scene {
     if (this.session.landingLock) return;
     if (kind === 'deck' && this.nowSec < (this.session.jacklynReadyAt || 0)) return;
     this.session.landingLock = true;
+    // The touchdown spine beat would otherwise play the "BOOSTER RECOVERED"
+    // radio line on every outcome. Each branch below does outcome-specific
+    // callouts/audio, so mark it fired here for all landing kinds.
+    this.session.fired.touchdown = true;
     const mode = DIFFICULTY[this.settings.difficulty];
     const vy = Math.abs(this.rocket.body.velocity.y);
     const dx = Math.abs(this.rocket.x - this.jacklyn.x);
@@ -2607,6 +2608,10 @@ export default class MissionScene extends Phaser.Scene {
 
   togglePause() {
     if (this.status === 'MENU' || this.status === 'SUMMARY') return;
+    if (this.settingsOpen) {
+      this.toggleSettings(); // close the sheet; never resume sim behind it
+      return;
+    }
     this.paused = !this.paused;
     this.pausedForSettings = false;
     this.syncMatterPause();
