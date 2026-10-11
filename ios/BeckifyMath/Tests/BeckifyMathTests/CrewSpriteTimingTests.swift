@@ -5,7 +5,7 @@ final class CrewSpriteTimingTests: XCTestCase {
     private func shippedSpec(_ crew: CrewTalkMember) throws -> CrewSpriteSheetSpec {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Beckify/Assets.xcassets/\(crew.spriteSheetAssetName).dataset/\(crew.spriteSheetAssetName).json")
+            .appendingPathComponent("Beckify/Assets.xcassets/\(crew.spriteTimingAssetName).dataset/\(crew.spriteTimingAssetName).json")
         return try CrewSpriteSheetSpec.decode(Data(contentsOf: url))
     }
 

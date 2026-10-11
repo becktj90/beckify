@@ -3,7 +3,7 @@
 Reads Art/CrewTalk/base/<asset>.png and <asset>Talk.png (96x96 pixel bases made by extract_base.py)
 and writes, per character, into Beckify/Assets.xcassets:
   <asset>Sheet.imageset/<asset>Sheet.png   frames on a grid, 96x96 each, nearest-neighbor only
-  <asset>Sheet.dataset/<asset>Sheet.json   frame timing: {frameSize, columns, animations{name:{frames,fps,loop}}}
+  <asset>SheetTiming.dataset/<asset>SheetTiming.json   frame timing: {frameSize, columns, animations{name:{frames,fps,loop}}}
 Animations: idle, talk (4 mouth shapes), gesture, intro, outro.
 Run:  python3 Art/CrewTalk/build_sprites.py [--preview DIR]
 """
@@ -123,10 +123,10 @@ def write_catalog(name, img, spec):
         "info": {"author": "xcode", "version": 1},
         "properties": {"preserves-vector-representation": False, "template-rendering-intent": "original"},
     }, indent=2) + "\n")
-    dset = XC / f"{name}Sheet.dataset"; dset.mkdir(exist_ok=True)
-    (dset / f"{name}Sheet.json").write_text(json.dumps(spec, indent=2) + "\n")
+    dset = XC / f"{name}SheetTiming.dataset"; dset.mkdir(exist_ok=True)
+    (dset / f"{name}SheetTiming.json").write_text(json.dumps(spec, indent=2) + "\n")
     (dset / "Contents.json").write_text(json.dumps({
-        "data": [{"filename": f"{name}Sheet.json", "idiom": "universal", "universal-type-identifier": "public.json"}],
+        "data": [{"filename": f"{name}SheetTiming.json", "idiom": "universal", "universal-type-identifier": "public.json"}],
         "info": {"author": "xcode", "version": 1},
     }, indent=2) + "\n")
 

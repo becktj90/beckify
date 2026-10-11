@@ -29,7 +29,7 @@ final class CrewSpriteLibrary {
         if let cached = sheets[crew] { return cached }
         let name = crew.spriteSheetAssetName
         guard
-            let data = NSDataAsset(name: name)?.data,
+            let data = NSDataAsset(name: crew.spriteTimingAssetName)?.data,
             let spec = try? CrewSpriteSheetSpec.decode(data),
             spec.isConsistent,
             let image = UIImage(named: name)?.cgImage

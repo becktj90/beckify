@@ -85,6 +85,8 @@ public struct CrewSpriteSheetSpec: Codable, Equatable, Sendable {
 public extension CrewTalkMember {
     /// Sprite sheet image and its `.dataset` timing JSON share this name.
     var spriteSheetAssetName: String { portraitAssetName + "Sheet" }
+    /// Data asset name for frame timing (must differ from the imageset name).
+    var spriteTimingAssetName: String { portraitAssetName + "SheetTiming" }
 }
 
 /// Frame plan for a shareable clip: a short scan-in, the talk loop for exactly the audio, a scan-out.
