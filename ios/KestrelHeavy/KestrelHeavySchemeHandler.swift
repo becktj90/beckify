@@ -25,6 +25,7 @@ final class KestrelHeavySchemeHandler: NSObject, WKURLSchemeHandler {
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         let id = ObjectIdentifier(urlSchemeTask)
+        defer { clearStopped(id) }
         guard let url = urlSchemeTask.request.url else {
             urlSchemeTask.didFailWithError(URLError(.badURL))
             return
@@ -74,6 +75,12 @@ final class KestrelHeavySchemeHandler: NSObject, WKURLSchemeHandler {
         lock.lock()
         defer { lock.unlock() }
         return stopped.contains(id)
+    }
+
+    private func clearStopped(_ id: ObjectIdentifier) {
+        lock.lock()
+        stopped.remove(id)
+        lock.unlock()
     }
 
     static func fileURL(for url: URL) -> URL? {
