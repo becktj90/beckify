@@ -624,6 +624,16 @@ public enum ToolHowItWorksCatalog {
                 "Design aid — not a panel schedule or a stamped calc package.",
             ]
         ),
+        "receptacleCircuit": ToolHowItWorks(
+            summary: "How many NEMA 5-20R receptacles one 120 V branch circuit carries, plus planned load and far-end voltage drop.",
+            context: "Daisy-chained general-purpose receptacles, dwelling or commercial.",
+            bullets: [
+                "Non-dwelling counts 180 VA per yoke (220.14(I)): 13 on 20 A, 10 at 80 % continuous.",
+                "Dwellings have no NEC count limit. The range shown is common practice, not code.",
+                "Drop reuses the Voltage Drop K-factor math with the load lumped at the far receptacle.",
+                "2023 NEC section numbers only. Local amendments and the AHJ govern.",
+            ]
+        ),
         "loadWorksheet": ToolHowItWorks(
             summary: "NEC 220.42 lighting demand plus motor and continuous VA totals.",
             context: "Service / feeder worksheet from lighting VA and added loads.",

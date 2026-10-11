@@ -69,6 +69,7 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case heaterDesign
     case empEmc
     case necCircuit
+    case receptacleCircuit
     case loadWorksheet
     case cableSchedule
     case solenoidDesign
@@ -427,6 +428,17 @@ enum ToolboxCatalog {
             synonyms: [
                 "receptacle", "outlet", "NEMA", "L5-30", "pin and sleeve", "Meltric", "Decontactor",
                 "Hubbell", "twist lock", "IEC 60309", "Schuko", "BS 1363", "Type F", "Type E", "Type I",
+            ]
+        ),
+        ToolDefinition(
+            id: .receptacleCircuit,
+            kind: .calculator,
+            title: "Receptacles per Circuit",
+            subtitle: "NEMA 5-20R count per 120 V branch circuit, 80 % load, and far-end voltage drop.",
+            symbol: "poweroutlet.strip",
+            synonyms: [
+                "receptacles per circuit", "outlets per circuit", "how many outlets", "daisy chain", "5-20r", "5-20",
+                "nema 5-20", "20 amp outlet", "180 va", "220.14", "duplex", "pigtail", "through feed", "branch circuit",
             ]
         ),
         ToolDefinition(
@@ -1085,7 +1097,7 @@ enum ToolboxCatalog {
         .field: [
             .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .cableLadder, .equipmentGround, .flexibleCable, .motorFLA, .motorSpeed, .motorNameplate,
             .motorNameplateOCR,
-            .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
+            .receptacleSelector, .receptacleCircuit, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
         ],
         .power: [
@@ -1180,7 +1192,8 @@ enum ToolboxCatalog {
         .motorFLA: [.ul508aPanelLab, .motorNameplateOCR, .motorNameplate, .motorSpeed],
         .wireAmpacity: [.ul508aPanelLab, .flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],
         .flexibleCable: [.wireAmpacity, .conduitFill, .equipmentGround, .cableSchedule],
-        .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
+        .receptacleSelector: [.receptacleCircuit, .wireAmpacity, .motorFLA, .voltageDrop],
+        .receptacleCircuit: [.receptacleSelector, .voltageDrop, .necCircuit, .wireAmpacity],
         .voltageDivider: [.electronicsLab, .ohmsLaw, .seriesParallel, .ledRC],
         .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
         .resistorColor: [.seriesParallel, .ledRC, .unitConverter],

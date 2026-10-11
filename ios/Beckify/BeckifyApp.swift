@@ -123,7 +123,7 @@ struct RootView: View {
 private struct LaunchSplashContainer<Content: View>: View {
     @ViewBuilder var content: Content
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showSplash = true
+    @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-skipLaunchSplash")
 
     /// Timing (seconds). Total ≈ hold + fade = 1.5 s (0.7 s with Reduce Motion).
     static var hold: Double { 1.2 }

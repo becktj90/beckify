@@ -198,7 +198,7 @@ public enum ToolCalculationPolicy {
         "transientCircuit", "rackCurrent", "diodeIV", "isLoopVerifier",
         "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate", "motorNameplateOCR",
         "heaterDesign",
-        "empEmc", "necCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
+        "empEmc", "necCircuit", "receptacleCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
         "solarDesign",
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",

@@ -90,7 +90,7 @@ public enum ToolHomeAreaPolicy {
     /// Which shelf each tool sits on. This map is the only place that decides it.
     private static let shelves: [(ToolShelfKind, [String])] = [
         (.jobsite, [
-            "voltageDrop", "wireAmpacity", "conduitFill", "receptacleSelector", "necCircuit",
+            "voltageDrop", "wireAmpacity", "conduitFill", "receptacleSelector", "receptacleCircuit", "necCircuit",
             "loadFactors", "shortCircuit", "equipmentGround",
         ]),
         (.wiring, ["cableLadder", "flexibleCable", "conductorCost", "conductorLength", "circularMils"]),
