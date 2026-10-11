@@ -54,7 +54,7 @@ final class CrewTalkContractsTests: XCTestCase {
         let json = """
         {
           "text": "Leave that breaker be.",
-          "voice": "tdK8noxHGTBqk6F18tbZ",
+          "voice": "m2X69O7Xomk9219qo0Gy",
           "voiceMode": "clean",
           "mode": "clean",
           "style": 1.0,
@@ -69,7 +69,7 @@ final class CrewTalkContractsTests: XCTestCase {
         XCTAssertEqual(decoded.model, "eleven_v3")
         XCTAssertEqual(decoded.format, "mp3")
         XCTAssertEqual(decoded.task, "speak")
-        XCTAssertEqual(decoded.voice, "tdK8noxHGTBqk6F18tbZ")
+        XCTAssertEqual(decoded.voice, "m2X69O7Xomk9219qo0Gy")
         let again = try JSONEncoder().encode(decoded)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: again) as? [String: Any])
         for key in omittedVoiceSettingKeys {

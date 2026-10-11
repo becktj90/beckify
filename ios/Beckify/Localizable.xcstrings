@@ -192,6 +192,16 @@
         }
       }
     },
+    "Code & Safety": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código y seguridad"
+          }
+        }
+      }
+    },
     "Conductor Cost Optimizer": {
       "localizations": {
         "es": {
@@ -562,6 +572,16 @@
         }
       }
     },
+    "Hazardous Locations": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áreas clasificadas"
+          }
+        }
+      }
+    },
     "Heater Design Wizard": {
       "localizations": {
         "es": {
@@ -718,6 +738,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Claro"
+          }
+        }
+      }
+    },
+    "Lightning Protection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protección contra rayos"
           }
         }
       }
@@ -1162,6 +1192,16 @@
         }
       }
     },
+    "Receptacles per Circuit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomacorrientes por circuito"
+          }
+        }
+      }
+    },
     "Reference Library": {
       "localizations": {
         "es": {
@@ -1402,12 +1442,12 @@
         }
       }
     },
-    "Tito, Lupita, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.": {
+    "Tito, Lupita, Humberto, Bodie, Junie, Pearl, Sloane, or Dre. The person, the line, and Speak.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tito, Lupita, Bodie, Junie, Pearl o Sloane. La persona, la frase y Hablar."
+            "value": "Tito, Lupita, Humberto, Bodie, Junie, Pearl, Sloane o Dre. La persona, la frase y Hablar."
           }
         }
       }

@@ -29,7 +29,7 @@ final class RetroIconCatalogTests: XCTestCase {
         let imagesets = entries
             .filter { $0.pathExtension == "imageset" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        XCTAssertEqual(imagesets.count, 90, "live tiles plus retired breathFlute and lookCheck")
+        XCTAssertEqual(imagesets.count, 93, "live tiles plus retired breathFlute and lookCheck")
 
         var shipped = Set<String>()
         for imageset in imagesets {

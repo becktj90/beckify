@@ -473,13 +473,13 @@ public enum CrewTalkStateMachine {
 }
 
 extension CrewTalkMember {
-    /// D1: direction picks the roster. English → Spanish is Tito and Lupita.
+    /// D1: direction picks the roster. English → Spanish is Tito, Lupita, and Humberto; Humberto also speaks English for Spanish → English.
     public static func roster(for direction: SpanishTranslateDirection) -> [CrewTalkMember] {
         switch direction {
         case .englishToSpanish:
-            return [.titoSolano, .lupitaReyes].filter(\.isReleased)
+            return [.titoSolano, .lupitaReyes, .humbertoArismendi].filter(\.isReleased)
         case .spanishToEnglish:
-            return [.bodieHale, .juniePell, .pearl, .sloaneMerritt]
+            return [.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish, .dreLacey]
         }
     }
 

@@ -10,9 +10,12 @@ enum CrewDialectRewrite {
         case .bodieHale: return bodie(raw)
         case .titoSolano: return tito(raw)
         case .lupitaReyes: return lupita(raw)
+        case .humbertoArismendi: return humberto(raw)
+        case .humbertoArismendiEnglish: return humbertoEnglish(raw)
         case .juniePell: return junie(raw)
         case .pearl: return pearl(raw)
         case .sloaneMerritt: return sloane(raw)
+        case .dreLacey: return dre(raw)
         }
     }
 
@@ -171,39 +174,43 @@ enum CrewDialectRewrite {
 
     // MARK: - Junie
 
+    /// Ornery old moonshiner from swamp country: thick backwoods speech (y'all, fixin' to,
+    /// might could, reckon, yonder, a mess of, I swanee, Lord have mercy, tote, holler,
+    /// young'un, plumb wore out, madder than a wet hen). Mild cussing only (damn, hell,
+    /// dadgum, son of a gun). Proud and funny: no group slurs, nothing that mocks poverty.
     static func junie(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
         let cleaned = scrub(trimmed)
         let line: String
-        let fallback = "Bless your heart, say that once more in plain words and I'll tend to it."
+        let fallback = "Lord have mercy, young'un, say that once more plain and I'll tend to it directly."
         switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
-            line = "That power needs to come off, bless your heart. Don't get your knickers in a knot."
+            line = "Young'un, cut off the light at the box, the power too, 'fore you go actin' a fool. I swanee, I ain't totin' you to the doctor."
         case .conduit:
-            line = "That conduit belongs over yonder in a working hand. It'll fit better than a sock on a rooster."
+            line = "Sugar, tote that conduit over here directly. I reckon it'll fit finer than frog hair."
         case .ladder:
-            line = "That ladder needs to slide a fur piece. Don't take any wooden nickels while it moves."
+            line = "Scoot that dadgum ladder over yonder a piece and set it firm. Lord have mercy, it's wobblin' like a drunk at the still."
         case .head:
-            line = "Mind the clearance above you. I'm nervous as a long-tailed cat in a room full of rocking chairs."
+            line = "Mind your head up yonder, young'un. Crack that noggin and I'll be madder than a wet hen."
         case .wire:
-            line = "We're shy on wire, and more has to come from over yonder. Bless your heart."
+            line = "[cackles] Sugar, tote me a mess more of that wire from over yonder, and don't dawdle. I'm fixin' to finish this 'fore supper, Lord willin'."
         case .mess:
-            line = "Well I'll be Sam Browned — this mess needs setting right. Bless your heart, let's own it."
+            line = "Lord have mercy, this mess is ugly as homemade sin. Y'all clean it up 'fore I holler."
         case .feeder:
-            line = "That feeder has to land before lunch. Don't get your knickers in a knot — we'll beat the cows home."
+            line = "Hush up and pull that feeder in 'fore dinner, y'all. I'm plumb wore out waitin' 'til the cows come home."
         case .breaker:
-            line = "Leave that breaker be, over yonder. Heavens to Betsy, it stays off."
+            line = "Leave that breaker be, sugar. I swanee, touch it and I'll learn you somethin'."
         case .racks:
-            line = "Those racks need a real clean, bless your heart. We'll set them right over yonder."
+            line = "Them racks is dirtier than a crick bottom. Y'all might could clean 'em directly."
         case .hold:
-            line = "Keep a gentle hold on this for a moment, and don't get your knickers in a knot."
+            line = "Hold this steady for me, sugar. Steady as a jar of shine, now."
         case .compliment:
-            line = "Bless your heart, you've got a real gift for this. Slick as a ribbon on an ice cube."
+            line = "Well I'll be, young'un, that's finer than frog hair. Bless your heart, you done good."
         case .greeting:
-            line = "Hey there, bless your heart. Good to see you over yonder."
+            line = "Well hey there, sugar. Come on in, I'm just fixin' to check the still."
         case .free:
-            line = "Listen here — \(voicedWords(cleaned)), over yonder. Bless your heart."
+            line = "Listen here, y'all, \(voicedWords(cleaned)), over yonder directly. Lord willin'."
         case nil:
             line = fallback
         }
@@ -311,10 +318,148 @@ enum CrewDialectRewrite {
         return guarded(line, raw: trimmed, fallback: "")
     }
 
+    // MARK: - Humberto
+
+    /// Polished Caracas Venezuelan Spanish from a seasoned master electrician in his 70s.
+    /// Courteous and exact: usted, por favor, con todo respeto, mi estimado, caballero,
+    /// hágame el favor, gentle chamo / warm pana, chévere, vale, bueno pues, a la orden, epa.
+    /// Little or no crude slang. Only a recognized ask gets a template; everything else
+    /// speaks the API's Venezuelan translation.
+    static func humberto(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let line: String
+        switch CrewRewriteGuard.intent(trimmed) {
+        case .cutPower:
+            line = "Mi estimado, corte la corriente primero, por favor. Así se trabaja con seguridad."
+        case .conduit:
+            line = "Caballero, hágame el favor de pasarme ese conduit. Se lo agradezco."
+        case .ladder:
+            line = "Mueva esa escalera un poquito, por favor, y déjela bien firme."
+        case .head:
+            line = "Con cuidado, mi estimado. Pendiente con la cabeza ahí arriba."
+        case .wire:
+            line = "Mi estimado, hágame el favor de traerme un poquito más de cable. Gracias, caballero."
+        case .mess:
+            line = "Con todo respeto, este desorden hay que recogerlo. Dejemos el área bien ordenada."
+        case .feeder:
+            line = "Bueno pues, caballeros, metamos ese alimentador antes del almuerzo, si Dios quiere."
+        case .breaker:
+            line = "Mi estimado, deje ese breaker quieto, por favor. Todavía lo vamos a revisar."
+        case .racks:
+            line = "Esos racks necesitan una buena limpieza, mi estimado. Hagámoslo chévere, como debe ser."
+        case .hold:
+            line = "Chamo, sosténgame esto un momento, por favor. Firme, así mismo, vale."
+        case .compliment:
+            line = "Lo felicito, pana. Ese trabajo quedó muy chévere, de verdad."
+        case .greeting:
+            line = "Epa, mi estimado. Aquí estamos, a la orden."
+        case .free, nil:
+            return ""
+        }
+        return guarded(line, raw: trimmed, fallback: "")
+    }
+
+    /// The same Humberto in English: courteous, seasoned, Spanish-shaped phrasing
+    /// ("my friend", "with all respect", "please"). The accent is the voice's job; no
+    /// phonetic spelling.
+    static func humbertoEnglish(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let cleaned = scrub(trimmed)
+        guard !cleaned.isEmpty else { return "Please, my friend, tell me what you need." }
+        let fallback = "With all respect, my friend, tell me which part you need."
+        let line: String
+        switch CrewRewriteGuard.intent(trimmed) {
+        case .cutPower:
+            line = "My friend, please, cut the power first. This is how we work safe."
+        case .conduit:
+            line = "My friend, do me the favor and pass me that conduit. Thank you."
+        case .ladder:
+            line = "Please, my friend, shift that ladder a little and leave it very firm."
+        case .head:
+            line = "Careful, my friend. Mind your head up there."
+        case .wire:
+            line = "My friend, do me the favor of bringing me a little more wire. Thank you."
+        case .mess:
+            line = "With all respect, this mess must be picked up. Let us leave the area in order."
+        case .feeder:
+            line = "Gentlemen, let us put that feeder in before lunch, please."
+        case .breaker:
+            line = "My friend, please let that breaker be. We will check it first."
+        case .racks:
+            line = "Those racks need a good cleaning. Let us do it properly, as it should be."
+        case .hold:
+            line = "Please keep this steady for me one moment, my friend. Just like that."
+        case .compliment:
+            line = "I congratulate you, my friend. That work is very well done, truly."
+        case .greeting:
+            line = "Good day, my friend. Here I am, at your service."
+        case .free:
+            line = "With all respect, my friend, what we must handle is \(voicedWords(cleaned))."
+        case nil:
+            line = fallback
+        }
+        return guarded(line, raw: trimmed, fallback: fallback)
+    }
+
+    // MARK: - Dre
+
+    /// East Oakland / Bay Area slang, loud and profane (Trevor-approved): hella, finna, blood,
+    /// bruh, fo shizzle, yadadamean, you feel me, the Town, slappin', mob, sick wid it, scrilla,
+    /// go dumb, it's a wrap. Swearing lands on the situation or the listener, never a group.
+    /// Natural phrasing, not caricature spelling, no real person.
+    static func dre(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        if let known = dreKnown[fold(trimmed)] { return known }
+        let cleaned = scrub(trimmed)
+        guard !cleaned.isEmpty else { return "Ay, blood, tell me what the fuck you need, fo shizzle." }
+        let fallback = "Ay, bruh, run that back, what's the play, blood. Fo shizzle."
+        let line: String
+        switch CrewRewriteGuard.intent(trimmed) {
+        case .cutPower:
+            line = "Ay, blood, cut the motherfuckin' power first, fo shizzle. Shit's live, bruh, we ain't goin' dumb today."
+        case .conduit:
+            line = "Bruh, toss me that conduit real quick, mob. Hella quick, you feel me."
+        case .ladder:
+            line = "Ay, blood, scoot that damn ladder over and lock it in. Fo shizzle, it's all good in the hood."
+        case .head:
+            line = "Watch the dome, bruh, that shit up there is hella low. Keep it tight, blood."
+        case .wire:
+            line = "Ay, blood, more motherfuckin' wire, that's hella important. Mob, we finna be done by lunch."
+        case .mess:
+            line = "Bruh, whoever left this bullshit mess, clean that shit up. The Town don't play like that."
+        case .feeder:
+            line = "Ay, blood, quit choppin' it up and pull that damn feeder before lunch. Go hard in the paint, bruh."
+        case .breaker:
+            line = "Blood, leave that motherfuckin' breaker alone for real. Keep your hands off it, fo shizzle."
+        case .racks:
+            line = "Bruh, them racks lookin' hella nasty. Clean that shit, then it's a wrap."
+        case .hold:
+            line = "Ay, hold this for me real quick, blood. Steady, playa, fo shizzle."
+        case .compliment:
+            line = "Bruh, that shit slaps, you went dumb on it. Sick wid it, blood."
+        case .greeting:
+            line = "Ay, what's good, blood. The Town in the building, fo shizzle."
+        case .free:
+            line = "Ay, blood, handle \(voicedWords(cleaned)), hella quick. Fo shizzle, you feel me."
+        case nil:
+            line = fallback
+        }
+        return guarded(line, raw: trimmed, fallback: fallback)
+    }
+
+    private static let dreKnown: [String: String] = [
+        "bring more wire": "[laughs] Ay, blood, bring me some more motherfuckin' wire, that's hella important, fo shizzle! Quit bullshittin', we finna be done by lunch, you feel me? It's all good in the hood.",
+        "we need more wire": "[laughs] Ay, blood, bring me some more motherfuckin' wire, that's hella important, fo shizzle! Quit bullshittin', we finna be done by lunch, you feel me? It's all good in the hood.",
+    ]
+
     // MARK: - Tito
 
     /// Cuban jobsite rewrite. The ask stays. Slurs are still scrubbed and never echoed.
-    /// Workplace cussing is the ceiling this character is allowed to hit.
+    /// Constant Cuban jobsite profanity and personal insults at the listener and his work
+    /// (Trevor-approved). Hard limit: never a slur aimed at a group.
     static func tito(_ raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
@@ -322,35 +467,35 @@ enum CrewDialectRewrite {
         if let known = titoKnown[key] { return known }
         let scrubbed = scrub(trimmed)
         if scrubbed.isEmpty {
-            return "Óyeme, coño, dime qué carajo necesitas en la obra, mierda."
+            return "Asere, dime qué carajo necesitas en la obra, coño, cabrón."
         }
         // A2: no .free template. Unmatched or rejected text is empty so callers use the translation.
         let line: String
         switch CrewRewriteGuard.intent(trimmed) {
         case .cutPower:
-            line = "¡Coño, corta esa pinga de corriente ahora mismo, carajo!"
+            line = "¡Asere, corta esa pinga de corriente ahora mismo, coño! Me cago en Dios, que nos fríes a todos, guanajo."
         case .conduit:
-            line = "Pásame ese conduit, cabrón, que lo necesito en la mano ahora, coño."
+            line = "Acere, pásame ese conduit de una vez, cojones. Me cago en tu madre, comemierda, que lo necesito ya."
         case .ladder:
-            line = "Mueve esa escalera, mi hermano, coño, y déjala firme, carajo."
+            line = "Mi hermano, mueve esa escalera y déjala firme, cabrón. Dale, singao, que te vas a partir la pinga."
         case .head:
-            line = "Ojo con la cabeza, coño. No te me golpees ahí arriba, mierda."
+            line = "Ojo con la cabeza, asere, coño. Te me partes el coco ahí arriba y te mato, estúpido."
         case .wire:
-            line = "Falta cable, mierda. Tráeme más alambre ya, coño, carajo."
+            line = "¡Asere, tráeme más cable, coño! ¿Qué tú haces parado ahí, comemierda? ¡Dale, que esto no se hace solo, me cago en tu madre!"
         case .mess:
-            line = "¿Quién dejó este desorden de mierda? Recógelo ahora, cabrón, coño."
+            line = "¿Quién dejó esta clase de mierda aquí, asere? Recógelo ya, hijo de puta, mamalanga."
         case .feeder:
-            line = "¡Coño, deja la habladera y mete ese alimentador antes del almuerzo, carajo!"
+            line = "¡Chico, deja la habladera y mete ese alimentador antes del almuerzo, coño! Dale, comemierda, me cago en tu madre."
         case .breaker:
-            line = "Óyeme, coño, deja ese breaker quieto, carajo. Ahora, mierda."
+            line = "Mi hermano, deja ese breaker quieto, cojones. Me cago en Dios, guanajo, quieto ahí."
         case .racks:
-            line = "Óyeme, coño, limpia esos racks ya, carajo. Sin excusa, mierda."
+            line = "Asere, esos racks están en candela, qué clase de mierda. Límpialos ya, cabrón, coño."
         case .hold:
-            line = "Óyeme, coño, sostén eso un momento, carajo. Firme, mierda."
+            line = "Chico, sostén eso un momento, coño. Firme ahí, singao, o te mando pa' la pinga."
         case .compliment:
-            line = "Óyeme, coño, esto lo haces de pinga, carajo. Sigue así, mierda."
+            line = "¡Tremendo trabajo, asere, coño! Esto te quedó de pinga, cabrón."
         case .greeting:
-            line = "¿Qué bolá, coño? Aquí estoy, carajo."
+            line = "¿Qué bolá, asere? Aquí estoy, pinchando, coño, cabrón."
         case .free, nil:
             return ""
         }
@@ -358,15 +503,16 @@ enum CrewDialectRewrite {
     }
 
     private static let titoKnown: [String: String] = [
-        "kill the power": "¡Coño, corta esa pinga de corriente ahora mismo, carajo!",
-        "corta la corriente": "Óyeme, la corriente córtala ya, coño, con cuidado, mierda.",
-        "hand me that conduit": "Pásame ese conduit, cabrón, que lo necesito en la mano ahora, coño.",
-        "move the ladder": "Mueve esa escalera, mi hermano, coño, y déjala firme, carajo.",
-        "watch your head": "Ojo con la cabeza, coño. No te me golpees ahí arriba, mierda.",
-        "we need more wire": "Falta cable, mierda. Tráeme más alambre ya, coño, carajo.",
-        "who left this mess": "¿Quién dejó este desorden de mierda? Recógelo ahora, cabrón, coño.",
-        "hola": "¿Qué bolá, coño? Aquí estoy, carajo.",
-        "stop talking and get that feeder in before lunch": "¡Coño, deja la habladera y mete ese alimentador antes del almuerzo, carajo!",
+        "kill the power": "¡Asere, corta esa pinga de corriente ahora mismo, coño! Me cago en Dios, que nos fríes a todos, guanajo.",
+        "corta la corriente": "Acere, la corriente córtala ya, coño, con cuidado, comemierda.",
+        "hand me that conduit": "Acere, pásame ese conduit de una vez, cojones. Me cago en tu madre, comemierda, que lo necesito ya.",
+        "move the ladder": "Mi hermano, mueve esa escalera y déjala firme, cabrón. Dale, singao, que te vas a partir la pinga.",
+        "watch your head": "Ojo con la cabeza, asere, coño. Te me partes el coco ahí arriba y te mato, estúpido.",
+        "we need more wire": "¡Asere, tráeme más cable, coño! ¿Qué tú haces parado ahí, comemierda? ¡Dale, que esto no se hace solo, me cago en tu madre!",
+        "who left this mess": "¿Quién dejó esta clase de mierda aquí, asere? Recógelo ya, hijo de puta, mamalanga.",
+        "bring more wire": "¡Asere, tráeme más cable, coño! ¿Qué tú haces parado ahí, comemierda? ¡Dale, que esto no se hace solo, me cago en tu madre!",
+        "hola": "¿Qué bolá, asere? Aquí estoy, pinchando, coño, cabrón.",
+        "stop talking and get that feeder in before lunch": "¡Chico, deja la habladera y mete ese alimentador antes del almuerzo, coño! Dale, comemierda, me cago en tu madre.",
     ]
 
     // MARK: - Shared

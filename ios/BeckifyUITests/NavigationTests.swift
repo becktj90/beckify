@@ -5,6 +5,7 @@ final class NavigationTests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
+        app.launchArguments += ["-skipLaunchSplash"]
         app.launch()
     }
 

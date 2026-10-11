@@ -20,7 +20,7 @@ final class ToolHomeAreaTests: XCTestCase {
             "motorSpeed", "isLoopVerifier", "signalScaling", "modbusAddress",
             "plcTimer", "rackCurrent", "powerFactor", "batteryBank",
             "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate",
-            "motorNameplateOCR", "necCircuit",
+            "motorNameplateOCR", "necCircuit", "receptacleCircuit",
             "controlSystems", "controlStrategies", "phasorDiagram", "phasorImpedance",
         ]
         for id in field {
@@ -106,7 +106,7 @@ final class ToolHomeAreaTests: XCTestCase {
     func testPrimaryJobsiteShelfMembership() {
         let jobsite = [
             "voltageDrop", "wireAmpacity", "conduitFill", "equipmentGround",
-            "receptacleSelector", "shortCircuit", "loadFactors", "necCircuit",
+            "receptacleSelector", "receptacleCircuit", "shortCircuit", "loadFactors", "necCircuit",
         ]
         for id in jobsite {
             XCTAssertEqual(ToolHomeAreaPolicy.area(forToolID: id), .field, id)

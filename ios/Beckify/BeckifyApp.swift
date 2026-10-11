@@ -99,6 +99,11 @@ struct RootView: View {
         }
         .onAppear {
             reviewAsk.recordSession()
+            // Count completed (successful) Calculate presses for the review ask.
+            // Counting never shows UI; the ask waits for a later pause point.
+            CalculationEvents.setSuccessHandler {
+                Task { @MainActor in ReviewAskStore.shared.recordSuccessfulCalc() }
+            }
             // Never request on first-launch onAppear (HIG + App Review 5.6.3).
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(400))
@@ -123,12 +128,12 @@ struct RootView: View {
 private struct LaunchSplashContainer<Content: View>: View {
     @ViewBuilder var content: Content
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showSplash = true
+    @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-skipLaunchSplash")
 
-    /// Timing (seconds). Total ≈ hold + fade = 1.5 s (0.7 s with Reduce Motion).
-    static var hold: Double { 1.2 }
+    /// Timing (seconds). Total ≈ hold + fade = 2.3 s (1.6 s with Reduce Motion).
+    static var hold: Double { 2.0 }
     static var fade: Double { 0.3 }
-    static var reducedHold: Double { 0.5 }
+    static var reducedHold: Double { 1.4 }
     static var reducedFade: Double { 0.2 }
 
     var body: some View {
@@ -179,7 +184,7 @@ private struct LaunchSplashView: View {
     @State private var start = Date()
     @State private var logoIn = false
 
-    private let accent = Color(red: 0.545, green: 0.482, blue: 1.0)
+    private let accent = Color(red: 0.0, green: 0.85, blue: 1.0) // retro cyan
 
     var body: some View {
         GeometryReader { geo in
@@ -206,6 +211,8 @@ private struct LaunchSplashView: View {
                     .scaleEffect(logoIn || !animated ? 1 : 0.96)
                     .opacity(logoIn || !animated ? 1 : 0.85)
                     .position(center)
+                PixelLoadBar(animated: animated, color: accent)
+                    .position(x: center.x, y: size.height * 0.78)
             }
         }
         .ignoresSafeArea()
@@ -238,6 +245,32 @@ private struct LaunchSplashView: View {
         }
         .scaleEffect(1 + 0.01 * peak, anchor: UnitPoint(x: 0.5, y: 0.5))
         .drawingGroup()
+    }
+}
+
+/// 8-bit style progress: ten square pixels light up one by one across the
+/// splash hold. Reduce Motion: all pixels shown, no stepping.
+private struct PixelLoadBar: View {
+    let animated: Bool
+    let color: Color
+    @State private var start = Date()
+    private let count = 10
+    private let step: Double = 0.18
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: step)) { timeline in
+            let lit = animated
+                ? min(count, Int(timeline.date.timeIntervalSince(start) / step) + 1)
+                : count
+            HStack(spacing: 4) {
+                ForEach(0..<count, id: \.self) { i in
+                    Rectangle()
+                        .fill(i < lit ? color : color.opacity(0.15))
+                        .frame(width: 8, height: 8)
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 

@@ -425,6 +425,7 @@ extension GlyphKind {
         case .fieldPosition: return .fieldPosition
         case .deviceHealth: return .deviceHealth
         case .receptacleSelector: return .receptacleSelector
+        case .receptacleCircuit: return .receptacleSelector
         case .reactance: return .reactance
         case .powerFactor: return .powerFactor
         case .shortCircuit: return .shortCircuit
@@ -455,6 +456,8 @@ extension GlyphKind {
         case .heaterDesign: return .heaterDesign
         case .empEmc: return .empEmc
         case .necCircuit: return .necCircuit
+        case .lightningProtection: return .equipmentGround
+        case .hazardousLocations: return .referenceLibrary
         case .loadWorksheet: return .loadWorksheet
         case .cableSchedule: return .cableSchedule
         case .solenoidDesign: return .solenoidDesign

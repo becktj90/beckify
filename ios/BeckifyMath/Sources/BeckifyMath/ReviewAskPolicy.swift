@@ -9,6 +9,8 @@ public struct ReviewAskSnapshot: Equatable, Sendable {
     public var lastPromptedVersion: String
     public var currentVersion: String
     public var now: Date
+    /// When Beckify last asked StoreKit, newest or oldest first (order does not matter).
+    public var recentPromptDates: [Date]
 
     public init(
         savedJobCount: Int,
@@ -17,7 +19,8 @@ public struct ReviewAskSnapshot: Equatable, Sendable {
         firstLaunchAt: Date,
         lastPromptedVersion: String,
         currentVersion: String,
-        now: Date
+        now: Date,
+        recentPromptDates: [Date] = []
     ) {
         self.savedJobCount = savedJobCount
         self.successfulCalcCount = successfulCalcCount
@@ -26,6 +29,7 @@ public struct ReviewAskSnapshot: Equatable, Sendable {
         self.lastPromptedVersion = lastPromptedVersion
         self.currentVersion = currentVersion
         self.now = now
+        self.recentPromptDates = recentPromptDates
     }
 }
 
@@ -40,7 +44,10 @@ public struct ReviewAskSnapshot: Equatable, Sendable {
 public enum ReviewAskPolicy {
     public static let minimumSavedJobs = 2
     public static let minimumSuccessfulCalcsWithOneSave = 5
-    public static let minimumSuccessfulCalcsAlone = 8
+    /// 1.0.6: the ask becomes eligible after the 5th completed calculation.
+    public static let minimumSuccessfulCalcsAlone = 5
+    /// Local mirror of Apple's cap (3 prompts per 365 days). Apple still enforces its own.
+    public static let maxPromptsPerYear = 3
     public static let minimumSessionDays = 2
     public static let minimumHoursSinceFirstLaunch: Double = 12
 
@@ -60,9 +67,16 @@ public enum ReviewAskPolicy {
     /// and not already prompted on this marketing version.
     public static func shouldRequest(_ snapshot: ReviewAskSnapshot) -> Bool {
         guard snapshot.currentVersion != snapshot.lastPromptedVersion else { return false }
+        guard promptsInLastYear(snapshot) < maxPromptsPerYear else { return false }
         guard snapshot.distinctSessionDays >= minimumSessionDays else { return false }
         let hours = snapshot.now.timeIntervalSince(snapshot.firstLaunchAt) / 3600
         guard hours >= minimumHoursSinceFirstLaunch else { return false }
         return hasClearWin(snapshot)
+    }
+
+    /// Prompts recorded in the trailing 365 days.
+    public static func promptsInLastYear(_ snapshot: ReviewAskSnapshot) -> Int {
+        let cutoff = snapshot.now.addingTimeInterval(-365 * 24 * 3600)
+        return snapshot.recentPromptDates.filter { $0 > cutoff && $0 <= snapshot.now }.count
     }
 }

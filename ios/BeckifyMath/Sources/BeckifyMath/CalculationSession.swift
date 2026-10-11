@@ -81,6 +81,7 @@ public struct ExplicitCalculationState<Result: Equatable & Sendable>: Equatable,
             isStale = false
             focusField = nil
             lastValidationError = nil
+            CalculationEvents.notifySuccess()
         } catch let error as CalcError {
             lastValidationError = error
             focusField = field
@@ -158,7 +159,9 @@ public enum ToolCalculationPolicy {
             "phasorImpedance",
             "magneticsLab",
             "emFields",
-            "statistics":
+            "statistics",
+            "lightningProtection",
+            "hazardousLocations":
             return .live
 
         case
@@ -198,7 +201,7 @@ public enum ToolCalculationPolicy {
         "transientCircuit", "rackCurrent", "diodeIV", "isLoopVerifier",
         "tapChanger", "harmonicsTHD", "upsSizing", "motorNameplate", "motorNameplateOCR",
         "heaterDesign",
-        "empEmc", "necCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
+        "empEmc", "necCircuit", "receptacleCircuit", "loadWorksheet", "cableSchedule", "solenoidDesign",
         "solarDesign",
         "analogWorkbench", "noiseSNR", "linearRegulator", "instrumentationAmp", "adcDac",
         "eBikeTorqueRPM", "eBikeSprocket", "eBikeRange", "eBikePackDesigner", "nickelStrip",
@@ -206,6 +209,7 @@ public enum ToolCalculationPolicy {
         "magneticsLab", "emFields", "statistics",
         "spanishTranslator",
         "switchgearLogicLab",
+        "lightningProtection", "hazardousLocations",
     ]
 
     public static var liveToolIDs: [String] {
@@ -240,5 +244,32 @@ public struct ValidatedVisualModel<Payload: Equatable & Sendable>: Equatable, Se
     public init(payload: Payload, accessibilitySummary: String) {
         self.payload = payload
         self.accessibilitySummary = accessibilitySummary
+    }
+}
+
+/// App-level hook for completed (successful) explicit calculations.
+///
+/// BeckifyMath stays UI-free: the app registers a handler (the review-ask
+/// counter) and this package only reports that a Calculate succeeded.
+public enum CalculationEvents {
+    private final class Box: @unchecked Sendable {
+        let lock = NSLock()
+        var handler: (@Sendable () -> Void)?
+    }
+
+    private static let box = Box()
+
+    /// Register (or clear with `nil`) the handler called after each successful Calculate.
+    public static func setSuccessHandler(_ handler: (@Sendable () -> Void)?) {
+        box.lock.lock()
+        box.handler = handler
+        box.lock.unlock()
+    }
+
+    static func notifySuccess() {
+        box.lock.lock()
+        let handler = box.handler
+        box.lock.unlock()
+        handler?()
     }
 }

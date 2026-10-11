@@ -624,6 +624,34 @@ public enum ToolHowItWorksCatalog {
                 "Design aid — not a panel schedule or a stamped calc package.",
             ]
         ),
+        "receptacleCircuit": ToolHowItWorks(
+            summary: "How many NEMA 5-20R receptacles one 120 V branch circuit carries, plus planned load and far-end voltage drop.",
+            context: "Daisy-chained general-purpose receptacles, dwelling or commercial.",
+            bullets: [
+                "Non-dwelling counts 180 VA per yoke (220.14(I)): 13 on 20 A, 10 at 80 % continuous.",
+                "Dwellings have no NEC count limit. The range shown is common practice, not code.",
+                "Drop reuses the Voltage Drop K-factor math with the load lumped at the far receptacle.",
+                "2023 NEC section numbers only. Local amendments and the AHJ govern.",
+            ]
+        ),
+        "lightningProtection": ToolHowItWorks(
+            summary: "NFPA 780 wizard: rolling-sphere zone for a mast, roof class, strike-device spacing, down-conductor count, Class I/II, plus Ch. 4, 7, 8 cards.",
+            context: "Laying out or checking a lightning protection system on a building or tank.",
+            bullets: [
+                "150 ft sphere for ordinary structures, 100 ft for flammable-vapor and explosives structures.",
+                "Counts are a planning estimate for a plain rectangle; corners, dormers, and roof units add devices.",
+                "NFPA 780-2023 section numbers only, in our own words. The adopted edition and the AHJ govern.",
+            ]
+        ),
+        "hazardousLocations": ToolHowItWorks(
+            summary: "Classify a hazardous location (Class/Division/Group or Zone), pick a T-code from autoignition temperature, and see allowed protection and seal rules.",
+            context: "Sorting out a classified area, equipment marking, or conduit seals. Includes an Article 490 card.",
+            bullets: [
+                "Material, how often it is present, and group map to Class I–III, Div 1/2, Zone 0/1/2 or 20/21/22.",
+                "T-code must not exceed the autoignition temperature in °C.",
+                "2023 NEC section numbers only, in our own words. Area classification is an engineering call; the AHJ governs.",
+            ]
+        ),
         "loadWorksheet": ToolHowItWorks(
             summary: "NEC 220.42 lighting demand plus motor and continuous VA totals.",
             context: "Service / feeder worksheet from lighting VA and added loads.",
@@ -788,12 +816,12 @@ public enum ToolHowItWorksCatalog {
         ),
 
         "spanishTranslator": ToolHowItWorks(
-            summary: "English ↔ Spanish with Tito Solano, Lupita Reyes, Bodie Hale, Junie Pell, Pearl, or Sloane Merritt. Their 16-bit sprite stays up and bobs while audio plays.",
+            summary: "English ↔ Spanish with Tito Solano, Lupita Reyes, Humberto Arismendi, Bodie Hale, Junie Pell, Pearl, Sloane Merritt, or Dre Lacey. Their 16-bit sprite stays up and bobs while audio plays.",
             context: "Toolkit → Reference. Crew Talk — not a certified interpreter.",
             bullets: [
                 "Direction persists. English → Spanish hears English; Spanish → English hears Spanish. Quick chips and Hey! stay. Mic audio stays local.",
-                "Tito and Lupita speak Spanish. Bodie, Junie, Pearl, and Sloane speak English. Speak plays their line, never the raw text field.",
-                "The dock shows the other language. Cuban and Mexican Spanish included.",
+                "Tito, Lupita, and Humberto speak Spanish. Bodie, Junie, Pearl, Sloane, Humberto, and Dre speak English. Speak plays their line, never the raw text field.",
+                "The dock shows the other language. Cuban, Mexican, and Venezuelan Spanish included.",
                 "Speak posts that voice to /api/speak (eleven_v3). The sprite swaps idle and talk while audio plays, then stops. Apple voice if cloud TTS fails.",
             ]
         ),

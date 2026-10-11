@@ -13,7 +13,7 @@ const path = require("node:path");
 const CREW = {
   bodieHale: "XVO6RhOYU9ZEKHFXrx6b",
   titoSolano: "goyf4sY4AqSvMIeO1hb5",
-  juniePell: "tdK8noxHGTBqk6F18tbZ",
+  juniePell: "m2X69O7Xomk9219qo0Gy",
   pearl: "xDnrPZyqSbomyfOcnNpu",
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
   lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr",

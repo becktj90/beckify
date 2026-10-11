@@ -10,6 +10,8 @@ import {
   translateTargetLanguage,
   translateUserPrompt,
   crewPersonaSystemPrompt,
+  normalizeSpanishCrew,
+  TRANSLATE_VENEZUELAN_SYSTEM_PROMPT,
   normalizeEnglishCrew,
 } from "../prompts/translatePrompt.js";
 import { observeRouteTiming } from "../lib/logger.js";
@@ -64,6 +66,7 @@ router.post("/translate", async (req, res) => {
   const voiceMode = normalizeTranslateVoiceMode(body.voiceMode ?? body.mode ?? body.style ?? body.dialect);
 
   const personaCrew = direction === "es-to-en" ? normalizeEnglishCrew(body.crew) : null;
+  const spanishCrew = direction === "en-to-es" ? normalizeSpanishCrew(body.crew) : null;
 
   const clientKey = getClientKey(req);
   const textCharge = chargeBudget("text", clientKey, 1);
@@ -112,7 +115,7 @@ router.post("/translate", async (req, res) => {
         response_format: { type: "json_object" },
         max_tokens: Math.min(TRANSLATE_MAX_OUTPUT_TOKENS, textMaxOutputTokens()),
         messages: [
-          { role: "system", content: personaCrew ? crewPersonaSystemPrompt(personaCrew) : translateSystemPrompt(voiceMode, direction) },
+          { role: "system", content: personaCrew ? crewPersonaSystemPrompt(personaCrew) : spanishCrew === "humbertoArismendi" ? TRANSLATE_VENEZUELAN_SYSTEM_PROMPT : translateSystemPrompt(voiceMode, direction) },
           { role: "user", content: translateUserPrompt(sourceText, sourceLanguage, voiceMode, direction) },
         ],
       }),

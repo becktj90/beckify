@@ -57,7 +57,7 @@ def base(name, box=None, thr=26):
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
     only = sys.argv[1:]
-    for n in ["crewBodieHale","crewTitoSolano","crewLupitaReyes","crewJuniePell","crewPearl","crewSloaneMerritt","crewDreLacey"]:
+    for n in ["crewBodieHale","crewTitoSolano","crewLupitaReyes","crewJuniePell","crewPearl","crewSloaneMerritt","crewDreLacey","crewHumbertoArismendi"]:
         if only and n not in only:
             continue
         thr = THRESH.get(n, 26)

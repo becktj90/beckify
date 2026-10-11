@@ -69,6 +69,9 @@ enum ToolID: String, Codable, CaseIterable, Identifiable {
     case heaterDesign
     case empEmc
     case necCircuit
+    case receptacleCircuit
+    case lightningProtection
+    case hazardousLocations
     case loadWorksheet
     case cableSchedule
     case solenoidDesign
@@ -161,6 +164,7 @@ extension ToolShelfKind {
         case .magnetics: return "Magnetics & Fields"
         case .instruments: return "Instruments"
         case .crew: return "Crew & Paperwork"
+        case .codeSafety: return "Code & Safety"
         case .basics: return "Basics"
         case .electronics: return "Electronics"
         case .rfOptics: return "RF & Optics"
@@ -181,7 +185,7 @@ extension ToolShelfKind {
         case .power, .magnetics: return .power
         case .controls: return .controls
         case .instruments: return .sensors
-        case .crew: return .reference
+        case .crew, .codeSafety: return .reference
         case .basics, .electronics, .rfOptics, .build: return .homework
         case .math: return .analysis
         }
@@ -427,6 +431,17 @@ enum ToolboxCatalog {
             synonyms: [
                 "receptacle", "outlet", "NEMA", "L5-30", "pin and sleeve", "Meltric", "Decontactor",
                 "Hubbell", "twist lock", "IEC 60309", "Schuko", "BS 1363", "Type F", "Type E", "Type I",
+            ]
+        ),
+        ToolDefinition(
+            id: .receptacleCircuit,
+            kind: .calculator,
+            title: "Receptacles per Circuit",
+            subtitle: "NEMA 5-20R count per 120 V branch circuit, 80 % load, and far-end voltage drop.",
+            symbol: "poweroutlet.strip",
+            synonyms: [
+                "receptacles per circuit", "outlets per circuit", "how many outlets", "daisy chain", "5-20r", "5-20",
+                "nema 5-20", "20 amp outlet", "180 va", "220.14", "duplex", "pigtail", "through feed", "branch circuit",
             ]
         ),
         ToolDefinition(
@@ -733,12 +748,36 @@ enum ToolboxCatalog {
             synonyms: ["nema", "ip rating", "enclosure", "conductor color", "wire color", "hazardous", "classified", "insulation", "thhn", "torque", "bolt", "conduit", "fittings", "standard sizes", "reference", "table"]
         ),
         ToolDefinition(
+            id: .lightningProtection,
+            kind: .calculator,
+            title: "Lightning Protection",
+            subtitle: "NFPA 780 wizard: rolling sphere zone, roof layout, down conductors, Class I/II, and Ch. 4, 7, 8 references.",
+            symbol: "bolt.shield",
+            synonyms: [
+                "nfpa 780", "780", "lightning", "lightning protection", "lps", "rolling sphere", "air terminal",
+                "strike termination", "down conductor", "zone of protection", "ground ring", "class ii materials",
+                "tank", "floating roof", "shunt", "explosives", "magazine", "bonding distance",
+            ]
+        ),
+        ToolDefinition(
+            id: .hazardousLocations,
+            kind: .calculator,
+            title: "Hazardous Locations",
+            subtitle: "NEC 500–506 Class/Division/Zone wizard, T-code vs autoignition, protection methods, seals, and an Art. 490 card.",
+            symbol: "flame",
+            synonyms: [
+                "hazardous", "classified", "hazloc", "class i", "division 1", "division 2", "zone 0", "zone 1", "zone 2",
+                "zone 20", "zone 21", "zone 22", "group d", "t code", "t-code", "autoignition", "explosionproof", "xp",
+                "intrinsically safe", "nonincendive", "increased safety", "seal", "seal off", "501.15", "490", "medium voltage",
+            ]
+        ),
+        ToolDefinition(
             id: .spanishTranslator,
             kind: .sensor,
             title: "Crew Talk",
-            subtitle: "Tito, Lupita, Bodie, Junie, Pearl, or Sloane. The person, the line, and Speak.",
+            subtitle: "Tito, Lupita, Humberto, Bodie, Junie, Pearl, Sloane, or Dre. The person, the line, and Speak.",
             symbol: "character.bubble",
-            synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "pearl", "sloane merritt", "sloane", "bodie", "tito", "lupita reyes", "lupita", "junie"]
+            synonyms: ["crew talk", "crew", "translator", "spanish translator", "spanish", "translate", "interpreter", "español", "speech", "speak", "tts", "jobsite", "clean", "hey", "attention", "english", "escuchar", "listen", "bodie hale", "tito solano", "junie pell", "pearl", "sloane merritt", "sloane", "bodie", "tito", "lupita reyes", "lupita", "junie", "humberto arismendi", "humberto", "venezuelan", "venezolano", "dre lacey", "dre", "oakland", "bay area"]
         ),
         ToolDefinition(
             id: .magneticCircuit,
@@ -1085,7 +1124,7 @@ enum ToolboxCatalog {
         .field: [
             .wireAmpacity, .conductorCost, .conductorLength, .voltageDrop, .conduitFill, .cableLadder, .equipmentGround, .flexibleCable, .motorFLA, .motorSpeed, .motorNameplate,
             .motorNameplateOCR,
-            .receptacleSelector, .shortCircuit, .circularMils, .loadFactors,
+            .receptacleSelector, .receptacleCircuit, .shortCircuit, .circularMils, .loadFactors,
             .necCircuit, .isLoopVerifier,
         ],
         .power: [
@@ -1115,6 +1154,7 @@ enum ToolboxCatalog {
         ],
         .reference: [
             .referenceLibrary, .spanishTranslator, .panelDirectory, .loadWorksheet, .cableSchedule,
+            .lightningProtection, .hazardousLocations,
         ],
     ]
 
@@ -1180,7 +1220,8 @@ enum ToolboxCatalog {
         .motorFLA: [.ul508aPanelLab, .motorNameplateOCR, .motorNameplate, .motorSpeed],
         .wireAmpacity: [.ul508aPanelLab, .flexibleCable, .equipmentGround, .voltageDrop, .conductorCost],
         .flexibleCable: [.wireAmpacity, .conduitFill, .equipmentGround, .cableSchedule],
-        .receptacleSelector: [.wireAmpacity, .motorFLA, .voltageDrop],
+        .receptacleSelector: [.receptacleCircuit, .wireAmpacity, .motorFLA, .voltageDrop],
+        .receptacleCircuit: [.receptacleSelector, .voltageDrop, .necCircuit, .wireAmpacity],
         .voltageDivider: [.electronicsLab, .ohmsLaw, .seriesParallel, .ledRC],
         .seriesParallel: [.voltageDivider, .resistorColor, .ohmsLaw],
         .resistorColor: [.seriesParallel, .ledRC, .unitConverter],
@@ -1254,5 +1295,7 @@ enum ToolboxCatalog {
         .magneticsLab: [.emFields, .transformer, .solenoidDesign, .magneticCircuit],
         .emFields: [.magneticsLab, .magnetometer, .solenoidDesign],
         .statistics: [.noiseSNR, .unitConverter, .harmonicsTHD],
+        .lightningProtection: [.hazardousLocations, .equipmentGround, .referenceLibrary],
+        .hazardousLocations: [.lightningProtection, .isLoopVerifier, .referenceLibrary, .conduitFill],
     ]
 }

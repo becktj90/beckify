@@ -319,12 +319,12 @@ final class CrewTalkStateMachineTests: XCTestCase {
     }
 
     func testInvariantI9_crewAlwaysOnTheRoster() {
-        XCTAssertEqual(CrewTalkMember.roster(for: .englishToSpanish), [.titoSolano, .lupitaReyes])
-        XCTAssertEqual(CrewTalkMember.roster(for: .englishToSpanish).count, 2)
-        XCTAssertEqual(CrewTalkMember.roster(for: .spanishToEnglish).count, 4)
+        XCTAssertEqual(CrewTalkMember.roster(for: .englishToSpanish), [.titoSolano, .lupitaReyes, .humbertoArismendi])
+        XCTAssertEqual(CrewTalkMember.roster(for: .englishToSpanish).count, 3)
+        XCTAssertEqual(CrewTalkMember.roster(for: .spanishToEnglish).count, 6)
         XCTAssertEqual(
             CrewTalkMember.roster(for: .spanishToEnglish),
-            [.bodieHale, .juniePell, .pearl, .sloaneMerritt]
+            [.bodieHale, .juniePell, .pearl, .sloaneMerritt, .humbertoArismendiEnglish, .dreLacey]
         )
         XCTAssertEqual(CrewTalkMember.defaultMember(for: .englishToSpanish), .titoSolano)
         XCTAssertEqual(CrewTalkMember.defaultMember(for: .spanishToEnglish), .bodieHale)
@@ -345,7 +345,7 @@ final class CrewTalkStateMachineTests: XCTestCase {
 
         var spanish = step(CrewTalkState(), .setDirection(.spanishToEnglish)).state
         XCTAssertEqual(spanish.crew, .bodieHale)
-        for member in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt, .titoSolano, .lupitaReyes] {
+        for member in [CrewTalkMember.bodieHale, .juniePell, .pearl, .sloaneMerritt, .titoSolano, .lupitaReyes, .humbertoArismendi, .humbertoArismendiEnglish] {
             let result = step(spanish, .setCrew(member))
             let roster = CrewTalkMember.roster(for: .spanishToEnglish)
             XCTAssertTrue(roster.contains(result.state.crew))
@@ -533,7 +533,7 @@ final class CrewTalkStateMachineTests: XCTestCase {
     private func fuzz(seed: UInt64, steps: Int) -> CrewTalkState {
         var rng = LCG(state: seed)
         var state = CrewTalkState()
-        let members: [CrewTalkMember] = [.titoSolano, .lupitaReyes, .bodieHale, .juniePell, .pearl, .sloaneMerritt]
+        let members: [CrewTalkMember] = [.titoSolano, .lupitaReyes, .humbertoArismendi, .humbertoArismendiEnglish, .bodieHale, .juniePell, .pearl, .sloaneMerritt, .dreLacey]
         let directions: [SpanishTranslateDirection] = [.englishToSpanish, .spanishToEnglish]
         let auths: [CrewTalkSpeechAuthorization] = [.authorized, .denied, .restricted, .notDetermined]
         let statuses = [0, 200, 204, 401, 404, 408, 429, 500]
