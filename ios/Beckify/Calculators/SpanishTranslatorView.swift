@@ -28,7 +28,16 @@ struct SpanishTranslatorView: View {
     /// Video clip of the current line (pixel character + voice). Built only when asked.
     @State private var clipBusy = false
     @State private var clipNotice: String?
+    @State private var clipNoticeIsError = false
     @State private var clipShare: CrewClipShare?
+    @State private var clipTask: Task<Void, Never>?
+    /// Determinate render progress; the bar shows only after `CrewClipProgress.showAfter`.
+    @State private var clipProgress: CrewClipProgress?
+    @State private var clipShowsBar = false
+    /// Picking a new helper re-runs the current line in that helper's voice (debounced).
+    @State private var helperSwitch = CrewHelperSwitchState(crew: .titoSolano)
+    @State private var helperSwitchTask: Task<Void, Never>?
+    @ScaledMetric(relativeTo: .body) private var actionDiameter: CGFloat = 52
 
     private var voiceMode: SpanishVoiceMode {
         get { SpanishVoiceMode.parse(voiceModeRaw) }
@@ -120,12 +129,29 @@ struct SpanishTranslatorView: View {
             engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
             engine.setDirection(direction)
             engine.applyCrew(crew, invalidateInFlight: false)
+            helperSwitch.reset(crew: engine.crew)
         }
         .onChange(of: voiceModeRaw) { _, raw in
             engine.applyVoiceMode(SpanishVoiceMode.parse(raw), invalidateInFlight: true)
         }
         .onChange(of: crewRaw) { _, raw in
-            engine.applyCrew(CrewTalkMember.parse(raw), invalidateInFlight: true)
+            let next = CrewTalkMember.parse(raw)
+            let source = heardLine
+            let hasResult = !dockSpeakLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || engine.phase == .translating
+            engine.applyCrew(next, invalidateInFlight: true)
+            cancelClip(clearNotice: true)
+            switch helperSwitch.helperChanged(to: engine.crew, source: source, hasResult: hasResult) {
+            case .none:
+                break
+            case .cancelAndSchedule(let token):
+                helperSwitchTask?.cancel()
+                helperSwitchTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: UInt64(CrewHelperSwitchState.debounce * 1_000_000_000))
+                    guard !Task.isCancelled, let line = helperSwitch.fire(token: token) else { return }
+                    translate(line)
+                }
+            }
         }
         .onChange(of: directionRaw) { _, raw in
             typedLine = ""
@@ -135,8 +161,13 @@ struct SpanishTranslatorView: View {
             alignCrewWithDirectionRoster(next)
             engine.setDirection(next)
             engine.applyCrew(crew, invalidateInFlight: true)
+            helperSwitchTask?.cancel()
+            helperSwitch.reset(crew: engine.crew)
+            cancelClip(clearNotice: true)
         }
         .onDisappear {
+            helperSwitchTask?.cancel()
+            cancelClip(clearNotice: true)
             engine.invalidateOutdatedWork(markCancelled: true)
         }
         .background {
@@ -207,45 +238,73 @@ struct SpanishTranslatorView: View {
         )
     }
 
-    /// One button: makes a short video of the character saying this line, then copies or shares it.
-    private func clipMenu(audioURL: URL) -> some View {
+    /// Make clip: short video of the character saying this line, then copy or share it.
+    private var clipMenu: some View {
         Menu {
             Button {
-                makeClip(audioURL: audioURL, share: false)
+                makeClip(share: false)
             } label: {
                 Label("Copy video clip", systemImage: "doc.on.doc")
             }
             Button {
-                makeClip(audioURL: audioURL, share: true)
+                makeClip(share: true)
             } label: {
                 Label("Share video clip", systemImage: "square.and.arrow.up")
             }
         } label: {
-            Group {
-                if clipBusy {
-                    ProgressView()
-                } else {
-                    Image(systemName: "film")
-                }
-            }
-            .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+            CrewActionLabel(title: "Clip", systemImage: "film", diameter: actionDiameter,
+                            style: .secondary, busy: clipBusy)
         }
-        .buttonStyle(.bordered)
-        .disabled(clipBusy)
+        .disabled(clipBusy || speakLineEmpty)
         .accessibilityLabel("Make clip")
         .accessibilityHint("Video of \(crew.firstName) saying this line, for Messages")
         .accessibilityIdentifier("spanishTranslator.makeClip")
     }
 
-    private func makeClip(audioURL: URL, share: Bool) {
+    private var speakLineEmpty: Bool {
+        dockSpeakLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func makeClip(share: Bool) {
         let line = dockSpeakLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.isEmpty else {
+            clipNoticeIsError = true
+            clipNotice = CrewTalkClipError.noLine.errorDescription
+            return
+        }
         let who = crew
+        clipTask?.cancel()
         clipBusy = true
+        clipNoticeIsError = false
         clipNotice = "Making clip…"
-        Task { @MainActor in
-            defer { clipBusy = false }
+        clipProgress = CrewClipProgress(framesDone: 0, totalFrames: 0)
+        clipShowsBar = false
+        let started = Date()
+        clipTask = Task { @MainActor in
+            // Reveal the bar + Cancel only when the job runs past ~1 s.
+            let reveal = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(CrewClipProgress.showAfter * 1_000_000_000))
+                if !Task.isCancelled, clipBusy {
+                    clipShowsBar = CrewClipProgress.shouldShowBar(elapsed: Date().timeIntervalSince(started), finished: false)
+                }
+            }
+            defer {
+                reveal.cancel()
+                clipBusy = false
+                clipShowsBar = false
+                clipProgress = nil
+            }
             do {
-                let url = try await CrewTalkClipBuilder.shared.clip(crew: who, line: line, audioURL: audioURL)
+                clipNotice = "Getting \(who.firstName)’s voice…"
+                let audioURL = try await engine.clipAudioURL(line: line, crew: who)
+                try Task.checkCancellation()
+                clipNotice = "Making clip…"
+                let url = try await CrewTalkClipBuilder.shared.clip(crew: who, line: line, audioURL: audioURL) { p in
+                    Task { @MainActor in
+                        if clipBusy { clipProgress = p }
+                    }
+                }
+                try Task.checkCancellation()
                 if share {
                     clipNotice = nil
                     clipShare = CrewClipShare(url: url)
@@ -253,10 +312,23 @@ struct SpanishTranslatorView: View {
                     try CrewTalkClipBuilder.copyToPasteboard(url)
                     clipNotice = "Clip copied. Open Messages and paste."
                 }
+            } catch is CancellationError {
+                clipNotice = nil
             } catch {
+                if Task.isCancelled { clipNotice = nil; return }
+                clipNoticeIsError = true
                 clipNotice = (error as? LocalizedError)?.errorDescription ?? "Couldn’t make the clip. Try again."
             }
         }
+    }
+
+    private func cancelClip(clearNotice: Bool) {
+        clipTask?.cancel()
+        clipTask = nil
+        clipBusy = false
+        clipShowsBar = false
+        clipProgress = nil
+        if clearNotice { clipNotice = nil; clipNoticeIsError = false }
     }
 
     /// Speak string: dialect / other-language / rewrite on screen, never the raw field.
@@ -279,6 +351,8 @@ struct SpanishTranslatorView: View {
     // MARK: - Layout
 
     private func translate(_ phrase: String) {
+        helperSwitch.reset(crew: engine.crew)
+        cancelClip(clearNotice: true)
         engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
         engine.setDirection(direction)
         engine.translateText(phrase, customEndpoint: customEndpoint, token: apiToken)
@@ -329,6 +403,97 @@ struct SpanishTranslatorView: View {
         return heard.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Equal-size round buttons with short labels. One row when it fits, two rows at large
+    /// Dynamic Type. Cancel/Stop is a real icon button, never a squeezed text pill.
+    @ViewBuilder
+    private var actionRow: some View {
+        let items = actionItems
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 10) {
+                ForEach(items) { $0.view }
+            }
+            .frame(maxWidth: .infinity)
+            VStack(spacing: 10) {
+                let split = (items.count + 1) / 2
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(items.prefix(split)) { $0.view }
+                }
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(items.dropFirst(split)) { $0.view }
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var actionItems: [CrewActionItem] {
+        var items: [CrewActionItem] = []
+        if engine.canCancelInFlight {
+            let stopping = engine.phase == .playing
+            items.append(CrewActionItem(id: "cancel", view: AnyView(
+                Button {
+                    helperSwitchTask?.cancel()
+                    engine.cancelInFlightWork()
+                } label: {
+                    CrewActionLabel(title: stopping ? "Stop" : SpanishTranslatorAPI.cancelActionTitle,
+                                    systemImage: stopping ? "stop.fill" : "xmark",
+                                    diameter: actionDiameter, style: .destructive)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(stopping ? "Stop playback" : "Cancel translation")
+                .accessibilityIdentifier("spanishTranslator.cancel")
+            )))
+        }
+        items.append(CrewActionItem(id: "speak", view: AnyView(
+            Button {
+                engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
+                engine.speakDockAnswer(dockSpeakLine, language: dockSpeakLanguage)
+            } label: {
+                CrewActionLabel(title: "Speak", systemImage: "speaker.wave.3.fill",
+                                diameter: actionDiameter, style: .primary)
+            }
+            .buttonStyle(.plain)
+            .disabled(speakAgainDisabled)
+            .opacity(speakAgainDisabled ? 0.45 : 1)
+            .accessibilityLabel("Speak")
+            .accessibilityIdentifier("spanishTranslator.speakAgain")
+        )))
+        let audioURL = engine.translatedAudioURL
+        items.append(CrewActionItem(id: "copy", view: AnyView(
+            Button {
+                engine.copyTranslatedAudio()
+            } label: {
+                CrewActionLabel(title: "Copy", systemImage: "doc.on.doc",
+                                diameter: actionDiameter, style: .secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(audioURL == nil)
+            .opacity(audioURL == nil ? 0.45 : 1)
+            .accessibilityLabel("Copy audio")
+            .accessibilityIdentifier("spanishTranslator.copyAudio")
+        )))
+        items.append(CrewActionItem(id: "share", view: AnyView(
+            Group {
+                if let audioURL {
+                    ShareLink(item: audioURL) {
+                        CrewActionLabel(title: "Share", systemImage: "square.and.arrow.up",
+                                        diameter: actionDiameter, style: .secondary)
+                    }
+                } else {
+                    CrewActionLabel(title: "Share", systemImage: "square.and.arrow.up",
+                                    diameter: actionDiameter, style: .secondary)
+                        .opacity(0.45)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Share audio")
+            .accessibilityIdentifier("spanishTranslator.shareAudio")
+        )))
+        items.append(CrewActionItem(id: "clip", view: AnyView(clipMenu.buttonStyle(.plain))))
+        return items
+    }
+
     /// The translated line, its status, and Speak. Lives at the top of the scroll area, so the
     /// result is the first thing seen and nothing pinned covers it.
     private var answerCard: some View {
@@ -366,50 +531,7 @@ struct SpanishTranslatorView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("spanishTranslator.dialectHelper")
             }
-            HStack(spacing: 8) {
-                if engine.canCancelInFlight {
-                    Button(role: .destructive) {
-                        engine.cancelInFlightWork()
-                    } label: {
-                        Label(SpanishTranslatorAPI.cancelActionTitle, systemImage: "xmark.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(minHeight: Theme.touchTarget)
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("spanishTranslator.cancel")
-                }
-                Button {
-                    engine.applyVoiceMode(voiceMode, invalidateInFlight: false)
-                    engine.speakDockAnswer(dockSpeakLine, language: dockSpeakLanguage)
-                } label: {
-                    Label("Speak", systemImage: "speaker.wave.3.fill")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .frame(maxWidth: .infinity, minHeight: Theme.touchTarget)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.accent)
-                .disabled(speakAgainDisabled)
-                .accessibilityIdentifier("spanishTranslator.speakAgain")
-                if let audioURL = engine.translatedAudioURL {
-                    Button {
-                        engine.copyTranslatedAudio()
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                            .frame(width: Theme.touchTarget, height: Theme.touchTarget)
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityLabel("Copy audio")
-                    .accessibilityIdentifier("spanishTranslator.copyAudio")
-                    ShareLink(item: audioURL) {
-                        Image(systemName: "square.and.arrow.up")
-                            .frame(width: Theme.touchTarget, height: Theme.touchTarget)
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityLabel("Share audio")
-                    .accessibilityIdentifier("spanishTranslator.shareAudio")
-                    clipMenu(audioURL: audioURL)
-                }
-            }
+            actionRow
             if engine.phase == .preparingVoice, engine.canSpeakWithDeviceVoice {
                 Button {
                     engine.speakNowWithDeviceVoice()
@@ -426,10 +548,35 @@ struct SpanishTranslatorView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.warn)
             }
+            if clipBusy, clipShowsBar, let progress = clipProgress {
+                HStack(spacing: 10) {
+                    ProgressView(value: progress.fraction)
+                        .tint(Theme.accent)
+                        .accessibilityLabel("Making clip")
+                        .accessibilityValue(progress.percentLabel)
+                        .accessibilityIdentifier("spanishTranslator.clipProgress")
+                    Text(progress.percentLabel)
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(Theme.muted)
+                        .fixedSize()
+                    Button {
+                        cancelClip(clearNotice: true)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.warn)
+                    .accessibilityLabel("Cancel clip")
+                    .accessibilityIdentifier("spanishTranslator.clipCancel")
+                }
+            }
             if let clipNotice {
                 Text(clipNotice)
                     .font(.footnote)
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(clipNoticeIsError ? Theme.warn : Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("spanishTranslator.clipNotice")
             }
         }
@@ -863,6 +1010,11 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
     @Published var engineLabel = ""
     @Published var voiceNote = ""
     @Published private(set) var translatedAudioURL: URL?
+    /// Helper + line the saved recording belongs to, so Make clip never pairs one helper's
+    /// sprite with another's voice.
+    private(set) var translatedAudioCrew: CrewTalkMember?
+    private(set) var translatedAudioLine: String?
+    private var pendingSpeakLine: String?
     @Published private(set) var audioCopyNotice: String?
 
     func copyTranslatedAudio() {
@@ -1624,6 +1776,7 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         }
         allowAppleSpeakFallback = preferNeural
         cancelSpeakPipeline(silence: true)
+        pendingSpeakLine = text.trimmingCharacters(in: .whitespacesAndNewlines)
         // cancelSpeakPipeline already advanced speakGeneration; never reset it downward.
         let generation = speakGeneration
         let turn = turnID
@@ -1740,6 +1893,8 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             .appendingPathComponent("Beckify-Translation-\(UUID().uuidString).mp3")
         do {
             try data.write(to: audioURL, options: .atomic)
+            translatedAudioCrew = turnCrew
+            translatedAudioLine = pendingSpeakLine
             translatedAudioURL = audioURL
             audioCopyNotice = nil
         } catch {
@@ -1783,7 +1938,10 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self, turn == self.turnID, speakGen == self.speakGeneration else { return }
                 switch result {
-                case .success(let url): self.translatedAudioURL = url
+                case .success(let url):
+                    self.translatedAudioCrew = self.turnCrew
+                    self.translatedAudioLine = self.pendingSpeakLine
+                    self.translatedAudioURL = url
                 case .failure: self.audioCopyNotice = "Couldn’t save device audio. Try Speak again."
                 }
             }
@@ -1800,6 +1958,37 @@ final class SpanishTranslatorEngine: NSObject, ObservableObject {
         } catch {
             // Still attempt utterance; route may already be speaker.
         }
+    }
+
+    /// Audio for Make clip. Reuses the Speak recording when it matches this helper + line;
+    /// otherwise fetches the cloud voice again without playing it.
+    func clipAudioURL(line: String, crew clipCrew: CrewTalkMember) async throws -> URL {
+        let hasFile = translatedAudioURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
+        switch CrewClipAudioSource.resolve(
+            hasCachedFile: hasFile, cachedCrew: translatedAudioCrew, crew: clipCrew,
+            cachedLine: translatedAudioLine, line: line
+        ) {
+        case .cached:
+            if let url = translatedAudioURL { return url }
+        case .fetch:
+            break
+        }
+        let text = SpanishTranslatorAPI.clampSpeakText(line)
+        guard !text.isEmpty else { throw CrewTalkClipError.noLine }
+        let result = try await Self.postSpeak(
+            text: text,
+            customEndpoint: pendingCustomEndpoint,
+            token: pendingToken,
+            voiceMode: voiceMode,
+            language: clipCrew.speakLanguage,
+            crew: clipCrew
+        )
+        try Task.checkCancellation()
+        guard !result.data.isEmpty else { throw CrewTalkClipError.noAudio }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Beckify-Clip-\(UUID().uuidString).mp3")
+        try result.data.write(to: url, options: .atomic)
+        return url
     }
 
     private static func postSpeak(
@@ -2029,6 +2218,61 @@ private final class TranslatorAudioExporter: @unchecked Sendable {
 }
 
 /// Finished clip handed to the share sheet.
+struct CrewActionItem: Identifiable {
+    let id: String
+    let view: AnyView
+}
+
+/// Round icon + one-line caption. Same size for every action so the row never goes lopsided.
+struct CrewActionLabel: View {
+    enum Style { case primary, secondary, destructive }
+    let title: String
+    let systemImage: String
+    let diameter: CGFloat
+    var style: Style = .secondary
+    var busy: Bool = false
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                Circle().fill(fill)
+                if busy {
+                    ProgressView().tint(iconColor)
+                } else {
+                    Image(systemName: systemImage)
+                        .font(.system(size: diameter * 0.38, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                }
+            }
+            .frame(width: diameter, height: diameter)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .frame(minWidth: max(diameter, Theme.touchTarget))
+        .contentShape(Rectangle())
+    }
+
+    private var fill: Color {
+        switch style {
+        case .primary: return Theme.accent
+        case .secondary: return Theme.accent.opacity(0.18)
+        case .destructive: return Theme.warn.opacity(0.22)
+        }
+    }
+
+    private var iconColor: Color {
+        switch style {
+        case .primary: return Color.black.opacity(0.85)
+        case .secondary: return Theme.accent
+        case .destructive: return Theme.warn
+        }
+    }
+}
+
 struct CrewClipShare: Identifiable {
     let id = UUID()
     let url: URL
