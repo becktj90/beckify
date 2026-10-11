@@ -80,3 +80,4 @@ window.visualViewport?.addEventListener('scroll', refreshScale);
 
 window.NEW_GLENN_ENGINE = 'phaser4';
 window.__ngGame = game;
+window.__khBooted = true; // boot guard in index.html stands down

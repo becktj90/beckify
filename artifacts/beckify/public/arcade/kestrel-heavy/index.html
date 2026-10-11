@@ -1407,7 +1407,7 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
       </div>
       <button id="ng-sep-btn" type="button" hidden aria-label="Separate stages">SEPARATE</button>
     </div>
-    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space launches then climb stays on, P or Escape pauses, M mutes. Touch: one tap launches, then drag left/right to steer (◀ ▶ optional). After MECO, stay in the SEP ZONE and press SEPARATE, then glide onto barge Haven's paint and HOLD TO BURN — a long approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. QA: ?beat=haven or ?beat=sep. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
+    <p class="help">Pick an unlocked KH-n flight (each has its own payload). Keyboard: A/D or arrows steer between the dotted corridor rails, Space launches then climb stays on, P or Escape pauses, M mutes. Touch: one tap launches, then drag left/right to steer (◀ ▶ optional). After MECO, stay in the SEP ZONE and press SEPARATE, then glide onto barge Haven's paint and HOLD TO BURN — a long approach, not a vertical drop. Soft deck = BOOSTER RECOVERED; tip or splash is a score hit, not a wipe. Difficulty stays KID / CADET / PAD RAT. Phaser 4 + Matter.js.</p>
     <div class="record">
       <div class="record-title">Mission record</div>
     </div>
@@ -1417,6 +1417,37 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
     window.recordGameScore = window.recordGameScore || function () { return Promise.resolve(null); };
   </script>
   <script src="./vendor/phaser.min.js"></script>
+  <script>
+  // Boot guard: if the engine or the module graph fails, show a readable card
+  // instead of a black playfield. (Pack script: do not remove.)
+  (function () {
+    function bootCard(msg) {
+      if (document.getElementById('kh-boot-error')) return;
+      var host = document.getElementById('ng-phaser-root');
+      var card = document.createElement('div');
+      card.id = 'kh-boot-error';
+      card.setAttribute('role', 'alert');
+      card.style.cssText = 'position:fixed;inset:0;display:flex;flex-direction:column;'
+        + 'align-items:center;justify-content:center;gap:10px;z-index:9999;'
+        + 'background:#05050d;color:#b7abff;font:600 15px/1.5 system-ui,sans-serif;'
+        + 'text-align:center;padding:32px;';
+      card.innerHTML = '<div style="font-size:22px;font-weight:800;letter-spacing:2px">KESTREL HEAVY</div>'
+        + '<div style="color:#8f96ad;max-width:34ch">' + msg + '</div>';
+      (host && host.parentNode ? host.parentNode : document.body).appendChild(card);
+    }
+    window.__khBootFail = function (msg) { bootCard(msg); };
+    if (!window.Phaser) {
+      bootCard('The game engine failed to load. Check your connection and reopen.');
+    }
+    window.addEventListener('error', function (e) {
+      if (window.__khBooted) return;
+      var msg = String((e && e.message) || '');
+      if (/phaser/i.test(msg) || /failed to load/i.test(msg)) {
+        bootCard('The game failed to start. Reopen to retry.');
+      }
+    }, true);
+  })();
+  </script>
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>
