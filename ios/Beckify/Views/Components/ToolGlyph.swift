@@ -456,6 +456,8 @@ extension GlyphKind {
         case .heaterDesign: return .heaterDesign
         case .empEmc: return .empEmc
         case .necCircuit: return .necCircuit
+        case .lightningProtection: return .equipmentGround
+        case .hazardousLocations: return .referenceLibrary
         case .loadWorksheet: return .loadWorksheet
         case .cableSchedule: return .cableSchedule
         case .solenoidDesign: return .solenoidDesign
