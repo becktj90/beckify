@@ -143,6 +143,10 @@ struct SetupCheckView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                Text(spectrum.windowKind.summary)
+                    .font(Theme.TypeRole.help)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text("Which frequencies are louder right now. Left to right is frequency. Up is louder, in relative dBFS — not dB SPL.")
                     .font(Theme.TypeRole.help)
                     .foregroundStyle(Theme.muted)

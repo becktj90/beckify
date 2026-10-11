@@ -846,6 +846,18 @@ public enum SpectrumWindowKind: String, CaseIterable, Sendable {
         case .blackman: return "Blackman"
         }
     }
+
+    /// One plain-language line shown under the window picker.
+    public var summary: String {
+        switch self {
+        case .hann:
+            return "Hann: good all-round default. Peaks stay fairly sharp, with a little energy smearing into nearby bars."
+        case .hamming:
+            return "Hamming: a slightly narrower peak than Hann, but more smearing far from it. Handy for telling two close tones apart."
+        case .blackman:
+            return "Blackman: least smearing, widest peak. Best for spotting a quiet tone next to a loud one."
+        }
+    }
 }
 
 /// Rough leftover energy in a microphone magnitude spectrum.
