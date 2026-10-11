@@ -99,6 +99,11 @@ struct RootView: View {
         }
         .onAppear {
             reviewAsk.recordSession()
+            // Count completed (successful) Calculate presses for the review ask.
+            // Counting never shows UI; the ask waits for a later pause point.
+            CalculationEvents.setSuccessHandler {
+                Task { @MainActor in ReviewAskStore.shared.recordSuccessfulCalc() }
+            }
             // Never request on first-launch onAppear (HIG + App Review 5.6.3).
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(400))

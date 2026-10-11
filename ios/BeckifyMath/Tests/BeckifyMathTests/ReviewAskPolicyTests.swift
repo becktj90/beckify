@@ -13,7 +13,8 @@ final class ReviewAskPolicyTests: XCTestCase {
         firstLaunch: Date? = nil,
         lastPrompted: String = "",
         nowOffsetHours: Double = 24,
-        current: String? = nil
+        current: String? = nil,
+        promptedDaysAgo: [Double] = []
     ) -> ReviewAskSnapshot {
         let start = firstLaunch ?? day0
         return ReviewAskSnapshot(
@@ -23,7 +24,10 @@ final class ReviewAskPolicyTests: XCTestCase {
             firstLaunchAt: start,
             lastPromptedVersion: lastPrompted,
             currentVersion: current ?? version,
-            now: start.addingTimeInterval(nowOffsetHours * 3600)
+            now: start.addingTimeInterval(nowOffsetHours * 3600),
+            recentPromptDates: promptedDaysAgo.map {
+                start.addingTimeInterval(nowOffsetHours * 3600 - $0 * 86_400)
+            }
         )
     }
 
@@ -70,9 +74,9 @@ final class ReviewAskPolicyTests: XCTestCase {
         )))
     }
 
-    func testEightCalcsWithoutSaveAsks() {
+    func testFifthCalcWithoutSaveAsks() {
         XCTAssertTrue(ReviewAskPolicy.shouldRequest(snapshot(
-            calcs: 8,
+            calcs: 5,
             days: 2,
             nowOffsetHours: 13
         )))
@@ -95,10 +99,28 @@ final class ReviewAskPolicyTests: XCTestCase {
     }
 
     func testHasClearWinThresholds() {
-        XCTAssertFalse(ReviewAskPolicy.hasClearWin(snapshot(calcs: 7)))
-        XCTAssertTrue(ReviewAskPolicy.hasClearWin(snapshot(calcs: 8)))
+        XCTAssertFalse(ReviewAskPolicy.hasClearWin(snapshot(calcs: 4)))
+        XCTAssertTrue(ReviewAskPolicy.hasClearWin(snapshot(calcs: 5)))
         XCTAssertFalse(ReviewAskPolicy.hasClearWin(snapshot(saved: 1, calcs: 4)))
         XCTAssertTrue(ReviewAskPolicy.hasClearWin(snapshot(saved: 1, calcs: 5)))
         XCTAssertTrue(ReviewAskPolicy.hasClearWin(snapshot(saved: 2)))
+    }
+
+    func testFourCalcsNeverAsks() {
+        XCTAssertFalse(ReviewAskPolicy.shouldRequest(snapshot(calcs: 4, days: 3, nowOffsetHours: 72)))
+    }
+
+    func testThreePromptsInAYearBlocksAFourth() {
+        XCTAssertFalse(ReviewAskPolicy.shouldRequest(snapshot(
+            calcs: 20, days: 30, lastPrompted: "1.0.5", nowOffsetHours: 24 * 300,
+            current: "1.0.6", promptedDaysAgo: [10, 100, 200]
+        )))
+    }
+
+    func testPromptsOlderThanAYearDoNotCount() {
+        XCTAssertTrue(ReviewAskPolicy.shouldRequest(snapshot(
+            calcs: 20, days: 30, lastPrompted: "1.0.5", nowOffsetHours: 24 * 800,
+            current: "1.0.6", promptedDaysAgo: [10, 400, 500]
+        )))
     }
 }

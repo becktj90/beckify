@@ -18,7 +18,7 @@ import { resolveToolSlug } from "./toolbox-tools.mjs";
 export const FEATURED_TOOLS = [
   { slug: "ohms-law", label: "Ohm's Law" },
   { slug: "voltage-drop", label: "Voltage drop" },
-  { slug: "wire-size-ampacity", label: "Ampacity / wire size" },
+  { slug: "wire-size-ampacity", label: "Wire size & ampacity" },
   { slug: "conduit-fill", label: "Conduit fill" },
   { slug: "motor", label: "Motor FLA" },
   { slug: "conductor-length-resistance", label: "Conductor length" },
@@ -37,7 +37,7 @@ export const VESPA_RELATED_TOOLS = [
   { slug: "battery-build-designer", label: "18650 pack designer" },
   { slug: "battery-bank", label: "Battery bank calculator" },
   { slug: "voltage-drop", label: "Voltage drop" },
-  { slug: "wire-size-ampacity", label: "Ampacity / wire size" },
+  { slug: "wire-size-ampacity", label: "Wire size & ampacity" },
   { slug: "ohms-law", label: "Ohm's Law" },
   { slug: "motor", label: "Motor FLA" },
   { slug: "ebike-drivetrain", label: "E-bike drivetrain" },

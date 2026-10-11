@@ -59,7 +59,17 @@
         'Let the tool sum conductor areas and compare them against the selected trade size or recommend the smallest size that works.',
         'Check the resulting fill percentage and verify it stays at or below the allowed limit.'
       ],
-      examples: ['Raceway type: EMT', 'Conductors: 3× #3/0 AWG THHN (phase) + 1× #3/0 AWG THHN (neutral) + 1× #6 AWG THHN (ground)', 'Target limit: ≤ 40% maximum fill'],
+      examples: ['Raceway: 3/4" EMT', 'Conductors: 4× #12 AWG THHN', 'Target limit: ≤ 40% maximum fill (3+ conductors) — this example passes at about 10%'],
+      button: { label: 'Load Example Values', action: 'loadConduitFillSameSizeExample' }
+    },
+    'sec-conduit-adv': {
+      overview: 'Mixed conductor sizes in one raceway. The tool sums each conductor’s Chapter 9 Table 5 area, compares it to the raceway’s Table 4 area, and recommends the smallest trade size that stays inside the fill limit.',
+      steps: [
+        'Choose the raceway type, or leave trade size on auto.',
+        'Add one row per conductor size and insulation, including the equipment grounding conductor.',
+        'Read the fill percentage and the smallest raceway that fits.'
+      ],
+      examples: ['Raceway type: EMT, trade size auto', 'Conductors: 3× #3/0 AWG THHN (phase) + 1× #3/0 AWG THHN (neutral) + 1× #6 AWG THHN (ground)', 'Target limit: ≤ 40% maximum fill'],
       button: { label: 'Load Example Values', action: 'loadConduitFillExample' }
     },
     'sec-xfmr-wizard': {
