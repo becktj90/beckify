@@ -138,7 +138,7 @@ ok("toolbox keeps a games-page link", toolboxHtml.includes("/games/kestrel-heavy
 ok("toolbox no longer loads arcade.js", !/src="js\/arcade\.js"/.test(toolboxHtml));
 
 console.log("\n--- E-bike Battery Pack Designer ---");
-ok("e-bike home category lists Battery Pack Designer", /E-Bike Build[\s\S]{0,600}Battery Pack Designer/.test(toolboxHtml));
+ok("e-bike tools listed under Specialist tools; section holds Battery Pack Designer", /07 · Specialist tools<\/span>[\s\S]{0,400}href="#sec-ebike-tools"/.test(toolboxHtml) && /Battery Pack Designer/.test(toolboxHtml));
 ok("e-bike section has a Battery Pack Designer canvas", /id="eb-battery-designer"/.test(toolboxHtml) && /id="ebd_canvas"/.test(toolboxHtml));
 ok("pack designer includes a 3D inspect canvas", /id="ebd_canvas_3d"/.test(toolboxHtml) && /id="ebd_view_3d"/.test(toolboxHtml));
 ok("toolbox loads the pack designer script", /src="js\/ebike-battery-designer\.js"/.test(toolboxHtml));

@@ -9,7 +9,8 @@ This Linux environment has not compiled the SwiftUI or CoreMotion/AVFoundation U
 ## Listing copy
 
 **Name:** Beckify  
-**Subtitle:** Field EE toolbox  
+**Subtitle:** Electrical Calculator  
+_(1.0.6 ASO: was “Field EE toolbox”. 21 of 30 characters. Enter in Connect by hand; nothing here is submitted automatically.)_  
 **App ID (Apple ID):** `6807908745`  
 **Bundle ID:** `com.beckify.toolbox`  
 **SKU:** `beckify-toolbox`  
@@ -150,8 +151,10 @@ Search tools… (try “switchgear”, “room & rig”, “setup check”, “e
 
 This app is a design aid. It is not a PE stamp, an AEE stamp, a permit, an inspection, a calibrated instrument, or a substitute for the National Electrical Code, AS/NZS 3000, AS/NZS 3008, or a qualified engineer.
 
-**Keywords (100 characters max, comma-separated draft):**
-electrical,NEC,ampacity,THD,UPS,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,NFPA 780,hazloc
+**Keywords (100 characters max, comma-separated, 1.0.6):**
+electrician,voltage drop,conduit fill,ampacity,wire size,nec,hazloc,transformer,breaker,load calc
+
+97 of 100 characters (hazloc swapped in for feeder so the NFPA 780 / Hazardous Locations tools from build 304 stay findable). No space after commas. Leaves out “electrical” and “calculator” on purpose: Apple already indexes the name and subtitle, so repeating those words wastes keyword space. Previous drafts: `electrical,NEC,ampacity,THD,UPS,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,NFPA 780,hazloc` (build 304); pre-1.0.6: `electrical,NEC,ampacity,THD,UPS,tap,heater,nameplate,ocr,ohm,motor,solar,pid,bode,adc,ebike,cellular`.
 
 **App Store languages:** English (primary) and Spanish (Mexico/Spain). Build **298** adds an in-app Spanish UI for the main chrome and tool names; tool subtitles, calculator screens, and long help text are still English. List Spanish as a supported language in Connect, but keep the App Store description in English until a Spanish listing is written.
 

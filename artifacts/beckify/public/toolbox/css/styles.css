@@ -294,6 +294,18 @@ a.nav-ext:hover {
   color: var(--fg);
   border-left-color: rgba(139,123,255,0.3);
 }
+.nav-ext-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--border, rgba(255,255,255,0.18));
+  border-radius: 999px;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  vertical-align: 1px;
+}
 
 .family-tabs {
   display: flex;

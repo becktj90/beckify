@@ -268,6 +268,18 @@ window.calcConduitFillAdvanced = function () {
   appendCopyBtn(el);
 };
 
+/* Same-size example — matches the iOS Conduit Fill example and the
+   sec-conduit doc copy: four 12 AWG THHN in 3/4" EMT (PASS, ~10% fill). */
+window.loadConduitFillSameSizeExample = function () {
+  var conduitEl = document.getElementById('cf_conduit');
+  var awgEl = document.getElementById('cf_awg');
+  var qtyEl = document.getElementById('cf_qty');
+  if (conduitEl) conduitEl.value = '3/4';
+  if (awgEl) awgEl.value = '12';
+  if (qtyEl) qtyEl.value = '4';
+  if (typeof window.calcConduitFill === 'function') window.calcConduitFill();
+};
+
 window.loadConduitFillExample = function () {
   var typeEl = document.getElementById('cfa_type');
   var sizeEl = document.getElementById('cfa_size');

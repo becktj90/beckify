@@ -18,6 +18,7 @@ final class ReviewAskStore: ObservableObject {
         static let firstLaunch = "com.beckify.toolbox.reviewAsk.firstLaunch"
         static let lastPromptedVersion = "com.beckify.toolbox.reviewAsk.lastPromptedVersion"
         static let pending = "com.beckify.toolbox.reviewAsk.pending"
+        static let promptDates = "com.beckify.toolbox.reviewAsk.promptDates"
     }
 
     private let defaults: UserDefaults
@@ -41,6 +42,7 @@ final class ReviewAskStore: ObservableObject {
     private var distinctSessionDays: Int
     private var firstLaunchAt: Date
     private var lastPromptedVersion: String
+    private var promptDates: [Date]
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -49,6 +51,8 @@ final class ReviewAskStore: ObservableObject {
         distinctSessionDays = max(defaults.integer(forKey: Key.sessionDays), 0)
         lastPromptedVersion = defaults.string(forKey: Key.lastPromptedVersion) ?? ""
         pendingAsk = defaults.bool(forKey: Key.pending)
+        promptDates = (defaults.array(forKey: Key.promptDates) as? [Double] ?? [])
+            .map { Date(timeIntervalSince1970: $0) }
         if let stored = defaults.object(forKey: Key.firstLaunch) as? Date {
             firstLaunchAt = stored
         } else {
@@ -101,6 +105,10 @@ final class ReviewAskStore: ObservableObject {
         }
         pendingAsk = false
         lastPromptedVersion = currentVersion
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-365 * 24 * 3600)
+        promptDates = (promptDates + [now]).filter { $0 > cutoff }
+        defaults.set(promptDates.map(\.timeIntervalSince1970), forKey: Key.promptDates)
         defaults.set(false, forKey: Key.pending)
         defaults.set(currentVersion, forKey: Key.lastPromptedVersion)
         Task { @MainActor in
@@ -117,7 +125,8 @@ final class ReviewAskStore: ObservableObject {
             firstLaunchAt: firstLaunchAt,
             lastPromptedVersion: lastPromptedVersion,
             currentVersion: currentVersion,
-            now: now
+            now: now,
+            recentPromptDates: promptDates
         )
     }
 
