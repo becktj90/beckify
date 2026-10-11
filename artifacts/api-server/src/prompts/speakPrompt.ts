@@ -196,6 +196,8 @@ const CREW_TALK_VOICE_IDS = new Set<string>(Object.values(CREW_TALK_ELEVEN_VOICE
 const ELEVENLABS_SPEAK_ALLOWLIST = new Set<string>([
   ...CREW_TALK_VOICE_IDS,
   CASSIAN_VALE_VOICE_ID,
+  // Pre-restyle Junie voice: shipped TestFlight builds still send it.
+  "tdK8noxHGTBqk6F18tbZ",
 ]);
 
 export function isElevenLabsVoiceId(raw: string): boolean {
