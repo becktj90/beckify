@@ -49,12 +49,13 @@ final class CrewSpriteLibrary {
 }
 
 enum CrewTalkClipError: LocalizedError {
-    case noSprites, noAudio, writerFailed(String)
+    case noSprites, noAudio, noLine, writerFailed(String)
     var errorDescription: String? {
         switch self {
         case .noSprites: return "This character has no clip animation yet."
-        case .noAudio: return "Tap Speak first so there’s a recording to put in the clip."
-        case .writerFailed: return "Couldn’t make the clip. Try again."
+        case .noAudio: return "Couldn’t get this character’s voice for the clip. Check your connection and try again."
+        case .noLine: return "Translate a line first, then make a clip."
+        case .writerFailed(let detail): return "Couldn’t make the clip (\(detail)). Try again."
         }
     }
 }
@@ -69,8 +70,6 @@ actor CrewTalkClipBuilder {
     private static let grid = UIColor(red: 0.25, green: 0.88, blue: 1.0, alpha: 0.07)
     private static let cyan = UIColor(red: 0.25, green: 0.88, blue: 1.0, alpha: 1)
 
-    private var inFlight: [String: Task<URL, Error>] = [:]
-
     private var folder: URL {
         let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("CrewTalkClips", isDirectory: true)
@@ -78,24 +77,36 @@ actor CrewTalkClipBuilder {
         return dir
     }
 
-    func clip(crew: CrewTalkMember, line: String, audioURL: URL) async throws -> URL {
+    /// Renders (or reuses) the clip. `progress` gets frames written / total, off the main thread.
+    /// Cancelling the calling Task cancels the render and removes the partial file.
+    func clip(
+        crew: CrewTalkMember,
+        line: String,
+        audioURL: URL,
+        progress: @escaping @Sendable (CrewClipProgress) -> Void = { _ in }
+    ) async throws -> URL {
+        guard FileManager.default.fileExists(atPath: audioURL.path) else { throw CrewTalkClipError.noAudio }
         let key = CrewClipKey.make(crew: crew, line: line, audioFileName: audioURL.lastPathComponent)
         let out = folder.appendingPathComponent("\(crew.firstName)-\(key).mp4")
-        if FileManager.default.fileExists(atPath: out.path) { return out }
-        if let running = inFlight[key] { return try await running.value }
-        let task = Task { try await Self.render(crew: crew, line: line, audioURL: audioURL, to: out) }
-        inFlight[key] = task
-        defer { inFlight[key] = nil }
-        return try await task.value
+        if FileManager.default.fileExists(atPath: out.path) {
+            progress(CrewClipProgress(framesDone: 1, totalFrames: 1))
+            return out
+        }
+        return try await Self.render(crew: crew, line: line, audioURL: audioURL, to: out, progress: progress)
     }
 
     // MARK: Render
 
-    private static func render(crew: CrewTalkMember, line: String, audioURL: URL, to out: URL) async throws -> URL {
+    /// Nonisolated + static: runs on the cooperative pool, never on the main actor.
+    private static func render(
+        crew: CrewTalkMember, line: String, audioURL: URL, to out: URL,
+        progress: @escaping @Sendable (CrewClipProgress) -> Void
+    ) async throws -> URL {
         guard let sheet = CrewSpriteLibrary.shared.sheet(for: crew) else { throw CrewTalkClipError.noSprites }
         let audio = AVURLAsset(url: audioURL)
         guard let audioTrack = try await audio.loadTracks(withMediaType: .audio).first else { throw CrewTalkClipError.noAudio }
         let audioSeconds = try await audio.load(.duration).seconds
+        guard audioSeconds.isFinite, audioSeconds > 0 else { throw CrewTalkClipError.noAudio }
         let timeline = CrewClipTimeline(audioDuration: audioSeconds)
 
         let tmp = out.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".mp4")
@@ -103,6 +114,7 @@ actor CrewTalkClipBuilder {
         try? FileManager.default.removeItem(at: out)
 
         let writer = try AVAssetWriter(outputURL: tmp, fileType: .mp4)
+        writer.shouldOptimizeForNetworkUse = true
         let videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: [
             AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoWidthKey: side,
@@ -119,71 +131,125 @@ actor CrewTalkClipBuilder {
             kCVPixelBufferWidthKey as String: side,
             kCVPixelBufferHeightKey as String: side,
         ])
+        var mono = AudioChannelLayout()
+        mono.mChannelLayoutTag = kAudioChannelLayoutTag_Mono
         let audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: [
             AVFormatIDKey: kAudioFormatMPEG4AAC,
             AVNumberOfChannelsKey: 1,
             AVSampleRateKey: 44_100,
             AVEncoderBitRateKey: 96_000,
+            AVChannelLayoutKey: Data(bytes: &mono, count: MemoryLayout<AudioChannelLayout>.size),
         ])
         audioInput.expectsMediaDataInRealTime = false
         guard writer.canAdd(videoInput), writer.canAdd(audioInput) else { throw CrewTalkClipError.writerFailed("inputs") }
         writer.add(videoInput)
         writer.add(audioInput)
 
+        // Decode to 44.1 kHz mono PCM so the AAC encoder never has to guess the source layout
+        // (ElevenLabs MP3 and Apple-voice exports differ).
         let reader = try AVAssetReader(asset: audio)
         let readerOutput = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: [
             AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 44_100,
+            AVNumberOfChannelsKey: 1,
             AVLinearPCMBitDepthKey: 16,
             AVLinearPCMIsFloatKey: false,
             AVLinearPCMIsBigEndianKey: false,
             AVLinearPCMIsNonInterleaved: false,
         ])
+        readerOutput.alwaysCopiesSampleData = false
         guard reader.canAdd(readerOutput) else { throw CrewTalkClipError.writerFailed("reader") }
         reader.add(readerOutput)
 
-        guard writer.startWriting(), reader.startReading() else {
+        guard reader.startReading() else {
+            throw CrewTalkClipError.writerFailed(reader.error?.localizedDescription ?? "reader start")
+        }
+        guard writer.startWriting() else {
+            reader.cancelReading()
             throw CrewTalkClipError.writerFailed(writer.error?.localizedDescription ?? "start")
         }
         writer.startSession(atSourceTime: .zero)
 
         let backdrop = makeBackdrop(crew: crew, line: line)
         let fps = Int32(CrewClipTimeline.framesPerSecond)
-
-        // Video: every frame comes from the pre-made sheet.
-        for index in 0..<timeline.frameCount {
-            while !videoInput.isReadyForMoreMediaData { try await Task.sleep(nanoseconds: 2_000_000) }
-            try Task.checkCancellation()
-            let t = timeline.time(ofFrame: index)
-            guard let pool = adaptor.pixelBufferPool else { throw CrewTalkClipError.writerFailed("pool") }
-            var buffer: CVPixelBuffer?
-            CVPixelBufferPoolCreatePixelBuffer(nil, pool, &buffer)
-            guard let buffer else { throw CrewTalkClipError.writerFailed("buffer") }
-            draw(into: buffer, backdrop: backdrop, sprite: sheet.frame(timeline.frame(at: t, spec: sheet.spec)))
-            if !adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(index), timescale: fps)) {
-                throw CrewTalkClipError.writerFailed(writer.error?.localizedDescription ?? "append")
-            }
-        }
-        videoInput.markAsFinished()
-
-        // Audio: same recording, shifted to start after the short scan-in.
+        let total = timeline.frameCount
         let offset = CMTime(seconds: timeline.audioStart, preferredTimescale: 44_100)
-        while let sample = readerOutput.copyNextSampleBuffer() {
-            while !audioInput.isReadyForMoreMediaData { try await Task.sleep(nanoseconds: 2_000_000) }
-            var timing = CMSampleTimingInfo()
-            CMSampleBufferGetSampleTimingInfo(sample, at: 0, timingInfoOut: &timing)
-            timing.presentationTimeStamp = CMTimeAdd(timing.presentationTimeStamp, offset)
-            timing.decodeTimeStamp = .invalid
-            var shifted: CMSampleBuffer?
-            CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: sample, sampleTimingEntryCount: 1,
-                                                  sampleTimingArray: &timing, sampleBufferOut: &shifted)
-            if let shifted, !audioInput.append(shifted) { break }
+
+        // Root-cause fix: interleave. The old code appended every video frame first; the writer
+        // stops accepting video once it's ~1 s ahead of audio, so the loop waited forever.
+        var frameIndex = 0
+        var audioDone = false
+        var audioTime = 0.0
+        var lastReported = -1
+        do {
+            loop: while true {
+                try Task.checkCancellation()
+                if writer.status == .failed {
+                    throw CrewTalkClipError.writerFailed(writer.error?.localizedDescription ?? "writer")
+                }
+                let step = CrewClipMux.next(
+                    videoRemaining: frameIndex < total, videoReady: videoInput.isReadyForMoreMediaData,
+                    videoTime: timeline.time(ofFrame: frameIndex),
+                    audioRemaining: !audioDone, audioReady: audioInput.isReadyForMoreMediaData,
+                    audioTime: audioTime
+                )
+                switch step {
+                case .finish:
+                    break loop
+                case .wait:
+                    try await Task.sleep(nanoseconds: 2_000_000)
+                case .video:
+                    guard let pool = adaptor.pixelBufferPool else { throw CrewTalkClipError.writerFailed("pool") }
+                    var buffer: CVPixelBuffer?
+                    CVPixelBufferPoolCreatePixelBuffer(nil, pool, &buffer)
+                    guard let buffer else { throw CrewTalkClipError.writerFailed("buffer") }
+                    let t = timeline.time(ofFrame: frameIndex)
+                    draw(into: buffer, backdrop: backdrop, sprite: sheet.frame(timeline.frame(at: t, spec: sheet.spec)))
+                    guard adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(frameIndex), timescale: fps)) else {
+                        throw CrewTalkClipError.writerFailed(writer.error?.localizedDescription ?? "append video")
+                    }
+                    frameIndex += 1
+                    if frameIndex == total { videoInput.markAsFinished() }
+                    if frameIndex - lastReported >= 3 || frameIndex == total {
+                        lastReported = frameIndex
+                        progress(CrewClipProgress(framesDone: frameIndex, totalFrames: total))
+                    }
+                case .audio:
+                    guard let sample = readerOutput.copyNextSampleBuffer() else {
+                        if reader.status == .failed {
+                            throw CrewTalkClipError.writerFailed(reader.error?.localizedDescription ?? "read audio")
+                        }
+                        audioDone = true
+                        audioInput.markAsFinished()
+                        continue
+                    }
+                    var timing = CMSampleTimingInfo()
+                    CMSampleBufferGetSampleTimingInfo(sample, at: 0, timingInfoOut: &timing)
+                    timing.presentationTimeStamp = CMTimeAdd(timing.presentationTimeStamp, offset)
+                    timing.decodeTimeStamp = .invalid
+                    var shifted: CMSampleBuffer?
+                    CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: sample, sampleTimingEntryCount: 1,
+                                                          sampleTimingArray: &timing, sampleBufferOut: &shifted)
+                    guard let shifted else { throw CrewTalkClipError.writerFailed("audio timing") }
+                    guard audioInput.append(shifted) else {
+                        throw CrewTalkClipError.writerFailed(writer.error?.localizedDescription ?? "append audio")
+                    }
+                    let end = CMTimeAdd(timing.presentationTimeStamp, CMSampleBufferGetDuration(shifted))
+                    audioTime = end.isNumeric ? end.seconds : audioTime + 0.02
+                }
+            }
+        } catch {
+            reader.cancelReading()
+            writer.cancelWriting()
+            throw error
         }
-        audioInput.markAsFinished()
+
         writer.endSession(atSourceTime: CMTime(seconds: timeline.totalDuration, preferredTimescale: 600))
         await writer.finishWriting()
         guard writer.status == .completed else {
             throw CrewTalkClipError.writerFailed(writer.error?.localizedDescription ?? "finish")
         }
+        try? FileManager.default.removeItem(at: out)
         try FileManager.default.moveItem(at: tmp, to: out)
         return out
     }
@@ -252,6 +318,7 @@ actor CrewTalkClipBuilder {
     @MainActor
     static func copyToPasteboard(_ url: URL) throws {
         let data = try Data(contentsOf: url)
+        guard !data.isEmpty else { throw CrewTalkClipError.writerFailed("empty file") }
         UIPasteboard.general.setItems([[UTType.mpeg4Movie.identifier: data]])
     }
 }
