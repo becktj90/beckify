@@ -518,17 +518,15 @@
       text-overflow: ellipsis;
     }
     #ng-tape li.is-now {
-      flex: 1.55 1 0;
       background: var(--amber);
       color: #041014;
       font-weight: 800;
+      box-shadow: 0 0 10px rgba(255, 207, 93, 0.55);
     }
-    #ng-tape li.is-now::before { content: "NOW "; }
     #ng-tape li.is-next {
       color: var(--cyan);
       box-shadow: inset 0 0 0 1px var(--cyan);
     }
-    #ng-tape li.is-next::before { content: "NEXT "; }
     #ng-tape li.is-done { color: var(--go); }
     body[data-phase="MENU"] #ng-tape { display: none; }
     #ng-hints {
