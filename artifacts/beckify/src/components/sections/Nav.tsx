@@ -9,6 +9,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTri
 const NAV_ICON_NAMES: Record<string, BeckifyIconName> = {
   Toolbox: "toolbox",
   "Control Systems": "gauge",
+  Apps: "about",
   Projects: "projects",
   Games: "games",
 };

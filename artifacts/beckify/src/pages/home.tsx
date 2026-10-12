@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowUpRight, Orbit, Zap } from "lucide-react";
+import { ArrowUpRight, Orbit, Smartphone, Zap } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NautilusTrace } from "@/components/NautilusTrace";
 import { PenroseCanvas } from "@/components/PenroseCanvas";
@@ -177,6 +177,36 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+            </FadeIn>
+
+            {/* ── IOS APPS ──────────────────────────────────────────────── */}
+            <FadeIn delay={0.15} className="bento-cell">
+              <Link href="/apps" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: "radial-gradient(ellipse at 20% 20%, rgba(139,123,255,0.12) 0%, transparent 60%)",
+                  }}
+                />
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-auto">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg, rgba(139,123,255,0.25) 0%, rgba(79,139,255,0.15) 100%)" }}
+                    >
+                      <Smartphone className="w-4.5 h-4.5 text-[var(--accent)]" />
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
+                  </div>
+                  <div className="mt-4 space-y-1.5">
+                    <p className="type-label text-[var(--accent)]">Native iOS</p>
+                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">iPhone &amp; iPad Apps</h2>
+                    <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
+                      Beckify field toolbox, Beckify Drive for OBD and CarPlay, and Look Check. Free, no ads.
+                    </p>
+                  </div>
+                </div>
+              </Link>
             </FadeIn>
 
             {/* ── PROJECTS ──────────────────────────────────────────────── */}
