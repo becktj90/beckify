@@ -1,3 +1,4 @@
+import BeckifyMath
 import CarPlay
 import SwiftUI
 import UIKit
