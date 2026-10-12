@@ -23,15 +23,19 @@ import Foundation
 /// (A/100), and heater power `2241B6` (A/1000). Those ceilings sit below pack
 /// voltage, DC fast-charge current, a full Bolt charge, or a multi-kilowatt
 /// heater. Instant kW on enthusiast lists is volts × current / 1000, and the
-/// public voltage scales disagree, so traction kW is left unread.
+/// public voltage scales disagree, so pack voltage is never decoded. Power is
+/// shown only as a labeled estimate: nominal 350 V × measured current
+/// (`DriveEstimates`).
 public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
     case generic
+    case genericEV
     case boltEV
     case boltEUV
 
     public var title: String {
         switch self {
         case .generic: return "Generic OBD"
+        case .genericEV: return "Generic EV"
         case .boltEV: return "Bolt EV"
         case .boltEUV: return "Bolt EUV"
         }
@@ -39,7 +43,7 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
 
     public var usesBoltPIDs: Bool {
         switch self {
-        case .generic: return false
+        case .generic, .genericEV: return false
         case .boltEV, .boltEUV: return true
         }
     }
@@ -48,7 +52,7 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
     /// 2017–2019 Bolt EV is 60 kWh; 2020–2023 Bolt EV and Bolt EUV are 65 kWh.
     public var nominalPackChoicesKWh: [Double] {
         switch self {
-        case .generic: return []
+        case .generic, .genericEV: return []
         case .boltEV: return [60, 65]
         case .boltEUV: return [65]
         }
@@ -58,6 +62,8 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
         switch self {
         case .generic:
             return "SAE J1979 Mode 01 for any ELM327-class car. Fuel level stays fuel level. PID 015B, when the ECU answers, is hybrid battery remaining life — not a state-of-charge gauge."
+        case .genericEV:
+            return "Any EV, standard Mode 01 only: speed, 12 V, ambient, accelerator, and PID 015B battery remaining life when the car answers. No maker-specific PIDs, so no charge, pack, current, or power estimates. Phone sensors and trip work as usual."
         case .boltEV:
             return "2017–2023 Bolt EV. Mode 01 speed and 12 V, plus published displayed SoC, pack temp, capacity, HV current, and motor temp. 60 kWh (2017–2019) or 65 kWh (2020–2023) is a planning assumption you type, not a reading."
         case .boltEUV:
@@ -118,6 +124,12 @@ public struct OBDReadingBook: Equatable, Sendable {
         guard now.timeIntervalSince(sample.at) >= 0 else { return nil }
         return sample.value
     }
+
+    /// Raw sample with its timestamp, ignoring expiry. The dashboard uses this
+    /// for live / stale / not-reported state; `read` stays the expiry gate.
+    public func sample(_ key: OBDReading) -> OBDSample? {
+        samples[key.rawValue]
+    }
 }
 
 public struct OBDSupportMap: Equatable, Sendable {
@@ -166,7 +178,7 @@ public enum OBDCommandPlan {
 
     public static func liveCycle(profile: VehicleProfile, support: OBDSupportMap) -> [String] {
         if profile.usesBoltPIDs {
-            return [
+            let base = [
                 "ATSH 7DF",
                 "010D", "010C", "0105", "0142", "0146", "0149", "015B",
                 "ATSH 7E4",
@@ -174,6 +186,7 @@ public enum OBDCommandPlan {
                 "ATSH 7E1",
                 "222414", "2228CB",
             ]
+            return base + DriveSignalTable.additionalBoltCommands(after: base)
         }
         let candidates = ["010C", "0105", "0104", "0111", "0149", "012F", "0142", "0146", "015C", "011F", "015B", "0131"]
         var commands = candidates.filter { command in
@@ -315,7 +328,7 @@ public enum OBDDecode {
             guard let word = signed16(data) else { return [:] }
             return [.hvCurrentAmps: Double(word) / 20.0]
         case 0x28CB: return tempByte(data, as: .motorTempC)
-        default: return [:]
+        default: return DriveSignalTable.decodeAdditionalMode22(did: did, data: data)
         }
     }
 
@@ -426,8 +439,22 @@ public enum OBDAdapterHint {
 }
 
 public enum DriveLayout: String, Sendable, Equatable {
+    /// An EV with a published enhanced PID set (charge, pack, current).
     case ev
+    /// An EV on standard Mode 01 only.
+    case evStandard
     case powertrain
+}
+
+extension VehicleProfile {
+    /// Which dashboard this profile gets.
+    public var dashboardLayout: DriveLayout {
+        switch self {
+        case .generic: return .powertrain
+        case .genericEV: return .evStandard
+        case .boltEV, .boltEUV: return .ev
+        }
+    }
 }
 
 public struct DriveTile: Equatable, Sendable, Identifiable {
@@ -507,7 +534,20 @@ public struct DrivePresentation: Equatable, Sendable {
     }
 
     public static let designAid = "Design aid for enthusiasts. Not a certified diagnostic tool, not a battery-health certificate, and not the vehicle's own range estimate."
-    public static let powerGap = "kW stays blank until volts and amps are both measured. Traction pack voltage is not invented."
+    public static let powerGap = "Estimate: 350 V nominal pack × measured HV current. Pack voltage is not read."
+
+    /// CarPlay / tile copy for estimated pack power. Nil without measured current.
+    public static func powerEstimateCopy(amps: Double?, unit: DrivePowerUnit = .kilowatts) -> String? {
+        guard let kW = DriveEstimates.packPowerKW(amps: amps) else { return nil }
+        let shown = unit.convert(kilowatts: abs(kW))
+        if kW < 0 {
+            return String(format: "Regen %.0f ", shown) + unit.label + " est."
+        }
+        return String(format: "%.0f ", shown) + unit.label + " est."
+    }
+
+    /// CarPlay wording when no units are passed: mph, °F, kW.
+    public static let carPlayDefaultUnits = DriveUnitPreference(speed: .mph, temperature: .fahrenheit)
 }
 
 public enum DrivePresentationBuilder {
@@ -517,7 +557,8 @@ public enum DrivePresentationBuilder {
         now: Date,
         planning: PlanningInputs,
         trip: OBDTripTrack,
-        link: String
+        link: String,
+        units: DriveUnitPreference = DrivePresentation.carPlayDefaultUnits
     ) -> DrivePresentation {
         let soc = book.read(.displayedSocPercent, now: now)
         let range = DrivePlanning.rangeMiles(
@@ -527,12 +568,13 @@ public enum DrivePresentationBuilder {
         )
         let speed = book.read(.speedKph, now: now)
         let layout: DriveLayout = profile.usesBoltPIDs ? .ev : .powertrain
-        let temperature = temperatureCopy(book: book, now: now, preferPack: profile.usesBoltPIDs)
+        let powerCopy = layout == .ev ? DrivePresentation.powerEstimateCopy(amps: book.read(.hvCurrentAmps, now: now), unit: units.power) : nil
+        let temperature = temperatureCopy(book: book, now: now, preferPack: profile.usesBoltPIDs, units: units)
         let carPlay = DriveCarPlayCopy(
             charge: soc.map { percent($0, digits: 1) } ?? "Not read",
-            power: "Not read",
-            speed: speed.map { speedCopy($0) } ?? "Not read",
-            range: range.map { "\(Int($0.rounded())) mi planning" } ?? "Not read",
+            power: powerCopy ?? "Not read",
+            speed: speed.map { "\(Int(units.speed(fromKph: $0).rounded())) \(units.speed.label)" } ?? "Not read",
+            range: range.map { "\(Int(units.distance(fromKilometers: $0 * DriveUnitPreference.kmPerMile).rounded())) \(units.distanceLabel) planning" } ?? "Not read",
             temperature: temperature.carPlay,
             link: link
         )
@@ -573,7 +615,7 @@ public enum DrivePresentationBuilder {
         let tiles = [
             DriveTile(id: "speed", label: "Speed", value: speed.map { speedCopy($0) } ?? "—", caption: speed.map { kphCopy($0) } ?? "Mode 01 vehicle speed"),
             DriveTile(id: "amps", label: "HV current", value: amps.map { ampsCopy($0) } ?? "—", caption: "PID 222414 · header 7E1 · sign as published"),
-            DriveTile(id: "power", label: "Power", value: "—", caption: DrivePresentation.powerGap),
+            DriveTile(id: "power", label: "Power", value: DrivePresentation.powerEstimateCopy(amps: amps) ?? "—", caption: DrivePresentation.powerGap),
             DriveTile(
                 id: "range",
                 label: "Range",
@@ -674,7 +716,10 @@ public enum DrivePresentationBuilder {
         return String(format: "Planning only · %.0f kWh assumed · %.0f Wh/mi · not the vehicle estimate", kWh, wh)
     }
 
-    private static func temperatureCopy(book: OBDReadingBook, now: Date, preferPack: Bool) -> (carPlay: String, label: String) {
+    private static func temperatureCopy(book: OBDReadingBook, now: Date, preferPack: Bool, units: DriveUnitPreference) -> (carPlay: String, label: String) {
+        func shortTemp(_ celsius: Double) -> String {
+            "\(Int(units.temperature(fromCelsius: celsius).rounded()))\(units.temperature.label)"
+        }
         if preferPack, let pack = book.read(.packTempC, now: now) {
             return ("Pack \(shortTemp(pack))", "Pack")
         }
@@ -715,10 +760,6 @@ public enum DrivePresentationBuilder {
         return String(format: "%.0f°C · %.0f°F", celsius, fahrenheit)
     }
 
-    private static func shortTemp(_ celsius: Double) -> String {
-        let fahrenheit = celsius * 9.0 / 5.0 + 32.0
-        return String(format: "%.0f°F", fahrenheit)
-    }
 
     private static func duration(_ seconds: Double) -> String {
         let total = Int(seconds.rounded())

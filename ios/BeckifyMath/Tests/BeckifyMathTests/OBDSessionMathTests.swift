@@ -187,7 +187,7 @@ final class OBDSessionMathTests: XCTestCase {
         XCTAssertEqual(glance.carPlay.speed, "37 mph")
         XCTAssertEqual(glance.carPlay.range, "208 mi planning")
         XCTAssertEqual(glance.carPlay.temperature, "Pack 72°F")
-        XCTAssertEqual(glance.carPlay.power, "Not read")
+        XCTAssertEqual(glance.carPlay.power, "Regen 2 kW est.", "−5 A × 350 V nominal = 1.75 kW into the pack")
         XCTAssertEqual(glance.tiles.first { $0.id == "amps" }?.value, "-5.0 A")
         XCTAssertTrue(glance.tiles.first { $0.id == "range" }?.caption.contains("not the vehicle estimate") == true)
         XCTAssertTrue(glance.designAid.contains("Not a certified diagnostic"))

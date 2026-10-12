@@ -25,6 +25,15 @@ final class OBDBluetoothSession: NSObject, ObservableObject {
     @Published private(set) var bluetoothDenied = false
     @Published private(set) var book = OBDReadingBook()
     @Published private(set) var trip = OBDTripTrack()
+    #if DEBUG
+    struct RawReply: Equatable {
+        let reply: String
+        let at: Date
+    }
+
+    /// Last raw reply per command, for the debug PID inspector. Not in release builds.
+    @Published private(set) var rawReplies: [String: RawReply] = [:]
+    #endif
     @Published var profile: VehicleProfile {
         didSet {
             guard profile != oldValue else { return }
@@ -279,6 +288,12 @@ final class OBDBluetoothSession: NSObject, ObservableObject {
     }
 
     private func handle(command: String, reply: String) {
+        #if DEBUG
+        let key = command.uppercased().replacingOccurrences(of: " ", with: "")
+        if !key.isEmpty, !key.hasPrefix("AT") {
+            rawReplies[key] = RawReply(reply: reply.trimmingCharacters(in: .whitespacesAndNewlines), at: Date())
+        }
+        #endif
         switch OBDDecode.interpret(command: command, reply: reply) {
         case .adapter:
             missedReplies = 0

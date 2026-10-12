@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Beckify Drive uses your location while the app is open for GPS speed, altitude, heading, grade, the trip, and the G-force plot. To adjust range for weather, it sends your location rounded to about 1 km to Open-Meteo. Nothing else leaves the phone.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Beckify Drive reads the phone's barometer to show air pressure and altitude change. Readings stay on this phone and are not uploaded.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>

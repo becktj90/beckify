@@ -27,27 +27,35 @@ Apple’s CarPlay guide (June 2026) says a CarPlay app must be designed primaril
 **Subtitle:** EV and OBD gauges  
 
 **Promotional text:**
-Glanceable vehicle gauges for a Bluetooth OBD-II adapter. Bolt-leaning, with generic Mode 01 for other cars. On-device. Not a certified diagnostic.
+A glanceable dashboard for a Bluetooth OBD-II adapter and your phone's own sensors. Bolt EV battery, motor, and 12 V telemetry; generic Mode 01 for other cars. On-device. Not a certified diagnostic.
 
 **Description:**
 
-Beckify Drive is an enthusiast dashboard for a Bluetooth Low Energy OBD-II adapter (ELM327-class). The phone shows the denser gauges. CarPlay shows a large, low-clutter summary: charge, power, speed, planning range, temperature, and link status.
+Beckify Drive is an enthusiast dashboard for a Bluetooth Low Energy OBD-II adapter (ELM327-class). The phone shows the denser dashboard: a speed hero, card sections with 60-second sparklines, and phone-sensor cards. CarPlay shows a large, low-clutter summary: charge, power (est.), regen, speed, planning range, weather-adjusted range (est.), efficiency (est.), temperature, and link status. It refreshes at most every 10 seconds and keeps working with the phone locked.
 
 Generic vehicles get SAE J1979 Mode 01: speed, RPM, coolant, engine load, throttle, fuel level, 12 V module voltage, and ambient temperature. Fuel level is not shown as battery charge. PID 015B, when the car answers, is hybrid battery remaining life — not a state-of-health certificate.
 
-Chevy Bolt EV and Bolt EUV add a short list of published enhanced PIDs: displayed state of charge, pack temperature, an enthusiast capacity figure in amp-hours, HV current, and motor temperature. Kilowatts stay blank until volts and amps are both measured. This app does not invent pack voltage or battery health.
+Chevy Bolt EV and Bolt EUV switch the dashboard to electrical telemetry in three groups. Battery: displayed state of charge, pack temperature, HV current with drive and regen, an enthusiast capacity figure in amp-hours, and remaining life (HD). Motor: motor temperature and drive / regen from the sign of HV current. Power electronics: the 12 V accessory bus; inverter, DC-DC, and charger cards say "Not reported by this vehicle" because no verified request is published. The top of the screen shows power, wheel torque, and regen. Power and torque are labeled estimates from measured current and a 350 V nominal pack. This app does not read pack voltage or invent battery health.
+
+Energy & range, all labeled estimates: real Wh/mi from charge used over GPS miles, range adjusted for temperature and headwind, a regen score, a trip energy split, a fast-charge temperature coach, and a capacity trend over months.
+
+Phone sensors, all on device: GPS speed, altitude, heading, a G-force plot lined up with the direction you drive, barometric pressure, phone battery, and a trip (distance, time, average, and max speed). Location and Motion & Fitness are asked for only when you tap a card that needs them.
+
+Every value shows whether it is live, a few seconds old, or not reported. A blank card was not read from the car. Estimates carry an "est." badge and state their assumption.
 
 Planning range uses displayed state of charge only after you type a pack size and Wh/mi. The 60 kWh and 65 kWh shortcuts are GM nominal assumptions, not a reading from the car.
 
-Readings stay on the phone. Nothing is uploaded. Design aid only — not a scan tool, not a warranty battery report, and not the vehicle’s own range estimate.
+Vehicle readings stay on the phone. The only network call is a weather lookup with your location rounded to about 1 km. Design aid only — not a scan tool, not a warranty battery report, and not the vehicle’s own range estimate.
 
 **Keywords:**
-obd,elm327,bolt,ev,carplay,soc,gauge,bluetooth
+obd,elm327,bolt,ev,carplay,soc,gauge,regen,torque,g-force
 
 **What’s New:**
-First release. Phone gauges and a CarPlay driving-task scene for a BLE OBD-II adapter. Generic Mode 01, plus published Bolt EV / Bolt EUV PIDs. On-device only.
+First release. Phone dashboard and a CarPlay driving-task scene for a BLE OBD-II adapter. Generic Mode 01, plus published Bolt EV / Bolt EUV battery, motor, and 12 V telemetry. Phone-sensor cards for GPS speed, heading, G-force, barometer, and trip. Units, card order, and appearance are adjustable. On-device only.
 
 ## CarPlay entitlement — Trevor
+
+**Status:** Driving Task request submitted to Apple and pending. Do not file a second request; steps 3 onward wait on Apple.
 
 The repo already contains the stub. A signed run still fails until Apple puts the capability on the App ID. Unsigned simulator compile (`CODE_SIGNING_ALLOWED=NO`) does not need the profile.
 
@@ -60,21 +68,23 @@ The repo already contains the stub. A signed run still fails until Apple puts th
 7. If automatic signing errors with “provisioning profile doesn’t include the CarPlay entitlement,” the capability is not on the App ID yet. Stop there and finish steps 2–5. Do not strip the entitlement to unblock Toolbox; Toolbox does not use this file.
 8. In App Store Connect, create the Beckify Drive record (bundle `com.beckify.drive`, SKU `beckify-drive`). Privacy URL `https://beckify.com/privacy`. Price free, no IAP. Create version **1.0**.
 9. Archive scheme **BeckifyDrive** (not Beckify, LookCheck, or KestrelHeavy). Upload **1.0 (1)**. Attach screenshots from a Mac simulator or device. This checkout did not capture them.
-10. In App Review notes, say: design aid; Bluetooth is the user’s OBD adapter; no cloud upload; CarPlay templates refresh at most every 10 seconds; missing manufacturer PIDs show “Not read” rather than a guessed battery health. CarPlay must be usable without telling the driver to pick up the phone — connection is established before the drive, and the CarPlay screen shows status only.
+10. In App Review notes, say: design aid; Bluetooth is the user’s OBD adapter; no cloud upload of vehicle data; the only network call is Open-Meteo weather with a location rounded to about 1 km; power and torque are labeled estimates; CarPlay templates refresh at most every 10 seconds; missing manufacturer PIDs show “Not read” rather than a guessed battery health. CarPlay must be usable without telling the driver to pick up the phone — connection is established before the drive, and the CarPlay screen shows status only.
 
 CarPlay Simulator is in Additional Tools for Xcode (Hardware folder), or use a head unit. The iOS Simulator alone does not draw the CarPlay templates.
 
 ## App privacy
 
-Nutrition label: **Data Not Collected**. Bluetooth and vehicle readings stay on device. Privacy manifest `BeckifyDrive/PrivacyInfo.xcprivacy` declares UserDefaults reason `CA92.1` and no collected data types. `NSPrivacyTracking` is false.
+Nutrition label: **Data Not Linked to You → Location → Coarse Location**, used for **App Functionality**, not for tracking. This changed from "Data Not Collected" when the weather lookup was added: it sends a location rounded to about 1 km to Open-Meteo, a third party. If Apple's reading of their questionnaire changes, revisit this. Bluetooth and vehicle readings stay on device. The privacy manifest `BeckifyDrive/PrivacyInfo.xcprivacy` declares UserDefaults reason `CA92.1` and `NSPrivacyCollectedDataTypeCoarseLocation` (not linked, no tracking, App Functionality). `NSPrivacyTracking` is false, and there are no tracking domains.
 
-Usage strings (Debug and Release): Bluetooth Always and Bluetooth Peripheral. No location, microphone, camera, or motion.
+Usage strings: Bluetooth Always and Bluetooth Peripheral are build settings (Debug and Release). `NSLocationWhenInUseUsageDescription` and `NSMotionUsageDescription` are in `BeckifyDrive/Info.plist`. Location is When In Use only, for GPS speed, altitude, heading, trip, and lining up the G-force plot. Motion & Fitness covers the barometer. Both are requested lazily from a card, not at launch. Motion is processed on device. Location is processed on device, except the rounded coordinate sent for weather. No microphone or camera.
+
+App Review note to add: location and motion are optional; every vehicle card works without them.
 
 Background mode `bluetooth-central` is in `BeckifyDrive/Info.plist` so the adapter session can continue while CarPlay is connected and the phone is locked.
 
 ## Export compliance
 
-The app does not implement custom cryptography and does not open network connections for OBD data. `ITSAppUsesNonExemptEncryption` is NO. In App Store Connect, answer **No** except the standard HTTPS exemption if the form still appears.
+The app does not implement custom cryptography and does not open network connections for OBD data. The weather lookup uses standard HTTPS through `URLSession`, which is exempt. `ITSAppUsesNonExemptEncryption` is NO. In App Store Connect, answer **No** except the standard HTTPS exemption if the form still appears.
 
 ## Screenshots
 
@@ -85,6 +95,8 @@ Not in this repository. Capture on a Mac:
 - CarPlay, from CarPlay Simulator, once the entitlement is on the profile
 
 Show the disconnected state and a connected state only with real or clearly non-shipping data. Do not ship a screenshot that implies a measured battery-health percentage.
+
+The Xcode previews in `BeckifyDrive/Dashboard/DashboardPreviews.swift` (no adapter, partial data, full Bolt EV, driving, regen, partial replies, light mode) are fixtures. They are useful for review, but they are not real readings, so do not use them as App Store screenshots.
 
 ## Build
 

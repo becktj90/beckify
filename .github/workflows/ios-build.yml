@@ -74,3 +74,89 @@ jobs:
         with:
           name: beckify-navigation-results-ios-${{ matrix.ios }}
           path: ${{ runner.temp }}/BeckifyNavigation.xcresult
+
+  drive-build:
+    name: Beckify Drive ${{ matrix.configuration }} build
+    runs-on: macos-15
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build Beckify Drive without signing
+        run: >-
+          xcodebuild -project ios/Beckify.xcodeproj
+          -scheme BeckifyDrive -configuration ${{ matrix.configuration }}
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath '${{ runner.temp }}/BeckifyDriveDerivedData'
+          CODE_SIGNING_ALLOWED=NO build
+
+  drive-screenshots:
+    name: Beckify Drive screenshots (${{ matrix.label }})
+    runs-on: macos-15
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: iPhone 16
+            slug: iphone-16
+            device: iPhone 16
+            set: full
+            content_size: ""
+          - label: iPhone SE
+            slug: iphone-se
+            device: iPhone SE (3rd generation)
+            set: core
+            content_size: ""
+          - label: iPhone 16 Pro Max
+            slug: iphone-16-pro-max
+            device: iPhone 16 Pro Max
+            set: core
+            content_size: ""
+          - label: iPad Pro 13-inch
+            slug: ipad-pro-13
+            device: iPad Pro 13-inch (M4)
+            set: core
+            content_size: ""
+          - label: iPhone 16, largest text
+            slug: iphone-16-ax5
+            device: iPhone 16
+            set: core
+            content_size: accessibility-extra-extra-extra-large
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+      - name: Prepare simulator
+        id: simulator
+        run: |
+          sudo xcodebuild -runFirstLaunch
+          python3 ios/scripts/prepare_drive_simulator.py '18.5' '${{ matrix.device }}'
+      - name: Build Beckify Drive (Debug, fixtures enabled)
+        run: >-
+          xcodebuild -project ios/Beckify.xcodeproj
+          -scheme BeckifyDrive -configuration Debug
+          -destination '${{ steps.simulator.outputs.destination }}'
+          -derivedDataPath '${{ runner.temp }}/BeckifyDriveShots'
+          CODE_SIGNING_ALLOWED=NO build
+      - name: Capture fixture screenshots
+        run: >-
+          ios/scripts/capture_drive_screenshots.sh
+          '${{ steps.simulator.outputs.udid }}'
+          '${{ runner.temp }}/BeckifyDriveShots/Build/Products/Debug-iphonesimulator/BeckifyDrive.app'
+          'drive-screenshots/${{ matrix.slug }}'
+          '${{ matrix.set }}'
+          '${{ matrix.content_size }}'
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: beckify-drive-screenshots-${{ matrix.slug }}
+          path: drive-screenshots
