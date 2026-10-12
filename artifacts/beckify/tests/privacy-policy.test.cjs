@@ -23,8 +23,8 @@ console.log("\n--- Privacy policy ---");
 ok("live policy is not a draft", !/Status:\s*Draft/i.test(privacyMd) && !/not published on https:\/\/beckify.com/i.test(privacyMd));
 ok("policy names Trevor Beck and contact email", /Trevor Beck/.test(privacyMd) && /trevorjohnbeck@gmail.com/.test(privacyMd));
 ok("policy URL is https://beckify.com/privacy", /https:\/\/beckify.com\/privacy/.test(privacyMd));
-ok("nutrition label documents Look Check photo upload", /Analyze Look/.test(privacyMd) && /Photos/.test(privacyMd) && /not used for tracking/.test(privacyMd));
-ok("Look Check posts to api.beckify.com, not GitHub Pages", /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyMd) && /https:\/\/api\.beckify\.com\/api\/analyze-look/.test(privacyPage) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyMd) && !/https:\/\/beckify\.com\/api\/analyze-look/.test(privacyPage));
+ok("nutrition label documents the Analyze photo upload", /\*\*Analyze\*\*/.test(privacyMd) && /Photos/.test(privacyMd) && /not used for tracking/.test(privacyMd) && /<strong>Photos<\/strong>/.test(privacyPage) && /not used for tracking/.test(privacyPage));
+ok("photo Analyze posts to api.beckify.com, not GitHub Pages", ["analyze-nameplate", "analyze-panel"].every((route) => privacyMd.includes(`https://api.beckify.com/api/${route}`) && privacyPage.includes(`https://api.beckify.com/api/${route}`) && !privacyMd.includes(`https://beckify.com/api/${route}`) && !privacyPage.includes(`https://beckify.com/api/${route}`)));
 ok("sensors and Saved Jobs stay on device", /Saved Jobs stay on the device/.test(privacyMd));
 ok("hosted share is user-initiated", /api\/share/.test(privacyMd) && /Nothing is sent until you tap Share/.test(privacyMd) && /Hosted calculation link/.test(privacyPage));
 ok("no analytics, ads, tracking, or accounts", /No analytics/.test(privacyMd) && /No ads/.test(privacyMd) && /no tracking/.test(privacyMd) && /No user accounts/.test(privacyMd));
@@ -35,15 +35,15 @@ ok("Apple Developer Program noted as signed up on 2026-09-02", /2026-09-02/.test
 ok("remaining Mac steps still listed", /Archive in Xcode/.test(appStoreMd) && /Attach screenshots/.test(appStoreMd) && /set \*\*Team\*\*/.test(appStoreMd) && /Create the app record/.test(appStoreMd));
 ok("bundle ID, name, devices, price, age stay honest", /com\.beckify\.toolbox/.test(appStoreMd) && /\*\*Name:\*\* Beckify/.test(appStoreMd) && /iPhone and iPad/.test(appStoreMd) && /Free to use, no ads/.test(appStoreMd) && /Optional tips in Settings are in-app purchases/.test(appStoreMd) && /Calculators are not paywalled/.test(appStoreMd) && /4\+/.test(appStoreMd));
 ok("support and marketing URLs are beckify.com", /\*\*Support URL:\*\* https:\/\/beckify.com/.test(appStoreMd) && /\*\*Marketing URL:\*\* https:\/\/beckify.com/.test(appStoreMd));
-ok("React privacy page is a live policy", /Analyze Look/.test(privacyPage) && /com.beckify.toolbox/.test(privacyPage) && !/not published/.test(privacyPage));
+ok("React privacy page is a live policy", /<strong>Analyze<\/strong>/.test(privacyPage) && /com.beckify.toolbox/.test(privacyPage) && !/not published/.test(privacyPage));
 ok("Kestrel Heavy standalone iOS app is on the public privacy page", /com\.beckify\.kestrelheavy/.test(privacyPage) && /does not collect/.test(privacyPage) && /\/games\/kestrel-heavy/.test(privacyPage));
 ok("React routes cover /privacy and /privacy/", appSrc.includes('path="/privacy"') && appSrc.includes('path="/privacy/"'));
 ok("sitemap All pages lists Privacy", /href: "\/privacy", label: "Privacy"/.test(sitemapSrc));
 ok("footer links Privacy", footerSrc.includes('href="/privacy"') && footerSrc.includes("Privacy"));
 ok("static route generator includes privacy", staticRoutes.includes("seo-copy") && staticRoutes.includes("privacy"));
-ok("privacy SEO copy stays honest about Look Check and the bundle ID", (() => {
+ok("privacy SEO copy stays honest about photo uploads and the bundle ID", (() => {
   const seoCopy = fs.readFileSync(path.join(siteRoot, "src/data/seo-copy.mjs"), "utf8");
-  return /Look Check/.test(seoCopy) && /com\.beckify\.toolbox/.test(seoCopy) && /No analytics/.test(seoCopy);
+  return /photos upload only when you tap Analyze/.test(seoCopy) && /com\.beckify\.toolbox/.test(seoCopy) && /No analytics/.test(seoCopy);
 })());
 ok("xml sitemap generator includes /privacy", /\["\/privacy\/?", "[a-z]+", "[0-9.]+", /.test(sitemapGen));
 ok("privacy page keeps the remaining game listed", sitemapSrc.includes("Kestrel Heavy") && !sitemapSrc.includes("Cosmic Cadet") && !sitemapSrc.includes("Apollo & Rocco Run"));
@@ -56,7 +56,6 @@ ok(
     /analyze-nameplate/.test(privacyPage) &&
     /analyze-panel/.test(privacyPage) &&
     /analyze-tdr/.test(privacyPage) &&
-    /analyze-look/.test(privacyPage) &&
     /OpenAI/.test(privacyPage) &&
     /Anthropic/.test(privacyPage),
 );

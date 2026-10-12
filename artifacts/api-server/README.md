@@ -6,7 +6,6 @@ Express vision + review service.
 
 Registered POST routes (must be present after every production deploy):
 
-- `/api/analyze-look`
 - `/api/analyze-nameplate`
 - `/api/analyze-panel`
 - `/api/analyze-tdr`
@@ -20,23 +19,6 @@ Registered POST routes (must be present after every production deploy):
 
 GitHub Pages (`https://beckify.com`) cannot accept these POSTs (`405`). Clients must use `https://api.beckify.com`.
 
-### `POST /api/analyze-look` roast modes
-
-Body (existing clients unchanged):
-
-```json
-{
-  "imageBase64": "data:image/jpeg;base64,…",
-  "mimeType": "image/jpeg",
-  "task": "look",
-  "roastMode": "mean"
-}
-```
-
-`roastMode` is `mean` | `nice` | `bro`. Omitted, blank, or unknown values default to **`bro`** (short BroGPT one-liner used by the website and Beckify Toolbox). The standalone **Look Check** iOS app (`com.beckify.lookcheck`) secretly coins `mean` or `nice` on each Analyze for a longer, exaggerated roast (several sentences) and does not show the choice. Safety rails are the same in every mode: anyone who appears under 18 is `declined` with no roast and no appearance rating; no sexual/graphic content; no race, disability, or body-shaming. Success JSON includes `roastMode` next to `analysis`.
-
-After merge, Fly auto-deploys when `artifacts/api-server` changes (needs `FLY_API_TOKEN`). Old clients that omit `roastMode` keep the BroGPT prompt.
-
 ### `POST /api/translate`
 
 Text translation for the Toolbox **Spanish Translator** tool. Omitting languages stays **English → Spanish** (`sourceLanguage` defaults to `en`, `targetLanguage` defaults to `es`). Optional `voiceMode`: `jobsite` or `clean`.
@@ -48,7 +30,7 @@ Same JSON shape either way: `translation`, `dialect`, `notes`, `voiceMode`, `sou
 
 ### `POST /api/speak`
 
-Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for translator clips. Look Check roast playback may send up to **900** characters with voice id `uYsaRSYDSuxmtyipO9Qt` (Cassian Vale), model `eleven_v3`, and seed **60606**. That voice uses server voice_settings for a slow, close, delighted delivery (stability 0.38, similarity_boost 0.82, style 1, speed 0.86). The ElevenLabs key stays in `ELEVENLABS_API_KEY` and is never sent to the app. Empty body → **400**. Used by Spanish Translator loud playback and Look Check roasts; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en). Look Check does not fall back to a device voice.
+Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for every voice (over → **413**). Crew Talk characters use allowlisted ElevenLabs voice ids on model `eleven_v3`; any other ElevenLabs-shaped id → **400** `Unknown voice.` before a provider call. The ElevenLabs key stays in `ELEVENLABS_API_KEY` and is never sent to the app. Empty body → **400**. Used by Spanish Translator loud playback and Crew Talk; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en).
 
 ### Crew Talk rooms (`/api/rooms`)
 
@@ -66,7 +48,7 @@ Limits: 300 rooms, 12 room creates and 40 join attempts per 15 min per IP, 4 ope
 
 ### `POST /api/share` and `GET /api/share/:token`
 
-Creates and reads a hosted Voltage Drop or Conduit Fill snapshot. The token is HMAC-SHA256 over the JSON payload using `SHARE_HMAC_SECRET` (at least 16 characters). Fly scale-to-zero does not drop existing links because nothing is stored in memory or on a volume. `POST` body: `{ "tool": "voltage-drop" | "conduit-fill", "contractor": "…", "fields": [{ "label": "…", "value": "…" }] }`. Success: `{ "url": "https://beckify.com/share/…", "tool", "title" }`. Missing secret → **503**. Bad payload → **400**. Bad or tampered token → **404**. Create is capped at 20 per 15 minutes per IP; reads at 120. No API key in the client. This does not meter translate, speak, or look.
+Creates and reads a hosted Voltage Drop or Conduit Fill snapshot. The token is HMAC-SHA256 over the JSON payload using `SHARE_HMAC_SECRET` (at least 16 characters). Fly scale-to-zero does not drop existing links because nothing is stored in memory or on a volume. `POST` body: `{ "tool": "voltage-drop" | "conduit-fill", "contractor": "…", "fields": [{ "label": "…", "value": "…" }] }`. Success: `{ "url": "https://beckify.com/share/…", "tool", "title" }`. Missing secret → **503**. Bad payload → **400**. Bad or tampered token → **404**. Create is capped at 20 per 15 minutes per IP; reads at 120. No API key in the client. This does not meter translate, speak, or the vision routes.
 
 ## Local
 
@@ -136,12 +118,12 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
 
    ```bash
    curl -sS https://api.beckify.com/api/healthz
-   curl -sS -D - -X POST https://api.beckify.com/api/analyze-look \
+   curl -sS -D - -X POST https://api.beckify.com/api/analyze-nameplate \
      -H 'Content-Type: application/json' -d '{}'
    ```
 
-   Expected healthz: `status: "ok"` and `routes.post` includes `/api/analyze-look`.  
-   Expected empty look POST: **400** JSON (not HTML `Cannot POST`).
+   Expected healthz: `status: "ok"` and `routes.post` includes `/api/analyze-nameplate`.  
+   Expected empty nameplate POST: **400** JSON (not HTML `Cannot POST`).
 
 ### Environment variables
 
@@ -160,7 +142,7 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
 | `AI_BUDGET_VISION` | Optional | Shared image analyses per client per 15 min. Default **5**. |
 | `AI_BUDGET_ELEVEN_CHARS` | Optional | ElevenLabs characters per client per 15 min. Default **8000**. |
 | `AI_BUDGET_OPENAI` | Optional | OpenAI speech requests per client per 15 min. Default **20**. |
-| `AI_BUDGET_TEXT` | Optional | Text completions (translate, review, look comedy) per client per 15 min. Default **30**. |
+| `AI_BUDGET_TEXT` | Optional | Text completions (translate, review) per client per 15 min. Default **30**. |
 | `AI_TEXT_MAX_OUTPUT_TOKENS` | Optional | Ceiling for text completions. Default **1800**. |
 | `AI_VISION_MAX_OUTPUT_TOKENS` | Optional | Ceiling for image completions. Default **8192**. |
 | `AI_PANEL_MAX_OUTPUT_TOKENS` | Optional | Panel directory output tokens. Default **8192**. |

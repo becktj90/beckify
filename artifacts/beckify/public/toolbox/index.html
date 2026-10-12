@@ -15,12 +15,12 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta property="og:site_name" content="Beckify">
   <meta property="og:title" content="Electrical engineering toolbox — Ohm's Law, voltage drop, ampacity, conduit fill">
-  <meta property="og:description" content="58 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta property="og:description" content="57 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <meta property="og:image" content="https://beckify.com/toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://beckify.com/toolbox/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="description" content="58 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta name="description" content="57 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFZ9X595E"></script>
   <script>
@@ -154,78 +154,6 @@
     .tdr-pill.up { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
     .tdr-pill.down { background: rgba(248, 113, 113, 0.12); color: #f87171; }
     .tdr-pill.unknown { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
-    .look-verdict-card {
-      display: grid;
-      gap: 16px;
-      padding: 20px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.03);
-    }
-    .look-verdict-card[hidden] { display: none; }
-    .look-verdict-card[data-verdict="looks_good"] { border-color: rgba(74, 222, 128, 0.45); background: rgba(74, 222, 128, 0.08); }
-    .look-verdict-card[data-verdict="looks_bad"] { border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.08); }
-    .look-verdict-card[data-verdict="mixed"] { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.07); }
-    .look-verdict-card[data-verdict="declined"] { border-color: rgba(148, 163, 184, 0.4); background: rgba(148, 163, 184, 0.08); }
-    .look-verdict-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .look-score { font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
-    .look-verdict-card[data-verdict="looks_good"] .look-score { color: #4ade80; }
-    .look-verdict-card[data-verdict="looks_bad"] .look-score { color: #f87171; }
-    .look-verdict-card[data-verdict="mixed"] .look-score { color: #fbbf24; }
-    .look-look-score-wrap {
-      margin: 14px 0 0;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.03);
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .look-look-score-wrap[hidden] { display: none; }
-    .look-look-score {
-      font-size: 2.6rem;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -0.04em;
-    }
-    .look-verdict-card[data-verdict="looks_good"] .look-look-score { color: #4ade80; }
-    .look-verdict-card[data-verdict="looks_bad"] .look-look-score { color: #f87171; }
-    .look-verdict-card[data-verdict="mixed"] .look-look-score { color: #fbbf24; }
-    .look-look-score-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      opacity: 0.75;
-    }
-    .look-verdict-list { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.55; }
-    .look-summary { margin: 0; line-height: 1.55; max-width: 70ch; }
-    .look-summary[hidden] { display: none; }
-    .look-roast {
-      margin: 0;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(251, 191, 36, 0.4);
-      background: rgba(251, 191, 36, 0.1);
-    }
-    .look-roast[hidden] { display: none; }
-    .look-roast-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #fbbf24;
-    }
-    .look-roast-text { margin: 8px 0 0; line-height: 1.55; max-width: 70ch; font-size: 1.05rem; }
-    .look-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 10px; }
-    .look-metrics[hidden] { display: none; }
-    .look-metric { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.03); }
-    .look-metric-label { color: var(--fg-muted); font-size: 0.85rem; }
-    .look-metric-value { font-size: 1.55rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
-    .look-metric-bar { height: 6px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.08); }
-    .look-metric-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--violet) 0%, var(--blue) 100%); }
     .feynman-lesson { margin: 14px 0 18px; padding: 16px 18px; border: 1px solid rgba(110, 231, 183, 0.28); border-radius: 14px; background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(79,139,255,0.05)); }
     .feynman-lesson-title { color: #6ee7b7; font-weight: 700; font-size: 0.98rem; }
     .feynman-formula { margin: 8px 0; color: #eef0fa; font: 600 1.05rem/1.5 Georgia, serif; letter-spacing: 0.02em; }
@@ -310,7 +238,6 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">05 · Test &amp; analysis</div>
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Trace Analyzer</button>
-      <button class="nav-btn" data-target="sec-look-check" data-keywords="look check photo verdict good bad selfie appearance camera metrics entertainment vision roast">Look Check</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
@@ -367,7 +294,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">58 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">57 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <section class="home-featured" aria-labelledby="featured-tools-heading">
@@ -444,7 +371,6 @@
           <div class="home-cat-header"><span class="home-cat-icon">🧪</span><span class="home-cat-name">05 · Test &amp; analysis</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Trace Analyzer</a></li>
-            <li><a class="home-tool-link" href="#sec-look-check">Look Check</a></li>
             <li><a class="home-tool-link" href="#sec-circuit-sim">Circuit Simulator</a></li>
             <li><a class="home-tool-link" href="#sec-smith-chart">Smith Chart</a></li>
             <li><a class="home-tool-link" href="#sec-emp-emc">EMP / EMC Shielding</a></li>
@@ -10191,145 +10117,6 @@
     </section>
 
     <!-- ════════════════════════════════════════
-         LOOK CHECK
-         ════════════════════════════════════════ -->
-    <section id="sec-look-check" class="section">
-      <div class="section-header">
-        <h2>Look Check</h2>
-        <p>Take a camera photo of a person, then get honest photo feedback — lighting / framing / expression / outfit scores, a brief how-you-look summary, and a surprise roast. Entertainment only — not medical advice, not dating advice, and not a beauty contest.</p>
-        <details class="section-info">
-          <summary>ℹ More Info — Look Check</summary>
-          <div class="section-info-body">
-            This is a bonus vision tool. It rates lighting, angle, expression, sharpness, and framing — not your worth —
-            and adds a roast of the shot.
-            Anyone who appears under 18 is not rated and gets no roast. Cloud-only: there is no on-device Tesseract path.
-            Taking or choosing a photo does not upload it. Analyze Look sends an upright copy to a HTTPS vision endpoint.
-          </div>
-        </details>
-      </div>
-      <div class="card-grid two-col">
-        <div class="card" style="grid-column:1/-1">
-          <div class="card-title">Take or choose a photo</div>
-          <div class="card-body">
-            <div id="look_privacy" class="photo-privacy is-upload"><strong>Privacy:</strong> this tool is cloud-only. Taking or choosing a photo does not upload it. The image leaves this device only when you click Analyze Look. The photo is not saved after you leave or reset. Anyone who appears under 18 is not rated. A non-empty adult roast is sent as text to the speak API and played; declined, no person, and empty roasts are not spoken.</div>
-            <div class="photo-safety"><strong>Honest photo feedback. You might get hyped. You might get roasted.</strong> Entertainment only. Photo notes plus a roast — not medical, dating, or beauty authority. Do not use this on photos of children.</div>
-            <div id="look_vlm_settings" class="vlm-settings">
-              <p class="note">Optional custom HTTPS endpoint. A personal API key stays in this tab only (sessionStorage) and is never sent to Beckify. The Beckify proxy may forward the photo to OpenAI and/or Anthropic. Production can use the Beckify proxy from <code>TDR_API_BASE_URL</code> / <code>beckify-api-base-url</code> → <code>/api/analyze-look</code>.</p>
-              <div class="input-group">
-                <div>
-                  <label for="look-vlm-endpoint">Custom VLM endpoint (optional)</label>
-                  <input id="look-vlm-endpoint" type="url" inputmode="url" autocomplete="off" data-no-persist placeholder="https://your-proxy.example/ocr" spellcheck="false">
-                </div>
-                <div>
-                  <label for="look-vlm-token">Bearer token for that endpoint (optional)</label>
-                  <input id="look-vlm-token" type="password" autocomplete="off" data-no-persist placeholder="not sent to Beckify">
-                </div>
-              </div>
-              <p id="look-vlm-config" class="note">No custom URL yet. Analyze Look uses the Beckify API on this site when available.</p>
-            </div>
-            <div id="look-drop-zone" class="tdr-drop-zone" role="button" tabindex="0" aria-label="Drag and drop a photo or choose a file">
-              <div style="font-size:2rem">📷</div>
-              <div>
-                <strong>Take a photo, drop a file, or choose one</strong><br>
-                Taking or choosing a photo does not upload it.
-              </div>
-              <input id="look-file-input" type="file" accept="image/*" hidden>
-              <input id="look-camera-input" type="file" accept="image/*" capture="user" hidden>
-              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
-                <button id="look-camera-btn" class="btn btn-accent" type="button">Take Photo</button>
-                <button id="look-browse-btn" class="btn" type="button">Choose Photo</button>
-              </div>
-            </div>
-
-            <div id="look-preview-frame" class="tdr-preview-frame" style="margin-top:12px">
-              <div id="look-preview-placeholder" class="tdr-preview-placeholder">No image loaded yet.</div>
-              <img id="look-preview-image" alt="Look Check photo preview">
-            </div>
-
-            <div class="input-group" style="margin-top:12px">
-              <div>
-                <label>File</label>
-                <div id="look-file-name" class="note">No file selected</div>
-              </div>
-              <div>
-                <label>Status</label>
-                <div id="look-status" class="note">Ready for a camera photo or a file. Taking or choosing a photo does not upload it.</div>
-              </div>
-            </div>
-
-            <div class="progress-shell" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px">
-              <div class="progress-bar" style="height:18px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:999px;overflow:hidden">
-                <div id="look-progress-fill" class="progress-fill" style="width:0%;height:100%;background:linear-gradient(90deg,var(--violet) 0%,var(--blue) 100%)"></div>
-              </div>
-              <span id="look-progress-label" style="min-width:46px;text-align:right;font-weight:700">0%</span>
-            </div>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-              <button id="look-analyze-btn" class="btn btn-accent" type="button" disabled>Analyze Look</button>
-              <button id="look-reset-btn" class="btn" type="button">Reset</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="grid-column:1/-1">
-          <div class="card-title">Verdict</div>
-          <div class="card-body">
-            <div id="look-verdict-card" class="look-verdict-card" hidden>
-              <div class="look-verdict-top">
-                <div>
-                  <div id="look-verdict-badge" class="tdr-pill unknown">Mixed</div>
-                  <h3 id="look-headline" style="margin:10px 0 0">Waiting on a photo.</h3>
-                </div>
-                <div id="look-score-wrap">
-                  <div id="look-score" class="look-score">—</div>
-                  <div class="note">Photo assessment · out of 100</div>
-                </div>
-              </div>
-              <p id="look-summary" class="look-summary" hidden></p>
-              <figure id="look-roast" class="look-roast" hidden>
-                <figcaption class="look-roast-label">Roast</figcaption>
-                <blockquote id="look-roast-text" class="look-roast-text"></blockquote>
-                <p class="note" style="margin-top:8px">Entertainment only. Comedy roast of this frame — not a beauty score. Photo assessment stays honest.</p>
-              </figure>
-              <div id="look-look-score-wrap" class="look-look-score-wrap" hidden>
-                <div>
-                  <div class="look-look-score-label">Look score</div>
-                  <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
-                    <div id="look-look-score" class="look-look-score">—</div>
-                    <div class="note">/ 10</div>
-                  </div>
-                </div>
-              </div>
-              <div id="look-metrics" class="look-metrics" hidden></div>
-              <div>
-                <strong>Why</strong>
-                <ul id="look-reasons" class="look-verdict-list"></ul>
-              </div>
-              <div>
-                <strong>Retake tips</strong>
-                <ul id="look-fixes" class="look-verdict-list"></ul>
-              </div>
-              <div>
-                <strong>Photo notes</strong>
-                <ul id="look-photo-notes" class="look-verdict-list"></ul>
-              </div>
-              <div id="look-warnings-host" hidden>
-                <strong>Notes</strong>
-                <ul id="look-warnings" class="look-verdict-list"></ul>
-              </div>
-              <div class="result-copy-row">
-                <button id="look-copy-btn" class="btn-copy" type="button">[COPY]</button>
-              </div>
-            </div>
-            <div class="note" style="margin-top:12px">
-              If the model declines, that is the right answer — especially for anyone who looks under 18.
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ════════════════════════════════════════
          KESTREL HEAVY — games page
          ════════════════════════════════════════ -->
     <section id="sec-arcade" class="section">
@@ -11836,7 +11623,6 @@
 <script src="js/vlm-ocr.js"></script>
 <script src="js/motor-nameplate.js"></script>
 <script src="js/tdr-analyzer.js"></script>
-<script src="js/look-check.js"></script>
 <script src="js/local-store.js"></script>
 <script src="js/projects-ui.js"></script>
 <script src="js/conduit-guide.js"></script>

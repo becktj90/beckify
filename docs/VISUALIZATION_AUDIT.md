@@ -1,6 +1,6 @@
 # Toolbox visualization audit
 
-Audit only. No feature work in this change. Retro CRT home tiles stay a separate pass. Look Check stays out of the field-graphics queue.
+Audit only. No feature work in this change. Retro CRT home tiles stay a separate pass.
 
 Source of truth: `ToolboxCatalog` / `ToolID` on `main` (`d7a5358`), routed by `CalculatorHostView`. Shelf names come from `ToolHomeAreaPolicy`, which owns home area. Category color bags in the catalog are not the shelf.
 
@@ -85,7 +85,7 @@ Do **not** staff `electronicsLab` from this document. Residual transfer typesett
 
 **Do not staff**
 
-Conduit fill, cable ladder, transformer windings, breath flute, instrument spectra and gauges listed as Hold, the hidden phasor-sum screen as a new home, Look Check, retro tiles, a Smith chart, or a second phasor on Reactance.
+Conduit fill, cable ladder, transformer windings, breath flute, instrument spectra and gauges listed as Hold, the hidden phasor-sum screen as a new home, retro tiles, a Smith chart, or a second phasor on Reactance.
 
 ## Inventory
 
@@ -157,7 +157,7 @@ Conduit fill, cable ladder, transformer windings, breath flute, instrument spect
 | UPS / On-site Power | `upsSizing` | Power & AC | kVA, kWh, Ah, runtime as rows | None | One tank: runtime energy against the design load | P1 | Planning energy, not a tested autonomy | Fill / tank kit |
 | Motor Nameplate Analyzer | `motorNameplate` | Motors | Overload, SCPD, conductor, and code-letter rows | None | None | P2 | A drawn plate would collide with Motor FLA’s card and with the OCR photo | — |
 | Motor Nameplate OCR | `motorNameplateOCR` | Motors | Camera photo, Vision text, confirm fields | Partial | Keep the photo | Hold | Human confirm. Do not draw a plate over the picture. MOCP and LRA are not FLA. | Camera |
-| Look Check | `lookCheck` | — | Removed from ToolboxCatalog. Standalone app and website only. | — | None | Removed | Not a toolbox tool. | — |
+| Look Check | `lookCheck` | — | Removed from ToolboxCatalog. Standalone app and website removed 2026-10-12. | — | None | Removed | Not a toolbox tool. | — |
 | Heater Design Wizard | `heaterDesign` | Build & Design | Line current, leg R, and wire length as rows | None | One three-leg sketch, Δ or Y matching the mode | P1 | Resistive planning model. Not a thermal photo. | Transformer connection kit (`BankKind` delta / wye) |
 | EMP / EMC Shielding | `empEmc` | Magnetics & Fields | Skin depth, sheet SE, loop voltage, aperture SE as rows | None | One protection sketch: wall thickness against skin depth, and the longest aperture | P1 | Protection-side only. Ideal sheet and worst-dimension aperture. Not a coupling weapon and not a free-space field map. | New sketch on `DiagramCard` |
 | NEC Circuit Calculator | `necCircuit` | Jobsite | One voltage-drop strip with an ampacity chip. Design current, conductor, drop, and OCPD stay rows. | Shipped | The strip is the run. The chip is usable versus design current: good when it meets, bad when it is short. 3% and 5% stay informational. | Done | No preferred target on this tool. No derating stack and no third graphic. | `VoltageDropDiagram` |
@@ -313,12 +313,11 @@ Staff only after the P0 kits exist. Each item is still one picture.
 
 ## Hold (do not thrash)
 
-Conduit fill, cable ladder, transformer windings, 555 waveform, flexible-cable bars, conductor-cost bars, conductor-length sketch, frequency sine, LED/RC curve, Ohm’s-law load line, Wi-Fi and cellular gauges, BLE radar, noise / acoustic / rig-check / coupled-vibration / magnetometer / stillness spectra, bubble level, breath flute, three-phase connection and triangle, battery-bank bar, load-factor bars, motor torque curve, RF loss curve, quick-sum polar plot, transient curve, diode I–V, analog Bode, control step and Bode, control-strategy plots, solenoid section, magnetics and EM sketches, panel-directory photo, nameplate OCR photo, Look Check.
+Conduit fill, cable ladder, transformer windings, 555 waveform, flexible-cable bars, conductor-cost bars, conductor-length sketch, frequency sine, LED/RC curve, Ohm’s-law load line, Wi-Fi and cellular gauges, BLE radar, noise / acoustic / rig-check / coupled-vibration / magnetometer / stillness spectra, bubble level, breath flute, three-phase connection and triangle, battery-bank bar, load-factor bars, motor torque curve, RF loss curve, quick-sum polar plot, transient curve, diode I–V, analog Bode, control step and Bode, control-strategy plots, solenoid section, magnetics and EM sketches, panel-directory photo, nameplate OCR photo.
 
 ## Out of this audit
 
 - Retro CRT tile icons.
-- Look Check verdict art.
 - Web-only pictures with no iOS tool (Smith chart, a second circuit simulator). Electronics Lab is the iOS schematic and breadboard.
 - Copy rewrites. Control Systems already says its plots are approximations; changing that sentence is not a visualization change.
 - Any graphic that needs a new input (gear AIC, a measured harmonic capture, a shade study) before it can be honest.

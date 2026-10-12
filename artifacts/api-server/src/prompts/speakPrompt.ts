@@ -128,26 +128,6 @@ export function speakSupportsInstructions(model: string): boolean {
 }
 
 
-/** Look Check roast voice: Cassian Vale. Low, close, raspy, unhurried, delighted. */
-export const CASSIAN_VALE_NAME = "Cassian Vale";
-export const CASSIAN_VALE_VOICE_ID = "uYsaRSYDSuxmtyipO9Qt";
-/** Deterministic ElevenLabs seed for this roast voice. Posted when the speak route sends seed. */
-export const CASSIAN_VALE_SEED = 60606;
-/** Paragraph roast. Crew Talk clips stay on SPEAK_MAX_INPUT_CHARS. */
-export const LOOK_CHECK_SPEAK_MAX_CHARS = 900;
-
-/**
- * Relish without a scream. High style exaggeration, close to the designed voice,
- * slightly slow so each word is savored, still intelligible.
- */
-export const CASSIAN_ELEVEN_VOICE_SETTINGS = {
-  stability: 0.38,
-  similarity_boost: 0.82,
-  style: 1,
-  speed: 0.86,
-  use_speaker_boost: true,
-} as const;
-
 /** Crew Talk playback. ElevenLabs voice ids are case-sensitive. */
 export const ELEVENLABS_TTS_MODEL = "eleven_v3";
 
@@ -192,10 +172,9 @@ export const SLOANE_MERRITT_SEED = 50505;
 
 const CREW_TALK_VOICE_IDS = new Set<string>(Object.values(CREW_TALK_ELEVEN_VOICES));
 
-/** Five Crew Talk ids plus Cassian Vale. Client ids outside this set are rejected. */
+/** Crew Talk ids only. Client ids outside this set are rejected. */
 const ELEVENLABS_SPEAK_ALLOWLIST = new Set<string>([
   ...CREW_TALK_VOICE_IDS,
-  CASSIAN_VALE_VOICE_ID,
   // Pre-restyle Junie voice: shipped TestFlight builds still send it.
   "tdK8noxHGTBqk6F18tbZ",
 ]);
@@ -205,7 +184,7 @@ export function isElevenLabsVoiceId(raw: string): boolean {
 }
 
 /**
- * ElevenLabs when the client sends an allowlisted voice (five crew ids or Cassian),
+ * ElevenLabs when the client sends an allowlisted Crew Talk voice,
  * an eleven_* model, or a provider-shaped id that must be rejected instead of
  * falling through to OpenAI. Built-in OpenAI voice names stay on the OpenAI path.
  */

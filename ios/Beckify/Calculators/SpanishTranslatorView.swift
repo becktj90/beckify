@@ -854,7 +854,7 @@ struct SpanishTranslatorView: View {
 
     private var endpointHint: String {
         if SpanishTranslatorAPI.translateURL(customEndpoint: customEndpoint) != nil,
-           PhotoLookCheck.httpsBase(customEndpoint) != nil {
+           BeckifyVisionAPI.httpsBase(customEndpoint) != nil {
             return "Custom translate URL is set."
         }
         return "Uses https://api.beckify.com/api/translate and /api/speak when the custom URL is blank. On-device Apple Translation + Apple TTS are fallbacks."

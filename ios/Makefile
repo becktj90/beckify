@@ -1,6 +1,6 @@
 # Mac-only app build. Math tests run on Linux or Mac via `swift test`.
 
-.PHONY: test-math build-sim build-sim-lookcheck
+.PHONY: test-math build-sim
 
 test-math:
 	cd BeckifyMath && swift test
@@ -14,13 +14,3 @@ build-sim:
 	  -configuration Debug \
 	  CODE_SIGNING_ALLOWED=NO \
 	  build
-
-build-sim-lookcheck:
-	xcodebuild \
-	  -project Beckify.xcodeproj \
-	  -scheme LookCheck \
-	  -destination 'generic/platform=iOS Simulator' \
-	  -configuration Debug \
-	  CODE_SIGNING_ALLOWED=NO \
-	  build
-

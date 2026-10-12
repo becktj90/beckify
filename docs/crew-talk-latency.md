@@ -2,7 +2,7 @@
 
 Date: 2026-10-03 America/New_York (samples ran 20:27–20:43 ET).
 
-Host: `https://api.beckify.com`. Confirmed from the iOS client (`SpanishTranslator` / `PhotoLookCheck` default base) and `artifacts/api-server/README.md` (Fly app `beckify-api`). Live `GET /api/healthz` returned 200 with `server: Fly` before the samples. This measurement does not deploy Fly.
+Host: `https://api.beckify.com`. Confirmed from the iOS client (`SpanishTranslator` default API base) and `artifacts/api-server/README.md` (Fly app `beckify-api`). Live `GET /api/healthz` returned 200 with `server: Fly` before the samples. This measurement does not deploy Fly.
 
 ## What this is
 
