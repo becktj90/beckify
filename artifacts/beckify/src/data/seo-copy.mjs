@@ -1,4 +1,4 @@
-import { resolveToolSlug } from "./toolbox-tools.mjs";
+import { PUBLIC_CALCULATOR_COUNT, resolveToolSlug } from "./toolbox-tools.mjs";
 
 /**
  * Discoverability copy: unique document titles and meta descriptions.
@@ -53,12 +53,12 @@ export const PAGE_SEO = {
   "/": {
     title: "Beckify — electrical calculators, NEC references, and workshop builds",
     description:
-      "Free electrical engineering calculators and NEC reference tables, plus workshop journals for a 1979 Vespa P200E conversion and other builds. Kestrel Heavy is the on-site arcade.",
+      `Free electrical calculators, NEC reference tables, and workshop build journals. ${PUBLIC_CALCULATOR_COUNT} field tools for electricians and engineers — no account needed.`,
   },
   "/toolbox/": {
     title: "Electrical engineering toolbox — Ohm's Law, voltage drop, ampacity, conduit fill",
     description:
-      "Browser-based electrical calculators for Ohm's Law, voltage drop, wire ampacity, conduit fill, motor FLA, and field tools. No account. Verify results against the adopted code edition.",
+      `${PUBLIC_CALCULATOR_COUNT} free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.`,
   },
   "/about": {
     title: "Trevor Beck — electrical engineer behind Beckify",
@@ -134,7 +134,10 @@ export const TOOL_SEO_TITLES = {
   "conduit-fill": "Conduit fill calculator — Chapter 9 areas and Table 1 limits",
   motor: "Motor FLA calculator — NEC Tables 430.248 and 430.250",
   "conductor-length-resistance": "Conductor length from resistance — milliohm reading to feet",
-  transformer: "Transformer calculator — ratio, NEC 450.3(B) sizing, and conductors",
+  transformer: "Transformer calculator — turns ratio, line/phase current, and delta-wye connections",
+  "transformer-sizing": "Transformer kVA sizing — standard sizes and NEC 450.3(B) protection",
+  "transformer-engine": "Transformer conductor and OCPD sizing — EGC/GEC, voltage drop, conduit",
+  "transformer-design": "Transformer connections training — delta-wye, high-leg, and %Z fault",
   "short-circuit": "Short-circuit current calculator — available fault from kVA and %Z",
   "nec-circuit": "NEC circuit calculator — branch-circuit conductor and OCPD sizing",
   "battery-bank": "Battery bank calculator — backup duration, strings, and C-rate",

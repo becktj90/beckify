@@ -27,6 +27,7 @@ export default function Home() {
         title={PAGE_SEO["/"].title}
         description={PAGE_SEO["/"].description}
         path="/"
+        singleGraph
         schema={[websiteSchema(PAGE_SEO["/"].description), organizationSchema()]}
       />
       <Starfield showPenrose={false} />
