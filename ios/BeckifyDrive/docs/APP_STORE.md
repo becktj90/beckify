@@ -31,7 +31,7 @@ A glanceable dashboard for a Bluetooth OBD-II adapter and your phone's own senso
 
 **Description:**
 
-Beckify Drive is an enthusiast dashboard for a Bluetooth Low Energy OBD-II adapter (ELM327-class). The phone shows the denser dashboard: a speed hero, card sections with 60-second sparklines, and phone-sensor cards. CarPlay shows a large, low-clutter summary: charge, power, speed, planning range, temperature, and link status.
+Beckify Drive is an enthusiast dashboard for a Bluetooth Low Energy OBD-II adapter (ELM327-class). The phone shows the denser dashboard: a speed hero, card sections with 60-second sparklines, and phone-sensor cards. CarPlay shows a large, low-clutter summary: charge, power (est.), regen, speed, planning range, weather-adjusted range (est.), efficiency (est.), temperature, and link status. It refreshes at most every 10 seconds and keeps working with the phone locked.
 
 Generic vehicles get SAE J1979 Mode 01: speed, RPM, coolant, engine load, throttle, fuel level, 12 V module voltage, and ambient temperature. Fuel level is not shown as battery charge. PID 015B, when the car answers, is hybrid battery remaining life — not a state-of-health certificate.
 

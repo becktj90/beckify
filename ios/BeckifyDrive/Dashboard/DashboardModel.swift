@@ -20,9 +20,21 @@ enum AltitudeSource: String {
     case gps = "GPS altitude"
 }
 
-/// View state for the dashboard. Reads `OBDBluetoothSession` through its
-/// observer protocol and never changes how the session polls.
+/// View state for the dashboard and the CarPlay screen. Reads
+/// `OBDBluetoothSession` through its observer protocol and never changes how
+/// the session polls.
+///
+/// One shared instance runs while the phone screen or CarPlay is showing, so
+/// the trip and every estimator keep going with the phone locked in a mount.
 final class DashboardModel: ObservableObject, OBDSessionObserving {
+    static let shared = DashboardModel()
+
+    /// Who is showing the dashboard's data right now.
+    enum Client: Hashable {
+        case phone
+        case carPlay
+    }
+
     @Published private(set) var profile: VehicleProfile
     @Published private(set) var book: OBDReadingBook
     @Published private(set) var linkTitle: String
@@ -53,6 +65,7 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
     private var timer: Timer?
     private var lastStamp: [OBDReading: Date] = [:]
     private var observing = false
+    private var clients = Set<Client>()
 
     private static let capacityKey = "beckify.drive.capacityLog"
 
@@ -118,7 +131,20 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
 
     // MARK: Lifecycle
 
-    func start() {
+    /// Starts sensors and the 1 s tick on the first client; stops on the last.
+    func attach(_ client: Client) {
+        clients.insert(client)
+        start()
+    }
+
+    func detach(_ client: Client) {
+        clients.remove(client)
+        if clients.isEmpty {
+            stop()
+        }
+    }
+
+    private func start() {
         guard let session else { return }
         if !observing {
             session.addObserver(self)
@@ -136,7 +162,7 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         self.timer = timer
     }
 
-    func stop() {
+    private func stop() {
         timer?.invalidate()
         timer = nil
         sensors.stop()
@@ -191,6 +217,19 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         guard let kph = sensors.gpsSpeedKph, let at = sensors.lastLocationAt else { return nil }
         let freshness = DriveFreshness.evaluate(sample: OBDSample(value: kph, at: at), now: now, validRange: 0...400)
         return DriveValue(value: kph, freshness: freshness)
+    }
+
+    // MARK: CarPlay
+
+    /// Regen, efficiency, and weather range rows for CarPlay, in its mph wording.
+    var carPlayExtras: DriveCarPlayExtras {
+        guard layout == .ev else { return .unknown }
+        return DriveCarPlayExtras.make(
+            flow: flow,
+            powerKW: powerKW,
+            whPerMile: insights.efficiency.whPerMile(packKWh: planning.usableKWh),
+            weatherRangeMiles: weatherAdjustment?.adjustedMiles
+        )
     }
 
     // MARK: Estimates (Bolt profiles only: they need HV current and the 350 V assumption)

@@ -446,3 +446,41 @@ public struct OpenMeteoCurrent: Equatable, Sendable, Codable {
         return 2 * r * atan2(a.squareRoot(), (1 - a).squareRoot())
     }
 }
+
+// MARK: - CarPlay extras
+
+/// Extra CarPlay rows built from the phone-side estimators. Same rules as the
+/// phone: estimates say "est.", unknown says "Not read".
+public struct DriveCarPlayExtras: Equatable, Sendable {
+    public var regen: String
+    public var efficiency: String
+    public var weatherRange: String
+
+    public static let unknown = DriveCarPlayExtras(regen: "Not read", efficiency: "Not read", weatherRange: "Not read")
+
+    public init(regen: String, efficiency: String, weatherRange: String) {
+        self.regen = regen
+        self.efficiency = efficiency
+        self.weatherRange = weatherRange
+    }
+
+    public static func make(flow: HVFlowState?, powerKW: Double?, whPerMile: Double?, weatherRangeMiles: Double?) -> DriveCarPlayExtras {
+        let regen: String
+        switch flow {
+        case .regen:
+            if let powerKW, powerKW < 0 {
+                regen = String(format: "Regen %.0f kW est.", -powerKW)
+            } else {
+                regen = "Regen"
+            }
+        case .drive: regen = "Drive"
+        case .idle: regen = "Idle"
+        case .none: regen = "Not read"
+        }
+        return DriveCarPlayExtras(
+            regen: regen,
+            efficiency: whPerMile.map { String(format: "%.0f Wh/mi est.", $0) } ?? "Not read",
+            weatherRange: weatherRangeMiles.map { String(format: "%.0f mi est.", $0) } ?? "Not read"
+        )
+    }
+}

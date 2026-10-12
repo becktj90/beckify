@@ -8,7 +8,7 @@ struct DashboardView: View {
     @StateObject private var preferences: DashboardPreferences
 
     init(
-        model: @autoclosure @escaping () -> DashboardModel = DashboardModel(),
+        model: @autoclosure @escaping () -> DashboardModel = .shared,
         preferences: @autoclosure @escaping () -> DashboardPreferences = DashboardPreferences()
     ) {
         _model = StateObject(wrappedValue: model())
@@ -119,13 +119,14 @@ private struct DashboardContent: View {
             }
             #endif
         }
-        .onAppear { model.start() }
-        .onDisappear { model.stop() }
+        .onAppear { model.attach(.phone) }
+        .onDisappear { model.detach(.phone) }
         .onChange(of: scenePhase) { _, phase in
+            // CarPlay keeps the model running on its own while the phone is locked.
             if phase == .active {
-                model.start()
+                model.attach(.phone)
             } else if phase == .background {
-                model.stop()
+                model.detach(.phone)
             }
         }
     }

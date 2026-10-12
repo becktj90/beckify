@@ -131,7 +131,7 @@ Entitlement stub: `BeckifyDrive/BeckifyDrive.entitlements` → `com.apple.develo
 
 Scene manifest: `BeckifyDrive/Info.plist` (`CPTemplateApplicationScene` and the dashboard scene).
 
-CarPlay copy refreshes at most once every 10 seconds. It mirrors charge, power (est.), speed, planning range, temperature, and link; the dashboard shortcuts are charge and power (est.). That is Apple’s driving-task limit (no live engine strip). The phone gauges update as PID replies arrive.
+CarPlay copy refreshes at most once every 10 seconds. CarPlay is a primary screen, not an extra. It shows nine rows: charge, power (est.), regen state, speed, planning range, weather-adjusted range (est.), efficiency (est.), temperature, and link. The dashboard shortcuts are charge and power (est.). Both CarPlay scenes attach to the shared `DashboardModel`, so the trip, efficiency, regen, grade, and weather estimators keep running with the phone locked in a mount (Location is "in use" while the CarPlay scene is up). There are no charger features. That is Apple’s driving-task limit (no live engine strip). The phone gauges update as PID replies arrive.
 
 Trevor has to turn the capability on before a signed device build will succeed. Steps are in [`docs/APP_STORE.md`](docs/APP_STORE.md).
 

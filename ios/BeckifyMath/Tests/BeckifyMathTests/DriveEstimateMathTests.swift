@@ -306,3 +306,14 @@ final class DriveInsightMathTests: XCTestCase {
         XCTAssertEqual(CapacityLog.decoded(from: Data("x".utf8)), CapacityLog())
     }
 }
+
+final class DriveCarPlayExtrasTests: XCTestCase {
+    func testCopy() {
+        let regen = DriveCarPlayExtras.make(flow: .regen, powerKW: -14.2, whPerMile: 271.6, weatherRangeMiles: 182.4)
+        XCTAssertEqual(regen, DriveCarPlayExtras(regen: "Regen 14 kW est.", efficiency: "272 Wh/mi est.", weatherRange: "182 mi est."))
+        XCTAssertEqual(DriveCarPlayExtras.make(flow: .drive, powerKW: 30, whPerMile: nil, weatherRangeMiles: nil),
+                       DriveCarPlayExtras(regen: "Drive", efficiency: "Not read", weatherRange: "Not read"))
+        XCTAssertEqual(DriveCarPlayExtras.make(flow: nil, powerKW: nil, whPerMile: nil, weatherRangeMiles: nil), .unknown)
+        XCTAssertEqual(DriveCarPlayExtras.make(flow: .idle, powerKW: 0, whPerMile: nil, weatherRangeMiles: nil).regen, "Idle")
+    }
+}

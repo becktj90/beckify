@@ -4,10 +4,13 @@ import UIKit
 
 /// Driving-task CarPlay scene. Templates only — no WKWebView, no custom map.
 /// Data items refresh at most once every 10 seconds (Apple driving-task rule).
+/// Attaches to the shared dashboard model so the trip, regen, efficiency, and
+/// weather estimators run while only CarPlay is on screen.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, OBDSessionObserving {
     private var interfaceController: CPInterfaceController?
     private var lastPublish: Date?
     private var lastCopy: DriveCarPlayCopy?
+    private var lastExtras: DriveCarPlayExtras?
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
@@ -16,6 +19,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         self.interfaceController = interfaceController
         OBDBluetoothSession.shared.addObserver(self)
         OBDBluetoothSession.shared.activate()
+        DashboardModel.shared.attach(.carPlay)
         publish(force: true)
     }
 
@@ -24,9 +28,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         didDisconnectInterfaceController interfaceController: CPInterfaceController
     ) {
         OBDBluetoothSession.shared.removeObserver(self)
+        DashboardModel.shared.detach(.carPlay)
         self.interfaceController = nil
         lastPublish = nil
         lastCopy = nil
+        lastExtras = nil
     }
 
     func obdSessionDidUpdate() {
@@ -38,14 +44,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let now = Date()
         guard force || CarPlayPublishPolicy.shouldPublish(since: lastPublish, now: now) else { return }
         let copy = OBDBluetoothSession.shared.presentation.carPlay
-        guard force || copy != lastCopy else { return }
+        let extras = DashboardModel.shared.carPlayExtras
+        guard force || copy != lastCopy || extras != lastExtras else { return }
         lastCopy = copy
+        lastExtras = extras
         lastPublish = now
+        // Nine rows, two columns. Estimates carry "est." in their text.
         let items = [
             CPInformationItem(title: "Charge", detail: copy.charge),
             CPInformationItem(title: "Power", detail: copy.power),
+            CPInformationItem(title: "Regen", detail: extras.regen),
             CPInformationItem(title: "Speed", detail: copy.speed),
             CPInformationItem(title: "Range", detail: copy.range),
+            CPInformationItem(title: "Weather range", detail: extras.weatherRange),
+            CPInformationItem(title: "Efficiency", detail: extras.efficiency),
             CPInformationItem(title: "Temp", detail: copy.temperature),
             CPInformationItem(title: "Link", detail: copy.link),
         ]
@@ -73,6 +85,7 @@ final class CarPlayDashboardSceneDelegate: UIResponder, CPTemplateApplicationDas
         self.dashboardController = dashboardController
         OBDBluetoothSession.shared.addObserver(self)
         OBDBluetoothSession.shared.activate()
+        DashboardModel.shared.attach(.carPlay)
         publish(force: true)
     }
 
@@ -82,6 +95,7 @@ final class CarPlayDashboardSceneDelegate: UIResponder, CPTemplateApplicationDas
         from window: UIWindow
     ) {
         OBDBluetoothSession.shared.removeObserver(self)
+        DashboardModel.shared.detach(.carPlay)
         self.dashboardController = nil
         lastPublish = nil
         lastCopy = nil
