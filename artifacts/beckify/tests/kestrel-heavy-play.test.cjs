@@ -562,6 +562,13 @@ assert.match(hudJs, /t-mach/);
 assert.match(hudJs, /function setSummaryWhy/);
 assert.match(hudJs, /if \(text && !same\) announce/);
 
+const pbx = fs.readFileSync(path.join(root, '../../ios/Beckify.xcodeproj/project.pbxproj'), 'utf8');
+assert.doesNotMatch(pbx, /KestrelHeavy/, 'Kestrel Heavy lives in becktj90/kestrel-heavy now');
+const toolboxConfigs = pbx.split('BECF0000000000000000003C /* Debug */')[1].split('AECF00000000000000000017')[0];
+assert.match(toolboxConfigs, /LandscapeLeft/, 'Beckify Toolbox must keep landscape');
+const lookCheckConfigs = pbx.split('AECF00000000000000000017 /* Debug */')[1].split('BDCF00000000000000000017 /* Debug */')[0];
+assert.match(lookCheckConfigs, /LandscapeLeft/, 'LookCheck must keep landscape');
+assert.match(lookCheckConfigs, /CURRENT_PROJECT_VERSION = [1-9]\d*;/);
 assert.doesNotMatch(fs.readFileSync(path.join(root, '../../ios/Beckify/Models/ToolboxCatalog.swift'), 'utf8'), /kestrel/i);
 
 console.log('Kestrel Heavy Phaser 4 path, Haven recovery, and iframe host checks passed');
