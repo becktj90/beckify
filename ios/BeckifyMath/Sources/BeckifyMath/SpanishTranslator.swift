@@ -355,7 +355,7 @@ public struct SpanishTranslationDraft: Equatable, Sendable {
 /// Pure helpers for Linux tests — no UIKit / Speech / AVFoundation.
 public enum SpanishTranslatorAPI {
     public static let task = "translate"
-    public static let defaultAPIBase = PhotoLookCheck.defaultAPIBase
+    public static let defaultAPIBase = BeckifyVisionAPI.defaultAPIBase
     public static let translatePath = "/api/translate"
     public static let speakPath = "/api/speak"
     /// Short neural TTS clips (cost control).
@@ -479,10 +479,10 @@ public enum SpanishTranslatorAPI {
 
     /// Custom HTTPS URL wins. Otherwise `{apiBase}/api/translate`.
     public static func translateURL(customEndpoint: String?, apiBase: String? = defaultAPIBase) -> URL? {
-        if let custom = PhotoLookCheck.httpsBase(customEndpoint), let url = URL(string: custom) {
+        if let custom = BeckifyVisionAPI.httpsBase(customEndpoint), let url = URL(string: custom) {
             return url
         }
-        guard let base = PhotoLookCheck.httpsBase(apiBase), !base.isEmpty else { return nil }
+        guard let base = BeckifyVisionAPI.httpsBase(apiBase), !base.isEmpty else { return nil }
         return URL(string: base + translatePath)
     }
 
@@ -495,7 +495,7 @@ public enum SpanishTranslatorAPI {
     /// on the same host; other custom URLs still fall back to `{apiBase}/api/speak` so a private
     /// translate proxy without TTS does not break loud playback.
     public static func speakURL(customEndpoint: String?, apiBase: String? = defaultAPIBase) -> URL? {
-        if let custom = PhotoLookCheck.httpsBase(customEndpoint), let url = URL(string: custom) {
+        if let custom = BeckifyVisionAPI.httpsBase(customEndpoint), let url = URL(string: custom) {
             let absolute = url.absoluteString
             if absolute.lowercased().contains("/api/translate") {
                 let mapped = absolute.replacingOccurrences(
@@ -506,7 +506,7 @@ public enum SpanishTranslatorAPI {
                 if let speak = URL(string: mapped) { return speak }
             }
         }
-        guard let base = PhotoLookCheck.httpsBase(apiBase), !base.isEmpty else { return nil }
+        guard let base = BeckifyVisionAPI.httpsBase(apiBase), !base.isEmpty else { return nil }
         return URL(string: base + speakPath)
     }
 
@@ -622,15 +622,16 @@ public enum SpanishTranslatorAPI {
         if status == 503 {
             return "The Beckify speak API is missing a provider key (HTTP 503)."
         }
-        if PhotoLookCheck.hostIsGitHubPages(endpoint) {
+        if BeckifyVisionAPI.hostIsGitHubPages(endpoint) {
             return "GitHub Pages cannot accept speak POSTs. Use https://api.beckify.com."
         }
         return "The Beckify speak API is unavailable (HTTP \(status))."
     }
 
-    /// Same Authorization rule as Look Check / vision: token only for a custom endpoint.
+    /// Token only for a custom HTTPS endpoint; the default Beckify API gets none.
     public static func authorizationToken(customEndpoint: String?, token: String) -> String {
-        PhotoLookCheck.authorizationToken(customEndpoint: customEndpoint, token: token)
+        guard BeckifyVisionAPI.httpsBase(customEndpoint) != nil else { return "" }
+        return token.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public static func requestBody(
@@ -871,7 +872,7 @@ public enum SpanishTranslatorAPI {
         if status == 503 {
             return "The Beckify translate API is missing a provider key (HTTP 503)."
         }
-        if PhotoLookCheck.hostIsGitHubPages(endpoint) {
+        if BeckifyVisionAPI.hostIsGitHubPages(endpoint) {
             return "GitHub Pages cannot accept translate POSTs. Use https://api.beckify.com."
         }
         return "The Beckify translate API is unavailable (HTTP \(status))."

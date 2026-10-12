@@ -26,9 +26,21 @@ final class SpanishTranslatorTests: XCTestCase {
     }
 
     func testHTTPCustomEndpointFallsBackToDefault() {
-        // Same rule as PhotoLookCheck: non-HTTPS custom is ignored; default API wins.
+        // Same rule as BeckifyVisionAPI: non-HTTPS custom is ignored; default API wins.
         let url = SpanishTranslatorAPI.translateURL(customEndpoint: "http://insecure.example/translate")
         XCTAssertEqual(url?.absoluteString, "https://api.beckify.com/api/translate")
+    }
+
+    func testAuthorizationTokenOnlyForCustomHTTPSEndpoint() {
+        XCTAssertEqual(SpanishTranslatorAPI.authorizationToken(customEndpoint: nil, token: "secret-token"), "")
+        XCTAssertEqual(
+            SpanishTranslatorAPI.authorizationToken(customEndpoint: "http://insecure.example/translate", token: "secret-token"),
+            ""
+        )
+        XCTAssertEqual(
+            SpanishTranslatorAPI.authorizationToken(customEndpoint: "https://proxy.example/translate", token: " secret-token "),
+            "secret-token"
+        )
     }
 
     func testClampSourceText() {

@@ -5,15 +5,15 @@ final class BeckifyVisionAPITests: XCTestCase {
 
     func testDefaultAnalyzeURLsHitLiveAPI() {
         XCTAssertEqual(
-            BeckifyVisionAPI.analyzeURL(task: .look, customEndpoint: nil)?.absoluteString,
-            "https://api.beckify.com/api/analyze-look"
-        )
-        XCTAssertEqual(
             BeckifyVisionAPI.analyzeURL(task: .nameplate, customEndpoint: nil)?.absoluteString,
             "https://api.beckify.com/api/analyze-nameplate"
         )
         XCTAssertEqual(
             BeckifyVisionAPI.analyzeURL(task: .panel, customEndpoint: nil)?.absoluteString,
+            "https://api.beckify.com/api/analyze-panel"
+        )
+        XCTAssertEqual(
+            BeckifyVisionAPI.defaultAnalyzeURL(for: .panel)?.absoluteString,
             "https://api.beckify.com/api/analyze-panel"
         )
         XCTAssertEqual(
@@ -24,33 +24,40 @@ final class BeckifyVisionAPITests: XCTestCase {
         XCTAssertNil(BeckifyVisionAPI.analyzeURL(task: .panel, customEndpoint: nil, apiBase: "http://beckify.com"))
     }
 
-    func testUploadLimitsAndLookBodyMatchPhotoLookCheck() {
-        XCTAssertEqual(BeckifyVisionAPI.defaultAPIBase, PhotoLookCheck.defaultAPIBase)
-        XCTAssertEqual(BeckifyVisionAPI.maxPickBytes, PhotoLookCheck.maxPickBytes)
-        XCTAssertEqual(BeckifyVisionAPI.maxUploadBytes, PhotoLookCheck.maxUploadBytes)
-        XCTAssertEqual(BeckifyVisionAPI.maxUploadEdge, PhotoLookCheck.maxUploadEdge)
-        let lookBody = BeckifyVisionAPI.requestBody(imageBase64: "x", mimeType: "image/jpeg", task: .look)
-        XCTAssertEqual(lookBody["roastMode"], "bro")
-        XCTAssertEqual(
-            lookBody,
-            PhotoLookCheck.requestBody(imageBase64: "x", mimeType: "image/jpeg")
-        )
-        XCTAssertEqual(
-            BeckifyVisionAPI.analyzeURL(task: .look, customEndpoint: nil)?.absoluteString,
-            PhotoLookCheck.analyzeURL(customEndpoint: nil)?.absoluteString
-        )
+    func testUploadLimitsAndDefaultHost() {
+        XCTAssertEqual(BeckifyVisionAPI.defaultAPIBase, "https://api.beckify.com")
+        XCTAssertEqual(BeckifyVisionAPI.maxPickBytes, 12 * 1024 * 1024)
+        XCTAssertEqual(BeckifyVisionAPI.maxUploadBytes, 8 * 1024 * 1024)
+        XCTAssertEqual(BeckifyVisionAPI.maxUploadEdge, 2048)
         XCTAssertTrue(BeckifyVisionAPI.disclaimer.localizedCaseInsensitiveContains("tap Analyze"))
     }
 
-    func testRequestBodyMatchesLookCheckContract() throws {
+    func testHTTPSBaseAndDataURLHelpers() {
+        XCTAssertEqual(BeckifyVisionAPI.httpsBase("https://beckify.com/"), "https://beckify.com")
+        XCTAssertEqual(BeckifyVisionAPI.httpsBase("  https://proxy.example:8443/ocr/?k=1 "), "https://proxy.example:8443/ocr?k=1")
+        XCTAssertNil(BeckifyVisionAPI.httpsBase("http://insecure.example/ocr"))
+        XCTAssertNil(BeckifyVisionAPI.httpsBase("not a url"))
+        XCTAssertNil(BeckifyVisionAPI.httpsBase(nil))
+        XCTAssertNil(BeckifyVisionAPI.httpsBase("   "))
+        XCTAssertEqual(BeckifyVisionAPI.mimeType(fromDataURL: "data:image/png;base64,aa"), "image/png")
+        XCTAssertEqual(BeckifyVisionAPI.mimeType(fromDataURL: "data:image/webp;base64,aa"), "image/webp")
+        XCTAssertEqual(BeckifyVisionAPI.mimeType(fromDataURL: "data:image/jpeg;base64,aa"), "image/jpeg")
+        XCTAssertEqual(BeckifyVisionAPI.mimeType(fromDataURL: "data:image/jpg;base64,aa"), "image/jpeg")
+        XCTAssertEqual(BeckifyVisionAPI.mimeType(fromDataURL: "data:image/heic;base64,aa", fallback: "image/heic"), "image/heic")
+        XCTAssertEqual(BeckifyVisionAPI.dataURL(jpegBase64: "abc"), "data:image/jpeg;base64,abc")
+    }
+
+    func testRequestBodyMatchesWebContract() throws {
         let body = BeckifyVisionAPI.requestBody(
             imageBase64: "data:image/jpeg;base64,abc",
             mimeType: "image/jpeg",
             task: .nameplate
         )
-        XCTAssertEqual(body["imageBase64"], "data:image/jpeg;base64,abc")
-        XCTAssertEqual(body["mimeType"], "image/jpeg")
-        XCTAssertEqual(body["task"], "nameplate")
+        XCTAssertEqual(body, [
+            "imageBase64": "data:image/jpeg;base64,abc",
+            "mimeType": "image/jpeg",
+            "task": "nameplate",
+        ])
 
         let data = try BeckifyVisionAPI.requestJSON(
             imageBase64: "data:image/jpeg;base64,abc",
@@ -59,15 +66,7 @@ final class BeckifyVisionAPITests: XCTestCase {
         )
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
         XCTAssertEqual(object["task"], "panel")
-        XCTAssertNil(object["roastMode"])
-
-        let look = BeckifyVisionAPI.requestBody(
-            imageBase64: "data:image/jpeg;base64,abc",
-            mimeType: "image/jpeg",
-            task: .look
-        )
-        XCTAssertEqual(look["task"], "look")
-        XCTAssertEqual(look["roastMode"], "bro")
+        XCTAssertEqual(object.count, 3)
     }
 
     func testAuthorizationTokenStaysOffDefaultHost() {
@@ -102,6 +101,21 @@ final class BeckifyVisionAPITests: XCTestCase {
             ).contains("GitHub Pages")
         )
         XCTAssertFalse(BeckifyVisionAPI.hostIsGitHubPages("https://api.beckify.com/api/analyze-nameplate"))
+        XCTAssertTrue(BeckifyVisionAPI.hostIsGitHubPages("https://www.beckify.com/"))
+        XCTAssertTrue(BeckifyVisionAPI.hostIsGitHubPages("beckify.com"))
+        XCTAssertFalse(BeckifyVisionAPI.hostIsGitHubPages(nil))
+        XCTAssertTrue(BeckifyVisionAPI.formatVisionError(status: 429, message: nil, retryAfter: 90, task: .panel).contains("2 min"))
+        XCTAssertTrue(BeckifyVisionAPI.formatVisionError(status: 413, message: nil, task: .panel).contains("8 MB"))
+        XCTAssertFalse(BeckifyVisionAPI.formatVisionError(status: 405, message: nil, task: .panel).contains("GitHub Pages"))
+        XCTAssertEqual(
+            BeckifyVisionAPI.formatVisionError(status: 502, message: "The vision provider could not analyze this image.", task: .panel),
+            "The vision provider could not analyze this image."
+        )
+        XCTAssertTrue(BeckifyVisionAPI.formatVisionError(status: 503, message: nil, task: .nameplate).localizedCaseInsensitiveContains("not configured"))
+        XCTAssertEqual(
+            BeckifyVisionAPI.formatVisionError(status: 500, message: nil, task: .nameplate),
+            "Nameplate analysis failed with HTTP 500."
+        )
     }
 
     func testUnwrapsAnalysisEnvelope() {

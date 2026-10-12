@@ -10,7 +10,7 @@ struct VisionHTTPError: LocalizedError {
 }
 
 /// Small shared HTTPS POST helper for Beckify API text routes (translate / speak);
-/// Look Check / OCR photo clients stay separate until a later consolidation.
+/// the OCR photo client below stays separate until a later consolidation.
 enum BeckifyAIClient {
     /// POST `application/json` and return the decoded object on 2xx.
     /// Throws `VisionHTTPError` with HTTP status (0 = transport) on failure.
@@ -114,8 +114,8 @@ enum BeckifyAIClient {
 }
 
 /// URLSession client for `/api/analyze-nameplate` and `/api/analyze-panel`.
-/// JPEG encode matches Look Check (8 MB / 2048 edge). Look Check keeps its
-/// own `PhotoLookCheckClient`. Photos are encoded only after Analyze.
+/// Upright JPEG encode within `BeckifyVisionAPI` limits (8 MB / 2048 edge).
+/// Photos are encoded only after Analyze.
 enum BeckifyVisionClient {
     struct PreparedUpload: Equatable {
         var dataURL: String
@@ -134,7 +134,7 @@ enum BeckifyVisionClient {
         body: Data,
         token: String,
         timeout: TimeInterval = 60,
-        task: BeckifyVisionTask = .look
+        task: BeckifyVisionTask
     ) async throws -> [String: Any] {
         do {
             return try await post(url: url, body: body, token: token, timeout: timeout, task: task)

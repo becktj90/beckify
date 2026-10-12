@@ -745,7 +745,7 @@ struct ThumbButtonRow<Content: View>: View {
     }
 }
 
-/// Optional user-initiated cloud Analyze — same chrome as Look Check.
+/// Optional user-initiated cloud Analyze (nameplate / panel photo OCR).
 /// Photos stay on device until the button is tapped.
 struct CloudVisionAnalyzeChrome: View {
     var title: String
