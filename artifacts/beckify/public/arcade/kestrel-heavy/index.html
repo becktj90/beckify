@@ -1046,6 +1046,11 @@
       body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud {
         margin-top: 46px;
       }
+      /* Results screen: the SUMMARY phase chip sat under the SOUND pill.
+         Drop the whole HUD stack below the pill row there too. */
+      body[data-phase="SUMMARY"] .mc-hud {
+        margin-top: 46px;
+      }
     }
     @media (orientation: portrait) {
       .cabinet { max-width: none; }
