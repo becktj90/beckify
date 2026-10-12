@@ -13,6 +13,7 @@ export const MISSIONS = [
     mark: 'AES',
     accent: '#3ec6ff',
     blurb: 'Demo stack. Prove the corridor.',
+    corridorWiden: 72,
     tod: 'dawn',
     todLabel: 'Dawn',
     spawnMul: 1,

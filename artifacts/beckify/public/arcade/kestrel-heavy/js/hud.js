@@ -515,6 +515,19 @@ export function readSettingsForm(settings) {
   return settings;
 }
 
+export function setSummaryMedal(medal, text) {
+  const node = el('ng-sum-medal');
+  if (!node) return;
+  node.textContent = text || '';
+  node.dataset.medal = medal || 'none';
+  node.hidden = !text;
+}
+
+export function setHangarMedals(text) {
+  const node = el('ng-hangar-medals');
+  if (node) node.textContent = text ? `MEDALS  ${text}` : '';
+}
+
 export function setSummaryBreakdown(ascent, jacklyn, delta, nextLabel) {
   const a = el('ng-sum-ascent');
   const j = el('ng-sum-jacklyn');

@@ -138,6 +138,13 @@ export const LINES = {
     'Stay inside the corridor. Dotted rails are the bounds.',
     'Those rails are the fly-out. Drift out and the stack aborts.',
   ],
+  'first-save': [
+    'That one should have broken her up. First flight — Pier 7 gives you one.',
+  ],
+  'corridor-soft': [
+    'Outside the rails. First flight — you have a moment. Steer back in.',
+    'Drifting out. Ease it back between the rails.',
+  ],
   'corridor-edge': [
     'Corridor edge. Steer back between the rails.',
     'Outside the rails is a RUD. Nudge back in.',
@@ -418,6 +425,7 @@ const COOLDOWN = {
   'health-scrape': 2.4,
   'sep-contact': 3,
   'corridor-edge': 2.8,
+  'corridor-soft': 2.4,
   'haven-burn-nag': 3.2,
 };
 
