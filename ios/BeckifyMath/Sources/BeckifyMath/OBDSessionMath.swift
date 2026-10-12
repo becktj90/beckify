@@ -118,6 +118,12 @@ public struct OBDReadingBook: Equatable, Sendable {
         guard now.timeIntervalSince(sample.at) >= 0 else { return nil }
         return sample.value
     }
+
+    /// Raw sample with its timestamp, ignoring expiry. The dashboard uses this
+    /// for live / stale / not-reported state; `read` stays the expiry gate.
+    public func sample(_ key: OBDReading) -> OBDSample? {
+        samples[key.rawValue]
+    }
 }
 
 public struct OBDSupportMap: Equatable, Sendable {
@@ -166,7 +172,7 @@ public enum OBDCommandPlan {
 
     public static func liveCycle(profile: VehicleProfile, support: OBDSupportMap) -> [String] {
         if profile.usesBoltPIDs {
-            return [
+            let base = [
                 "ATSH 7DF",
                 "010D", "010C", "0105", "0142", "0146", "0149", "015B",
                 "ATSH 7E4",
@@ -174,6 +180,7 @@ public enum OBDCommandPlan {
                 "ATSH 7E1",
                 "222414", "2228CB",
             ]
+            return base + DriveSignalTable.additionalBoltCommands(after: base)
         }
         let candidates = ["010C", "0105", "0104", "0111", "0149", "012F", "0142", "0146", "015C", "011F", "015B", "0131"]
         var commands = candidates.filter { command in
@@ -315,7 +322,7 @@ public enum OBDDecode {
             guard let word = signed16(data) else { return [:] }
             return [.hvCurrentAmps: Double(word) / 20.0]
         case 0x28CB: return tempByte(data, as: .motorTempC)
-        default: return [:]
+        default: return DriveSignalTable.decodeAdditionalMode22(did: did, data: data)
         }
     }
 
