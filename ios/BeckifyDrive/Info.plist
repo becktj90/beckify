@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Beckify Drive uses your location while the app is open to show GPS speed, altitude, heading, and a trip, and to line up the G-force plot with the direction you are driving. Location stays on this phone and is not uploaded.</string>
+	<string>Beckify Drive uses your location while the app is open for GPS speed, altitude, heading, grade, the trip, and the G-force plot. To adjust range for weather, it sends your location rounded to about 1 km to Open-Meteo. Nothing else leaves the phone.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Beckify Drive reads the phone's barometer to show air pressure and altitude change. Readings stay on this phone and are not uploaded.</string>
 	<key>UIBackgroundModes</key>

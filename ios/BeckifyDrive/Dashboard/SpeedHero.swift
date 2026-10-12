@@ -110,7 +110,6 @@ struct SpeedHero: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Speed")
                 .accessibilityValue(heroSpokenSpeed)
-            FlowChip(flow: flow)
             if let miles = model.planningRangeMiles {
                 let distance = units.distance(fromKilometers: miles * DriveUnitPreference.kmPerMile)
                 Label("\(Int(distance.rounded())) \(units.distanceLabel) planning", systemImage: "road.lanes")

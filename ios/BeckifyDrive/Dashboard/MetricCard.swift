@@ -13,6 +13,8 @@ struct MetricCard<Accessory: View>: View {
     let freshness: DriveFreshness
     var level: DriveLevel = .normal
     var tint: Color? = nil
+    /// Estimated values get the "est." badge and the estimated color.
+    var estimated: Bool = false
     var caption: String? = nil
     var history: [SparklineBuffer.Point] = []
     var historyBaseline: Double? = nil
@@ -37,6 +39,9 @@ struct MetricCard<Accessory: View>: View {
                     .foregroundStyle(DriveTheme.muted)
                     .lineLimit(1)
                 Spacer(minLength: 4)
+                if estimated {
+                    EstimateBadge()
+                }
                 FreshnessBadge(freshness: freshness)
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -78,7 +83,8 @@ struct MetricCard<Accessory: View>: View {
     }
 
     private var valueColor: Color {
-        level == .normal ? DriveTheme.text : color
+        if level != .normal { return color }
+        return estimated ? DriveTheme.estimated : DriveTheme.measured
     }
 
     private var isStale: Bool {
@@ -93,7 +99,8 @@ struct MetricCard<Accessory: View>: View {
         case .outOfRange:
             return "Reading out of range, not shown"
         case .live, .stale:
-            let spoken = spokenValue ?? [value, unit].compactMap { $0 }.joined(separator: " ")
+            var spoken = spokenValue ?? [value, unit].compactMap { $0 }.joined(separator: " ")
+            if estimated { spoken += ", estimate" }
             if case .stale(let age) = freshness {
                 return "\(spoken), \(age) seconds old"
             }
@@ -111,6 +118,7 @@ extension MetricCard where Accessory == EmptyView {
         freshness: DriveFreshness,
         level: DriveLevel = .normal,
         tint: Color? = nil,
+        estimated: Bool = false,
         caption: String? = nil,
         history: [SparklineBuffer.Point] = [],
         historyBaseline: Double? = nil,
@@ -124,6 +132,7 @@ extension MetricCard where Accessory == EmptyView {
             freshness: freshness,
             level: level,
             tint: tint,
+            estimated: estimated,
             caption: caption,
             history: history,
             historyBaseline: historyBaseline,

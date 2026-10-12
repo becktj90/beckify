@@ -1,6 +1,25 @@
 import BeckifyMath
 import Foundation
 
+/// Trip-scoped estimators, fed once a second from measured values.
+struct DriveInsights {
+    var efficiency = EfficiencyTracker()
+    /// GPS-only distance: the "true efficiency" denominator and the grade baseline.
+    var gpsTrip = DriveTripStats()
+    var regen = RegenScoreTracker()
+    var energy = TripEnergyLedger()
+    var grade = GradeEstimator()
+    var gradeSource: AltitudeSource?
+    /// Session peaks, for steady gauge scales.
+    var peakPowerKW = 0.0
+    var peakTorqueNm = 0.0
+}
+
+enum AltitudeSource: String {
+    case barometer = "barometer"
+    case gps = "GPS altitude"
+}
+
 /// View state for the dashboard. Reads `OBDBluetoothSession` through its
 /// observer protocol and never changes how the session polls.
 final class DashboardModel: ObservableObject, OBDSessionObserving {
@@ -15,6 +34,8 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
     @Published private(set) var trip = DriveTripStats()
     @Published private(set) var tripSource: SpeedSource?
     @Published private(set) var histories: [OBDReading: SparklineBuffer] = [:]
+    @Published private(set) var insights = DriveInsights()
+    @Published private(set) var capacityLog: CapacityLog
     #if DEBUG
     @Published private(set) var rawReplies: [String: OBDBluetoothSession.RawReply] = [:]
     #endif
@@ -27,13 +48,27 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
     /// Nil in previews: nothing is scanned or polled.
     let session: OBDBluetoothSession?
     let sensors: PhoneSensorStore
+    let weather: WeatherService
+    private let defaults: UserDefaults?
     private var timer: Timer?
     private var lastStamp: [OBDReading: Date] = [:]
     private var observing = false
 
-    init(session: OBDBluetoothSession = .shared, sensors: PhoneSensorStore = PhoneSensorStore()) {
+    private static let capacityKey = "beckify.drive.capacityLog"
+
+    init(
+        session: OBDBluetoothSession = .shared,
+        sensors: PhoneSensorStore = PhoneSensorStore(),
+        weather: WeatherService = WeatherService(),
+        defaults: UserDefaults = .standard
+    ) {
         self.session = session
         self.sensors = sensors
+        self.weather = weather
+        self.defaults = defaults
+        // Samples are stamped when they arrive; keep `now` current so a fresh
+        // reply never reads as a future timestamp (which freshness rejects).
+        now = Date()
         profile = session.profile
         book = session.book
         linkTitle = session.linkTitle
@@ -41,6 +76,7 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         carPlayLink = session.carPlayLink
         isScanning = session.isScanning
         planning = session.planning
+        capacityLog = CapacityLog.decoded(from: defaults.data(forKey: Self.capacityKey))
         now = Date()
     }
 
@@ -55,11 +91,16 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         planning: PlanningInputs,
         trip: DriveTripStats,
         tripSource: SpeedSource?,
+        insights: DriveInsights = DriveInsights(),
+        capacityLog: CapacityLog = CapacityLog(),
         sensors: PhoneSensorStore,
+        weather: WeatherService = WeatherService(preview: nil),
         now: Date
     ) {
         session = nil
+        defaults = nil
         self.sensors = sensors
+        self.weather = weather
         self.profile = profile
         self.book = book
         self.histories = histories
@@ -70,6 +111,8 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         self.planning = planning
         self.trip = trip
         self.tripSource = tripSource
+        self.insights = insights
+        self.capacityLog = capacityLog
         self.now = now
     }
 
@@ -106,10 +149,11 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
     func resetTrip() {
         trip.reset()
         tripSource = nil
+        insights = DriveInsights()
         sensors.gForce.clear()
     }
 
-    // MARK: Reads
+    // MARK: Measured reads
 
     var layout: DriveLayout {
         profile.usesBoltPIDs ? .ev : .powertrain
@@ -131,15 +175,6 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         histories[reading]?.points(now: now) ?? []
     }
 
-    /// Planning range in miles. Needs displayed charge actually read plus both typed inputs.
-    var planningRangeMiles: Double? {
-        DrivePlanning.rangeMiles(
-            socPercent: value(.displayedSocPercent).value,
-            usableKWh: planning.usableKWh,
-            whPerMile: planning.whPerMile
-        )
-    }
-
     /// The speed the hero shows: OBD when live or stale, GPS otherwise.
     var heroSpeed: (kph: Double, source: SpeedSource, freshness: DriveFreshness)? {
         let obd = value(.speedKph)
@@ -158,6 +193,61 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         return DriveValue(value: kph, freshness: freshness)
     }
 
+    // MARK: Estimates (Bolt profiles only: they need HV current and the 350 V assumption)
+
+    /// Pack power, kW. + drive, − regen. Nil on generic profiles.
+    var powerKW: Double? {
+        guard layout == .ev else { return nil }
+        return DriveEstimates.packPowerKW(amps: value(.hvCurrentAmps).value)
+    }
+
+    var flow: HVFlowState? {
+        guard layout == .ev else { return nil }
+        return HVFlowState.from(amps: value(.hvCurrentAmps).value)
+    }
+
+    /// Wheel torque, N·m, from pack power and OBD speed.
+    var torqueNm: Double? {
+        DriveEstimates.wheelTorqueNm(powerKW: powerKW, speedKph: value(.speedKph).value)
+    }
+
+    /// Planning range in miles. Needs displayed charge actually read plus both typed inputs.
+    var planningRangeMiles: Double? {
+        DrivePlanning.rangeMiles(
+            socPercent: value(.displayedSocPercent).value,
+            usableKWh: planning.usableKWh,
+            whPerMile: planning.whPerMile
+        )
+    }
+
+    /// Weather used for range, only while fresh enough.
+    var usableWeather: OpenMeteoCurrent? {
+        guard let current = weather.current, current.isUsable(now: now) else { return nil }
+        return current
+    }
+
+    var weatherAdjustment: RangeWeatherModel.Adjustment? {
+        guard let weather = usableWeather else { return nil }
+        let headwind = RangeWeatherModel.headwindMps(
+            windSpeedMps: weather.windSpeedMps,
+            windFromDegrees: weather.windFromDegrees,
+            courseDegrees: sensors.courseDegrees
+        )
+        return RangeWeatherModel.adjust(
+            baseMiles: planningRangeMiles,
+            celsius: weather.temperatureC,
+            speedKph: heroSpeed?.kph,
+            headwindMps: headwind
+        )
+    }
+
+    var preconditionAdvice: PreconditionCoach.Advice {
+        PreconditionCoach.advice(
+            packC: value(.packTempC).value,
+            trendPerMinute: TrendMath.slopePerMinute(history(.packTempC))
+        )
+    }
+
     // MARK: Private
 
     private func pull() {
@@ -167,7 +257,11 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
             lastStamp = [:]
             trip.reset()
             tripSource = nil
+            insights = DriveInsights()
         }
+        // Samples are stamped when they arrive; keep `now` current so a fresh
+        // reply never reads as a future timestamp (which freshness rejects).
+        now = Date()
         profile = session.profile
         book = session.book
         linkTitle = session.linkTitle
@@ -187,19 +281,80 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
             next[reading] = buffer
         }
         histories = next
+        // Peaks follow PID replies so the hero gauges rescale as soon as a value lands.
+        var updated = insights
+        if let powerKW { updated.peakPowerKW = max(updated.peakPowerKW, abs(powerKW)) }
+        if let torqueNm { updated.peakTorqueNm = max(updated.peakTorqueNm, abs(torqueNm)) }
+        if updated.peakPowerKW != insights.peakPowerKW || updated.peakTorqueNm != insights.peakTorqueNm {
+            insights = updated
+        }
     }
 
     private func tick() {
         now = Date()
         let obd = value(.speedKph)
+        let gps = gpsSpeed
         if obd.freshness == .live, let kph = obd.value {
             trip.add(speedKph: kph, at: now)
             tripSource = .obd
-        } else if let gps = gpsSpeed, gps.freshness == .live, let kph = gps.value {
+        } else if let gps, gps.freshness == .live, let kph = gps.value {
             trip.add(speedKph: kph, at: now)
             tripSource = .gps
         } else {
             trip.add(speedKph: nil, at: now)
         }
+
+        var next = insights
+        next.gpsTrip.add(speedKph: gps?.freshness == .live ? gps?.value : nil, at: now)
+        let gpsMiles = next.gpsTrip.distanceKilometers / DriveUnitPreference.kmPerMile
+
+        let liveSoc = liveValue(.displayedSocPercent)
+        let liveAmps = liveValue(.hvCurrentAmps)
+        let liveSpeed = obd.freshness == .live ? obd.value : nil
+        if layout == .ev {
+            next.efficiency.update(socPercent: liveSoc, gpsMiles: gpsMiles)
+            next.regen.add(speedKph: liveSpeed, amps: liveAmps, at: now)
+        }
+
+        // Barometric relative altitude is steadier than GPS; never mix the two in one window.
+        let source: AltitudeSource?
+        let altitude: Double?
+        if let relative = sensors.relativeAltitudeMeters {
+            source = .barometer
+            altitude = relative
+        } else if let gpsAltitude = sensors.altitudeMeters {
+            source = .gps
+            altitude = gpsAltitude
+        } else {
+            source = nil
+            altitude = nil
+        }
+        if source != next.gradeSource {
+            next.grade.reset()
+            next.gradeSource = source
+        }
+        next.grade.add(distanceMeters: next.gpsTrip.distanceKilometers * 1_000, altitudeMeters: altitude)
+        if layout == .ev {
+            next.energy.add(amps: liveAmps, speedKph: liveSpeed ?? (gps?.freshness == .live ? gps?.value : nil), altitudeMeters: altitude, at: now)
+        }
+        insights = next
+
+        if layout == .ev, let ah = liveValue(.capacityAh) {
+            var log = capacityLog
+            log.record(ampHours: ah, at: now)
+            if log != capacityLog {
+                capacityLog = log
+                defaults?.set(log.encoded(), forKey: Self.capacityKey)
+            }
+        }
+
+        if layout == .ev, let point = sensors.coordinate {
+            weather.refreshIfNeeded(at: point, now: now)
+        }
+    }
+
+    private func liveValue(_ reading: OBDReading) -> Double? {
+        let current = value(reading)
+        return current.freshness == .live ? current.value : nil
     }
 }

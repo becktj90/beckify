@@ -46,6 +46,9 @@ private struct DashboardContent: View {
                     ) {
                         showAdapter = true
                     }
+                    if model.layout == .ev {
+                        PowerHero(model: model, units: preferences.units)
+                    }
                     SpeedHero(model: model, units: preferences.units)
                     ForEach(DashboardSection.sections(for: model.layout), id: \.self) { section in
                         let cards = preferences.layout.cards(in: section, for: model.layout)

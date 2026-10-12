@@ -89,6 +89,35 @@ struct DashboardCardView: View {
             notReported(.dcdcOutput, id: "dcdcOutput", symbol: "arrow.left.arrow.right")
         case .charger:
             notReported(.charger, id: "charger", symbol: "powerplug.fill")
+        // EV energy & range (estimates)
+        case .efficiency:
+            EfficiencyCard(tracker: model.insights.efficiency, packKWh: model.planning.usableKWh, units: units)
+        case .weatherRange:
+            WeatherRangeCard(
+                model: model,
+                weather: model.weather,
+                locationAccess: sensors.locationAccess,
+                units: units,
+                requestLocation: sensors.requestLocation,
+                openSettings: sensors.openSettings,
+                openAdapter: openAdapter
+            )
+        case .regenScore:
+            RegenScoreCard(tracker: model.insights.regen)
+        case .tripEnergy:
+            TripEnergyCard(ledger: model.insights.energy)
+        case .precondition:
+            PreconditionCard(pack: model.value(.packTempC), advice: model.preconditionAdvice, units: units)
+        case .degradation:
+            DegradationCard(log: model.capacityLog)
+        case .grade:
+            GradeCard(
+                grade: model.insights.grade.gradePercent,
+                source: model.insights.gradeSource,
+                locationAccess: sensors.locationAccess,
+                requestLocation: sensors.requestLocation,
+                openSettings: sensors.openSettings
+            )
         // Phone
         case .gpsSpeed:
             gpsSpeed

@@ -104,12 +104,13 @@ final class CarPlayDashboardSceneDelegate: UIResponder, CPTemplateApplicationDas
             subtitleVariants: ["Charge"],
             image: Self.symbol("bolt.fill")
         )
-        let speed = CPDashboardButton(
-            titleVariants: [copy.speed],
-            subtitleVariants: ["Speed"],
-            image: Self.symbol("speedometer")
+        // Power is an estimate (350 V nominal × measured current); its copy says "est.".
+        let power = CPDashboardButton(
+            titleVariants: [copy.power],
+            subtitleVariants: ["Power"],
+            image: Self.symbol("gauge.with.dots.needle.67percent")
         )
-        dashboardController.shortcutButtons = [charge, speed]
+        dashboardController.shortcutButtons = [charge, power]
     }
 
     private static func symbol(_ name: String) -> UIImage {

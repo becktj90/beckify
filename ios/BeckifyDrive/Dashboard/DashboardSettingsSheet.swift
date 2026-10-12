@@ -21,6 +21,16 @@ struct DashboardSettingsSheet: View {
                             Text(unit.label).tag(unit)
                         }
                     }
+                    Picker("Power", selection: $preferences.units.power) {
+                        ForEach(DrivePowerUnit.allCases, id: \.self) { unit in
+                            Text(unit.label).tag(unit)
+                        }
+                    }
+                    Picker("Torque", selection: $preferences.units.torque) {
+                        ForEach(DriveTorqueUnit.allCases, id: \.self) { unit in
+                            Text(unit.label).tag(unit)
+                        }
+                    }
                     Button("Use Region Settings") {
                         preferences.useSystemUnits()
                     }

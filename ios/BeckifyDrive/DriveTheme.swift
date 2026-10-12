@@ -68,6 +68,22 @@ enum DriveTheme {
         dark: UIColor(red: 0.45, green: 0.70, blue: 1.0, alpha: 1)
     )
 
+    // MARK: Data provenance
+
+    /// A value read from the car or the phone.
+    static var measured: Color { text }
+    /// A value computed from measured data plus a stated assumption. Always
+    /// paired with the "est." badge so color is never the only cue.
+    static let estimated = adaptive(
+        light: UIColor(red: 0.40, green: 0.30, blue: 0.78, alpha: 1),
+        dark: UIColor(red: 0.74, green: 0.68, blue: 1.0, alpha: 1)
+    )
+    /// Unlit segment behind retro digits.
+    static let segmentGhost = adaptive(
+        light: UIColor(white: 0, alpha: 0.06),
+        dark: UIColor(white: 1, alpha: 0.07)
+    )
+
     // MARK: Older names, kept so existing views read the same
 
     static var card: Color { surface }
@@ -135,5 +151,18 @@ extension View {
             .foregroundStyle(DriveTheme.muted)
             .textCase(.uppercase)
             .tracking(0.6)
+    }
+}
+
+/// "est." chip on every estimated value.
+struct EstimateBadge: View {
+    var body: some View {
+        Text("est.")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(DriveTheme.estimated)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .overlay(Capsule().strokeBorder(DriveTheme.estimated.opacity(0.6), lineWidth: 1))
+            .accessibilityLabel("estimate")
     }
 }

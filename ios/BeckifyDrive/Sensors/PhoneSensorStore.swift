@@ -12,6 +12,11 @@ enum SensorAccess: Equatable {
     case unavailable
 }
 
+struct GeoPoint: Equatable {
+    var latitude: Double
+    var longitude: Double
+}
+
 /// Smoothed G readout. Its own object so 15 Hz updates redraw only the G card.
 final class GForceFeed: ObservableObject {
     @Published private(set) var tracker = GForceTracker()
@@ -54,6 +59,10 @@ final class PhoneSensorStore: NSObject, ObservableObject {
     @Published private(set) var gpsSpeedKph: Double?
     @Published private(set) var altitudeMeters: Double?
     @Published private(set) var lastLocationAt: Date?
+    /// Last fix, for the weather lookup (rounded to 0.01° before it leaves the phone).
+    @Published private(set) var coordinate: GeoPoint?
+    /// GPS course, degrees from true north, while moving fast enough to trust it.
+    @Published private(set) var courseDegrees: Double?
     @Published private(set) var headingDegrees: Double?
     @Published private(set) var pressureKPa: Double?
     @Published private(set) var relativeAltitudeMeters: Double?
@@ -275,6 +284,8 @@ extension PhoneSensorStore: CLLocationManagerDelegate {
             manager.stopUpdatingHeading()
             gpsSpeedKph = nil
             headingDegrees = nil
+            coordinate = nil
+            courseDegrees = nil
         }
     }
 
@@ -288,8 +299,12 @@ extension PhoneSensorStore: CLLocationManagerDelegate {
             gpsSpeedKph = nil
         }
         altitudeMeters = location.verticalAccuracy > 0 ? location.altitude : nil
+        coordinate = GeoPoint(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
         if location.course >= 0, location.courseAccuracy >= 0, location.speed >= Self.minimumCourseSpeed {
             lastCourse = (location.course, location.timestamp)
+            courseDegrees = location.course
+        } else {
+            courseDegrees = nil
         }
     }
 
@@ -317,6 +332,8 @@ extension PhoneSensorStore {
         var gpsSpeedKph: Double?
         var altitudeMeters: Double?
         var headingDegrees: Double?
+        var courseDegrees: Double?
+        var coordinate: GeoPoint? = GeoPoint(latitude: 42.33, longitude: -83.05)
         var pressureKPa: Double?
         var relativeAltitudeMeters: Double?
         var batteryLevel: Double?
@@ -333,6 +350,8 @@ extension PhoneSensorStore {
         store.altitudeMeters = values.altitudeMeters
         store.lastLocationAt = values.gpsSpeedKph == nil && values.altitudeMeters == nil ? nil : now
         store.headingDegrees = values.headingDegrees
+        store.courseDegrees = values.courseDegrees
+        store.coordinate = values.coordinate
         store.pressureKPa = values.pressureKPa
         store.relativeAltitudeMeters = values.relativeAltitudeMeters
         store.lastAltimeterAt = values.pressureKPa == nil ? nil : now

@@ -16,7 +16,7 @@ struct HVCurrentCard: View {
             unit: "A",
             freshness: value.freshness,
             tint: DriveTheme.color(for: flow),
-            caption: "PID 222414 · header 7E1 · + leaves the pack, − is regen or charge. Amps only: no kW without a measured pack voltage.",
+            caption: "PID 222414 · header 7E1 · measured. + leaves the pack, − is regen or charge. Power (est.) is in the hero above.",
             history: history,
             historyBaseline: 0,
             spokenValue: value.value.map { "\(String(format: "%.1f", $0)) amps, \(flow?.title ?? "")" }

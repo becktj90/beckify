@@ -134,6 +134,10 @@
 		BDCF0000000000000000002B /* PIDInspectorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003B /* PIDInspectorSheet.swift */; };
 		BDCF0000000000000000002C /* DashboardPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003C /* DashboardPreviews.swift */; };
 		BDCF0000000000000000002D /* PhoneSensorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003D /* PhoneSensorStore.swift */; };
+		BDCF00000000000000000050 /* PowerHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000054 /* PowerHero.swift */; };
+		BDCF00000000000000000051 /* RetroDigits.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000055 /* RetroDigits.swift */; };
+		BDCF00000000000000000052 /* InsightCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000056 /* InsightCards.swift */; };
+		BDCF00000000000000000053 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000057 /* WeatherService.swift */; };
 		BDCF0000000000000000000C /* DriveTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000003 /* DriveTheme.swift */; };
 		BDCF0000000000000000000D /* OBDBluetoothSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000004 /* OBDBluetoothSession.swift */; };
 		BDCF0000000000000000000E /* CarPlayDriveScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000005 /* CarPlayDriveScene.swift */; };
@@ -297,6 +301,10 @@
 		BDCF0000000000000000003B /* PIDInspectorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIDInspectorSheet.swift; sourceTree = "<group>"; };
 		BDCF0000000000000000003C /* DashboardPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardPreviews.swift; sourceTree = "<group>"; };
 		BDCF0000000000000000003D /* PhoneSensorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSensorStore.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000054 /* PowerHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerHero.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000055 /* RetroDigits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetroDigits.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000056 /* InsightCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCards.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000057 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000003 /* DriveTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTheme.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000004 /* OBDBluetoothSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDBluetoothSession.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000005 /* CarPlayDriveScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayDriveScene.swift; sourceTree = "<group>"; };
@@ -403,6 +411,9 @@
 				BDCF0000000000000000003A /* DashboardSettingsSheet.swift */,
 				BDCF0000000000000000003B /* PIDInspectorSheet.swift */,
 				BDCF0000000000000000003C /* DashboardPreviews.swift */,
+				BDCF00000000000000000054 /* PowerHero.swift */,
+				BDCF00000000000000000055 /* RetroDigits.swift */,
+				BDCF00000000000000000056 /* InsightCards.swift */,
 			);
 			path = Dashboard;
 			sourceTree = "<group>";
@@ -415,12 +426,21 @@
 			path = Sensors;
 			sourceTree = "<group>";
 		};
+		BDCF00000000000000000042 /* Net */ = {
+			isa = PBXGroup;
+			children = (
+				BDCF00000000000000000057 /* WeatherService.swift */,
+			);
+			path = Net;
+			sourceTree = "<group>";
+		};
 		BDCF00000000000000000016 /* BeckifyDrive */ = {
 			isa = PBXGroup;
 			children = (
 				BDCF00000000000000000001 /* BeckifyDriveApp.swift */,
 				BDCF00000000000000000040 /* Dashboard */,
 				BDCF00000000000000000041 /* Sensors */,
+				BDCF00000000000000000042 /* Net */,
 				BDCF00000000000000000003 /* DriveTheme.swift */,
 				BDCF00000000000000000004 /* OBDBluetoothSession.swift */,
 				BDCF00000000000000000005 /* CarPlayDriveScene.swift */,
@@ -925,6 +945,10 @@
 				BDCF0000000000000000002B /* PIDInspectorSheet.swift in Sources */,
 				BDCF0000000000000000002C /* DashboardPreviews.swift in Sources */,
 				BDCF0000000000000000002D /* PhoneSensorStore.swift in Sources */,
+				BDCF00000000000000000050 /* PowerHero.swift in Sources */,
+				BDCF00000000000000000051 /* RetroDigits.swift in Sources */,
+				BDCF00000000000000000052 /* InsightCards.swift in Sources */,
+				BDCF00000000000000000053 /* WeatherService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -25,6 +25,8 @@ final class DashboardPreferences: ObservableObject {
         didSet {
             defaults?.set(units.speed.rawValue, forKey: Key.speed)
             defaults?.set(units.temperature.rawValue, forKey: Key.temperature)
+            defaults?.set(units.power.rawValue, forKey: Key.power)
+            defaults?.set(units.torque.rawValue, forKey: Key.torque)
         }
     }
     @Published var appearance: DriveAppearance {
@@ -37,6 +39,8 @@ final class DashboardPreferences: ObservableObject {
         static let layout = "beckify.drive.dashboard.layout"
         static let speed = "beckify.drive.units.speed"
         static let temperature = "beckify.drive.units.temperature"
+        static let power = "beckify.drive.units.power"
+        static let torque = "beckify.drive.units.torque"
         static let appearance = "beckify.drive.appearance"
     }
 
@@ -46,7 +50,9 @@ final class DashboardPreferences: ObservableObject {
         let system = Self.regionUnits()
         units = DriveUnitPreference(
             speed: defaults.string(forKey: Key.speed).flatMap(DriveSpeedUnit.init(rawValue:)) ?? system.speed,
-            temperature: defaults.string(forKey: Key.temperature).flatMap(DriveTemperatureUnit.init(rawValue:)) ?? system.temperature
+            temperature: defaults.string(forKey: Key.temperature).flatMap(DriveTemperatureUnit.init(rawValue:)) ?? system.temperature,
+            power: defaults.string(forKey: Key.power).flatMap(DrivePowerUnit.init(rawValue:)) ?? system.power,
+            torque: defaults.string(forKey: Key.torque).flatMap(DriveTorqueUnit.init(rawValue:)) ?? system.torque
         )
         appearance = defaults.string(forKey: Key.appearance).flatMap(DriveAppearance.init(rawValue:)) ?? .dark
     }
@@ -63,6 +69,8 @@ final class DashboardPreferences: ObservableObject {
         units = Self.regionUnits()
         defaults?.removeObject(forKey: Key.speed)
         defaults?.removeObject(forKey: Key.temperature)
+        defaults?.removeObject(forKey: Key.power)
+        defaults?.removeObject(forKey: Key.torque)
     }
 
     private static func regionUnits() -> DriveUnitPreference {
