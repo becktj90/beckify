@@ -104,7 +104,7 @@ export const NautilusTrace = ({ className }: { className?: string }) => {
         const fade = 1 - Math.min(1, outerPt.r / septumLimit);
         const alpha = envelope(outerPt.r, outer) * 0.42 * (0.25 + 0.75 * fade);
         if (alpha <= 0.004) continue;
-        ctx.strokeStyle = `rgba(139, 123, 255, ${alpha.toFixed(4)})`;
+        ctx.strokeStyle = `rgba(64, 186, 214, ${alpha.toFixed(4)})`;
         ctx.beginPath();
         ctx.moveTo(innerPt.x, innerPt.y);
         ctx.lineTo(outerPt.x, outerPt.y);
@@ -112,7 +112,7 @@ export const NautilusTrace = ({ className }: { className?: string }) => {
       }
 
       // ── The shell curve itself, drawn in short segments so colour, weight
-      //    and opacity can shift with radius (blue core → violet rim) ──
+      //    and opacity can shift with radius (blue core → teal rim) ──
       const step = 0.03;
       let prev = point(thetaMin);
       for (let theta = thetaMin + step; theta <= thetaMax; theta += step) {
@@ -120,9 +120,10 @@ export const NautilusTrace = ({ className }: { className?: string }) => {
         const alpha = envelope(curr.r, outer);
         if (alpha > 0.004) {
           const mix = Math.min(1, curr.r / (outer * 0.75));
-          const red = Math.round(79 + (139 - 79) * mix);
-          const green = Math.round(139 + (123 - 139) * mix);
-          ctx.strokeStyle = `rgba(${red}, ${green}, 255, ${alpha.toFixed(4)})`;
+          const red = Math.round(96 + (64 - 96) * mix);
+          const green = Math.round(156 + (186 - 156) * mix);
+          const blue = Math.round(230 + (214 - 230) * mix);
+          ctx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${alpha.toFixed(4)})`;
           ctx.lineWidth = 0.8 + 1.5 * mix;
           ctx.beginPath();
           ctx.moveTo(prev.x, prev.y);
@@ -135,8 +136,8 @@ export const NautilusTrace = ({ className }: { className?: string }) => {
       // ── Soft bloom over the dense core, where the chambers crowd together ──
       const radius = height * 0.34;
       const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-      glow.addColorStop(0, "rgba(139, 123, 255, 0.20)");
-      glow.addColorStop(1, "rgba(139, 123, 255, 0)");
+      glow.addColorStop(0, "rgba(64, 186, 214, 0.20)");
+      glow.addColorStop(1, "rgba(64, 186, 214, 0)");
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);

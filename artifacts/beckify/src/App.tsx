@@ -14,6 +14,7 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const AboutPage = lazy(() => import("@/pages/about"));
 const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
+const AppsPage = lazy(() => import("@/pages/apps"));
 const GamesPage = lazy(() => import("@/pages/games"));
 const SiteMapPage = lazy(() => import("@/pages/sitemap"));
 const KestrelHeavyPage = lazy(() => import("@/pages/kestrel-heavy"));
@@ -51,6 +52,8 @@ function Router() {
         <Route path="/about/" component={AboutPage} />
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/privacy/" component={PrivacyPage} />
+        <Route path="/apps" component={AppsPage} />
+        <Route path="/apps/" component={AppsPage} />
         <Route path="/projects" component={ProjectsPage} />
         <Route path="/projects/" component={ProjectsPage} />
         <Route path="/projects/vespa-p200e" component={VespaP200EPage} />

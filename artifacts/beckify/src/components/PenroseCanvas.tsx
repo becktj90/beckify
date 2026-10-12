@@ -97,7 +97,7 @@ function paintTriangle(context: CanvasRenderingContext2D, tile: Tile, progress: 
   const a = { x: tile.a.x + tile.driftX * drift, y: tile.a.y + tile.driftY * drift };
   const b = { x: tile.b.x + tile.driftX * drift, y: tile.b.y + tile.driftY * drift };
   const c = { x: tile.c.x + tile.driftX * drift, y: tile.c.y + tile.driftY * drift };
-  const colors = ["#5fe3ed", "#638eff", "#a776ff", "#f1b78f"];
+  const colors = ["#5fe3ed", "#638eff", "#e09c56", "#f1b78f"];
   const color = colors[Math.floor(tile.hue * colors.length) % colors.length];
   const glint = 0.04 + (Math.sin(elapsed / 2400 + tile.hue * TAU) + 1) * 0.015;
 

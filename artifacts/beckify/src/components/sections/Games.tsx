@@ -9,7 +9,7 @@ import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 const FEATURED = {
   mode: "Launch arcade",
   input: "Keyboard + touch",
-  accent: "#8b7bff",
+  accent: "#40bad6",
 };
 
 const ARCADE_FACTS = [
