@@ -252,7 +252,7 @@ final class DriveTripStatsTests: XCTestCase {
 
 final class DriveUnitTests: XCTestCase {
     func testSystemDefaults() {
-        XCTAssertEqual(DriveUnitPreference.systemDefault(measurementSystem: "us"), DriveUnitPreference(speed: .mph, temperature: .fahrenheit))
+        XCTAssertEqual(DriveUnitPreference.systemDefault(measurementSystem: "us"), DriveUnitPreference(speed: .mph, temperature: .fahrenheit, power: .horsepower, torque: .poundFeet))
         XCTAssertEqual(DriveUnitPreference.systemDefault(measurementSystem: "uk"), DriveUnitPreference(speed: .mph, temperature: .celsius))
         XCTAssertEqual(DriveUnitPreference.systemDefault(measurementSystem: "metric"), DriveUnitPreference(speed: .kmh, temperature: .celsius))
         XCTAssertEqual(DriveUnitPreference.systemDefault(measurementSystem: "anything"), DriveUnitPreference(speed: .kmh, temperature: .celsius))

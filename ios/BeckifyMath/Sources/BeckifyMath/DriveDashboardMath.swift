@@ -345,18 +345,27 @@ public enum DriveTemperatureUnit: String, CaseIterable, Codable, Sendable {
 public struct DriveUnitPreference: Equatable, Sendable {
     public var speed: DriveSpeedUnit
     public var temperature: DriveTemperatureUnit
+    public var power: DrivePowerUnit
+    public var torque: DriveTorqueUnit
 
-    public init(speed: DriveSpeedUnit, temperature: DriveTemperatureUnit) {
+    public init(
+        speed: DriveSpeedUnit,
+        temperature: DriveTemperatureUnit,
+        power: DrivePowerUnit = .kilowatts,
+        torque: DriveTorqueUnit = .newtonMeters
+    ) {
         self.speed = speed
         self.temperature = temperature
+        self.power = power
+        self.torque = torque
     }
 
-    /// `identifier` is `Locale.MeasurementSystem.identifier`: `metric`, `us`, or `uk`.
-    /// The UK drives in mph and reads the weather in °C.
+    /// `identifier` is `metric`, `us`, or `uk`.
+    /// The UK drives in mph and reads the weather in °C; US car specs use hp and lb-ft.
     public static func systemDefault(measurementSystem identifier: String) -> DriveUnitPreference {
         switch identifier.lowercased() {
         case "us", "ussystem":
-            return DriveUnitPreference(speed: .mph, temperature: .fahrenheit)
+            return DriveUnitPreference(speed: .mph, temperature: .fahrenheit, power: .horsepower, torque: .poundFeet)
         case "uk", "uksystem":
             return DriveUnitPreference(speed: .mph, temperature: .celsius)
         default:

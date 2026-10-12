@@ -23,7 +23,9 @@ import Foundation
 /// (A/100), and heater power `2241B6` (A/1000). Those ceilings sit below pack
 /// voltage, DC fast-charge current, a full Bolt charge, or a multi-kilowatt
 /// heater. Instant kW on enthusiast lists is volts × current / 1000, and the
-/// public voltage scales disagree, so traction kW is left unread.
+/// public voltage scales disagree, so pack voltage is never decoded. Power is
+/// shown only as a labeled estimate: nominal 350 V × measured current
+/// (`DriveEstimates`).
 public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
     case generic
     case boltEV
@@ -514,7 +516,16 @@ public struct DrivePresentation: Equatable, Sendable {
     }
 
     public static let designAid = "Design aid for enthusiasts. Not a certified diagnostic tool, not a battery-health certificate, and not the vehicle's own range estimate."
-    public static let powerGap = "kW stays blank until volts and amps are both measured. Traction pack voltage is not invented."
+    public static let powerGap = "Estimate: 350 V nominal pack × measured HV current. Pack voltage is not read."
+
+    /// CarPlay / tile copy for estimated pack power. Nil without measured current.
+    public static func powerEstimateCopy(amps: Double?) -> String? {
+        guard let kW = DriveEstimates.packPowerKW(amps: amps) else { return nil }
+        if kW < 0 {
+            return String(format: "Regen %.0f kW est.", -kW)
+        }
+        return String(format: "%.0f kW est.", kW)
+    }
 }
 
 public enum DrivePresentationBuilder {
@@ -534,10 +545,11 @@ public enum DrivePresentationBuilder {
         )
         let speed = book.read(.speedKph, now: now)
         let layout: DriveLayout = profile.usesBoltPIDs ? .ev : .powertrain
+        let powerCopy = layout == .ev ? DrivePresentation.powerEstimateCopy(amps: book.read(.hvCurrentAmps, now: now)) : nil
         let temperature = temperatureCopy(book: book, now: now, preferPack: profile.usesBoltPIDs)
         let carPlay = DriveCarPlayCopy(
             charge: soc.map { percent($0, digits: 1) } ?? "Not read",
-            power: "Not read",
+            power: powerCopy ?? "Not read",
             speed: speed.map { speedCopy($0) } ?? "Not read",
             range: range.map { "\(Int($0.rounded())) mi planning" } ?? "Not read",
             temperature: temperature.carPlay,
@@ -580,7 +592,7 @@ public enum DrivePresentationBuilder {
         let tiles = [
             DriveTile(id: "speed", label: "Speed", value: speed.map { speedCopy($0) } ?? "—", caption: speed.map { kphCopy($0) } ?? "Mode 01 vehicle speed"),
             DriveTile(id: "amps", label: "HV current", value: amps.map { ampsCopy($0) } ?? "—", caption: "PID 222414 · header 7E1 · sign as published"),
-            DriveTile(id: "power", label: "Power", value: "—", caption: DrivePresentation.powerGap),
+            DriveTile(id: "power", label: "Power", value: DrivePresentation.powerEstimateCopy(amps: amps) ?? "—", caption: DrivePresentation.powerGap),
             DriveTile(
                 id: "range",
                 label: "Range",
