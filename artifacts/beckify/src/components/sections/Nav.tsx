@@ -9,6 +9,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTri
 const NAV_ICON_NAMES: Record<string, BeckifyIconName> = {
   Toolbox: "toolbox",
   "Control Systems": "gauge",
+  Apps: "about",
   Projects: "projects",
   Games: "games",
 };
@@ -59,7 +60,7 @@ function NavLink({
       title={label}
       className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium tracking-[0.02em] transition-all duration-200 whitespace-nowrap ${
         active
-          ? "text-[var(--accent-foreground)] bg-[var(--accent)] shadow-[0_0_12px_rgba(139,123,255,0.45)]"
+          ? "text-[var(--accent-foreground)] bg-[var(--accent)] shadow-[0_0_12px_rgba(64,186,214,0.45)]"
           : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/08"
       }`}
     >
@@ -107,7 +108,7 @@ export const Nav = () => {
               style={{
                 background:
                   "linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)",
-                boxShadow: "0 0 0 1px rgba(139,123,255,0.3)",
+                boxShadow: "0 0 0 1px rgba(64,186,214,0.3)",
               }}
             >
               <img

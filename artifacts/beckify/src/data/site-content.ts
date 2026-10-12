@@ -26,6 +26,7 @@ import {
   Youtube,
   Phone,
   Zap,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -54,6 +55,7 @@ export interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { href: "/toolbox/", label: "Toolbox", icon: Wrench, external: true },
   { href: "/control-systems", label: "Control Systems", icon: Zap },
+  { href: "/apps", label: "Apps", icon: Smartphone },
   { href: "/projects", label: "Projects", icon: Rocket },
   { href: "/games", label: "Games", icon: Gamepad2 },
 ];
@@ -79,6 +81,12 @@ export const HOME_NAV_CARDS: HubCard[] = [
     href: "/toolbox/",
     external: true,
     icon: Wrench,
+  },
+  {
+    title: "Beckify for iPhone & iPad",
+    description: "The native field electrical toolbox on the App Store. Free, no ads.",
+    href: "/apps",
+    icon: Smartphone,
   },
   {
     title: "Projects",
@@ -227,3 +235,43 @@ export const GAMES: Game[] = [
 
 // Legacy single-game export for backwards compatibility
 export const GAME = GAMES[0];
+
+/** ------------------------------------------------------------------------
+ * IOS APPS
+ *
+ * Native SwiftUI app from ios/. Keep in step with ios/docs/APP_STORE.md.
+ * Only set `appStoreUrl` once the listing is live; without it the card
+ * shows the status label instead of a download button.
+ * -------------------------------------------------------------------- */
+export interface IosApp {
+  name: string;
+  bundleId: string;
+  tagline: string;
+  description: string;
+  highlights: string[];
+  /** Store category and price line shown on the card. */
+  meta: string;
+  appStoreUrl?: string;
+  /** Shown when there is no App Store link yet. */
+  status?: string;
+  icon: LucideIcon;
+}
+
+export const IOS_APPS: IosApp[] = [
+  {
+    name: "Beckify",
+    bundleId: "com.beckify.toolbox",
+    tagline: "Field electrical toolbox",
+    description:
+      "A native iPhone and iPad toolbox for electricians, engineers, and students. Home is two areas: Field (jobsite calculators and instruments, opens first) and Toolkit (basics, bench, and references). Not a website wrapper.",
+    highlights: [
+      "Voltage drop, wire size & ampacity, conduit fill, motor FLA, equipment grounding, and cable ladder",
+      "Motor nameplate OCR, transformer sizing, three-phase power, short circuit, and battery bank",
+      "Control systems lab, UL 508A panel lab, and switchgear logic lab",
+      "NEC (US) by default with AS/NZS selectable; tools say when they still show NEC",
+    ],
+    meta: "iPhone & iPad · Productivity · Free, no ads",
+    appStoreUrl: "https://apps.apple.com/app/id6807908745",
+    icon: Wrench,
+  },
+];
