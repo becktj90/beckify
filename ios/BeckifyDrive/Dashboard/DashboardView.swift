@@ -179,6 +179,8 @@ struct LinkStatusPill: View {
     let state: LinkState
     let action: () -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Button(action: action) {
@@ -192,7 +194,7 @@ struct LinkStatusPill: View {
                     Text(profile)
                         .font(.subheadline)
                         .foregroundStyle(DriveTheme.muted)
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                     Spacer(minLength: 4)
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.bold))

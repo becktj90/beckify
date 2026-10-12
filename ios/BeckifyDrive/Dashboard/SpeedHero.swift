@@ -9,6 +9,11 @@ struct SpeedHero: View {
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// At accessibility text sizes the secondary line moves under the arc so
+    /// it wraps instead of truncating inside the ring.
+    private var secondaryBelowArc: Bool { dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         Group {
@@ -30,21 +35,25 @@ struct SpeedHero: View {
 
     private var powertrainHero: some View {
         let rpm = model.value(.rpm)
-        return Gauge(value: min(rpm.value ?? 0, RPMScale.max), in: 0...RPMScale.max) {
-            Text("RPM")
-        } currentValueLabel: {
-            VStack(spacing: 2) {
-                SpeedReadout(speed: model.heroSpeed, units: units, large: true)
-                Text(rpm.value.map { "\(Int($0.rounded()).formatted()) rpm" } ?? "RPM —")
-                    .font(.subheadline.weight(.medium))
-                    .monospacedDigit()
-                    .foregroundStyle(DriveTheme.muted)
-                    .contentTransition(.numericText())
+        let rpmText = Text(rpm.value.map { "\(Int($0.rounded()).formatted()) rpm" } ?? "RPM —")
+            .font(.subheadline.weight(.medium))
+            .monospacedDigit()
+            .foregroundStyle(DriveTheme.muted)
+            .contentTransition(.numericText())
+        return VStack(spacing: 6) {
+            Gauge(value: min(rpm.value ?? 0, RPMScale.max), in: 0...RPMScale.max) {
+                Text("RPM")
+            } currentValueLabel: {
+                VStack(spacing: 2) {
+                    SpeedReadout(speed: model.heroSpeed, units: units, large: true)
+                    if !secondaryBelowArc { rpmText }
+                }
             }
+            .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: rpm.value != nil))
+            .animation(reduceMotion ? nil : .snappy, value: rpm.value)
+            .frame(width: ringSize, height: ringSize)
+            if secondaryBelowArc { rpmText }
         }
-        .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: rpm.value != nil))
-        .animation(reduceMotion ? nil : .snappy, value: rpm.value)
-        .frame(width: ringSize, height: ringSize)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed and engine RPM")
         .accessibilityValue(spokenPowertrain(rpm: rpm.value))
@@ -55,21 +64,27 @@ struct SpeedHero: View {
     /// Speed inside an arc. Standard Mode 01 has no RPM or charge on most EVs.
     private var standardEVHero: some View {
         let kph = model.heroSpeed?.kph
-        return Gauge(value: min(kph ?? 0, SpeedScale.maxKph), in: 0...SpeedScale.maxKph) {
-            Text("Speed")
-        } currentValueLabel: {
-            VStack(spacing: 2) {
-                SpeedReadout(speed: model.heroSpeed, units: units, large: true)
-                Text("Standard OBD · no charge or power on this profile")
-                    .font(.caption)
-                    .foregroundStyle(DriveTheme.muted)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
+        let note = Text("Standard OBD · no charge or power on this profile")
+            .font(.caption)
+            .foregroundStyle(DriveTheme.muted)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+        return VStack(spacing: 6) {
+            Gauge(value: min(kph ?? 0, SpeedScale.maxKph), in: 0...SpeedScale.maxKph) {
+                Text("Speed")
+            } currentValueLabel: {
+                VStack(spacing: 2) {
+                    SpeedReadout(speed: model.heroSpeed, units: units, large: true)
+                    if !secondaryBelowArc {
+                        note.padding(.horizontal, 28)
+                    }
+                }
             }
+            .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: kph != nil))
+            .animation(reduceMotion ? nil : .snappy, value: kph)
+            .frame(width: ringSize, height: ringSize)
+            if secondaryBelowArc { note }
         }
-        .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: kph != nil))
-        .animation(reduceMotion ? nil : .snappy, value: kph)
-        .frame(width: ringSize, height: ringSize)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed")
         .accessibilityValue(heroSpokenSpeed)
