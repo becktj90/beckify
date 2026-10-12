@@ -105,7 +105,6 @@ assert.equal(rejected.ok, false);
 assert.equal(rejected.status, 400);
 
 assert.ok(api.DEFAULT_MAX_OUTPUT_TOKENS >= 4096);
-assert.ok(api.VISION_POST_PATHS.includes('/api/analyze-look'));
 assert.ok(api.VISION_POST_PATHS.includes('/api/analyze-nameplate'));
 const missing = new api.MissingProviderKeyError('OPENAI_API_KEY');
 const missingHttp = api.visionProviderFailure(missing);
