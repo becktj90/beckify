@@ -26,6 +26,13 @@ import {
   clampToCorridor,
   corridorEdge,
   corridorVisibleSpan,
+  corridorWidenFor,
+  FIRST_FLIGHT,
+  freshCorridorGrace,
+  isFirstFlightGrace,
+  setCorridorWiden,
+  softenFirstFlightHit,
+  stepCorridorGrace,
   dashRail,
 } from './corridor.js';
 import { applyHit, applyScrape, healthKind, healthMaxFor } from './health.js';
@@ -67,6 +74,8 @@ import {
   setSummaryBreakdown,
   setSummaryCopy,
   setSummaryWhy,
+  setSummaryMedal,
+  setHangarMedals,
   showScreen,
   syncSettingsForm,
 } from './hud.js';
@@ -92,6 +101,8 @@ import {
 import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isAscentCruise, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
 import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from './missions.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, playPhase, playPhaseKind, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
+import { gradeLanding, medalShelf, medalText, recordMedal } from './medals.js';
+import { submitFlightScore } from './gamecenter.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
 import { installTextures, refreshLoadoutTextures, refreshTodTextures } from './textures.js';
 import {
@@ -479,6 +490,7 @@ export default class MissionScene extends Phaser.Scene {
 
   freshSession() {
     const beats = beatsFor(this.currentFlight());
+    setCorridorWiden(corridorWidenFor(this.currentFlight()));
     return {
       score: 0,
       combo: 0,
@@ -498,6 +510,8 @@ export default class MissionScene extends Phaser.Scene {
       coach: '',
       abortId: '',
       recovered: false,
+      medal: null,
+      touchdown: null,
       splash: false,
       salvage: false,
       hits: 0,
@@ -531,6 +545,7 @@ export default class MissionScene extends Phaser.Scene {
       science: null,
       attitudeHold: 0,
       corridorHold: 0,
+      corridorGrace: freshCorridorGrace(isFirstFlightGrace(this.currentFlight().id, this.settings)),
       burnHold: 0,
       burnAck: false,
       shieldTaught: false,
@@ -1704,6 +1719,16 @@ export default class MissionScene extends Phaser.Scene {
     const onPaint = kind === 'deck' && dx <= mode.landingTol + 22;
     const soft = vy <= mode.landingVy;
     const tipped = Math.abs(this.rocket.angle) > 14;
+    this.session.touchdown = { kind, vy, dx, tilt: Math.abs(this.rocket.angle) };
+    this.session.medal = gradeLanding({
+      kind,
+      vy,
+      dx,
+      tilt: Math.abs(this.rocket.angle),
+      landingVy: mode.landingVy,
+      landingTol: mode.landingTol + 22,
+      recovered: kind === 'deck' && onPaint && soft && !tipped,
+    });
     this.rocket.setVelocity(0, 0);
     this.rocket.setIgnoreGravity(true);
 
@@ -1900,7 +1925,14 @@ export default class MissionScene extends Phaser.Scene {
     const kind = hazardKindOf(obj, label);
     if (!contactsHazard(this.rocket, obj, kind, this.status === 'JACKLYN')) return;
     const atMaxQ = this.session.tClock >= PACE.MAXQ - 4 && this.session.tClock <= PACE.MAXQ + 8;
+    const prevHealth = this.session.health;
     const result = applyHit(this.session, kind, this.settings.difficulty);
+    const soft = softenFirstFlightHit(this.session.corridorGrace, prevHealth, result);
+    result.health = soft.health;
+    result.kind = soft.kind;
+    if (soft.saved) {
+      this.callout('first-save', { banner: `FIRST FLIGHT SAVE — INT ${Math.round(soft.health)} · fly clean to Haven`, kind: 'warn', holdMs: 2200 });
+    }
     this.session.health = result.health;
     this.session.shield = result.shield;
     obj.destroy();
@@ -2202,6 +2234,9 @@ export default class MissionScene extends Phaser.Scene {
     };
     const prevBest = this.settings.missionBests?.[this.currentFlight().id]?.score || 0;
     recordMissionResult(this.settings, this.currentFlight().id, points, this.session.recovered);
+    const medal = reason === 'rud' ? null : this.session.medal;
+    const medalRec = recordMedal(this.settings, this.currentFlight().id, medal);
+    submitFlightScore(this.currentFlight().id, points);
     const nxt = reason === 'rud' ? null : nextMissionId(this.currentFlight().id);
     const unlockedNext = nxt && !this.settings.unlockedMissions.includes(nxt);
     if (unlockedNext) this.settings.unlockedMissions.push(nxt);
@@ -2241,6 +2276,13 @@ export default class MissionScene extends Phaser.Scene {
       ? `WHY  ${this.session.failReason}${this.session.coach ? `\nNEXT  ${this.session.coach}` : ''}`
       : (reason === 'recovered' ? 'SOFT CATCH  painted deck, sink in limits' : '');
     setSummaryWhy(why);
+    const td = this.session.touchdown;
+    setSummaryMedal(
+      medal,
+      medal
+        ? `MEDAL  ${medalText(medal)}${medalRec.improved ? '  ·  NEW BEST' : ''}${td ? `\nSINK ${td.vy.toFixed(1)} · OFF ${Math.round(td.dx)} · TILT ${Math.round(td.tilt)}°` : ''}`
+        : `MEDAL  — land on Haven for bronze, soft on the paint for silver/gold${medalRec.best ? `  ·  best ${medalText(medalRec.best)}` : ''}`,
+    );
     setSummaryCopy(
       `${this.currentFlight().id}  ${headline}`,
       `${this.currentFlight().payload}\nScore ${points.toLocaleString()}  ·  Combo peak ×${this.session.bestCombo}${extra}\n${this.session.upperDone ? 'SECO + payload deploy — good flight.\n' : ''}${this.session.failReason ? `${this.session.failReason}\n` : ''}Tap continue or press Space`,
@@ -2283,6 +2325,23 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.x = clamp(this.rocket.x, 80, W - 80);
     const edge = corridorEdge(this.rocket.x, this.rocket.y);
     const mode = DIFFICULTY[this.settings.difficulty];
+    const grace = stepCorridorGrace(this.session.corridorGrace, edge.state, dt);
+    if (grace === 'soft' && mode.allowFail) {
+      // First-flight soft warning: no scrape, no abort, gentle push home.
+      this.session.corridorHold = 0;
+      const mid = (edge.left + edge.right) / 2;
+      const dir = this.rocket.x < mid ? 1 : -1;
+      const vx = this.rocket.body?.velocity?.x || 0;
+      this.rocket.setVelocityX(vx * 0.86 + dir * FIRST_FLIGHT.assist * 4);
+      this.callout('corridor-soft', { banner: 'CORRIDOR — steer back in (first flight grace)', kind: 'warn', holdMs: 1400 });
+      return;
+    }
+    if (grace === 'wall' && mode.allowFail) {
+      this.rocket.x = clampToCorridor(this.rocket.x, this.rocket.y);
+      this.session.corridorHold = 0;
+      this.callout('corridor-soft', { banner: 'CORRIDOR — steer back in (first flight grace)', kind: 'warn', holdMs: 1200 });
+      return;
+    }
     if (edge.state !== 'out') {
       this.session.corridorHold = 0;
       if (edge.state === 'warn') {
@@ -2734,6 +2793,7 @@ export default class MissionScene extends Phaser.Scene {
 
   refreshHangar() {
     setHangar(this.settings, { LOADOUT_CATS }, comboCount(), (cat, id) => this.equipPart(cat, id));
+    setHangarMedals(medalShelf(this.settings, MISSIONS.map((m) => m.id)));
   }
 
   equipPart(cat, id) {

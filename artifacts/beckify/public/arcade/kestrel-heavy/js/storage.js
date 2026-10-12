@@ -14,6 +14,7 @@
  */
 import { DEFAULT_SETTINGS, LEGACY_KEYS, STORAGE_KEY } from './config.js';
 import { FIRST_MISSION, MISSIONS, getMission } from './missions.js';
+import { normalizeMedal } from './medals.js';
 import { clampLoadout, evaluateUnlocks, mergeUnlocks } from './loadout.js';
 
 function parse(raw) {
@@ -61,6 +62,7 @@ function normalizeMissions(next) {
     next.missionBests[id] = {
       score: Number(row.score) || 0,
       recovered: Boolean(row.recovered),
+      medal: normalizeMedal(row.medal),
     };
   }
   return next;
@@ -125,7 +127,7 @@ export function resetRecord(settings) {
   settings.loadout = { ...DEFAULT_SETTINGS.loadout };
   settings.unlockedParts = { ...DEFAULT_SETTINGS.unlockedParts };
   for (const mission of MISSIONS) {
-    settings.missionBests[mission.id] = { score: 0, recovered: false };
+    settings.missionBests[mission.id] = { score: 0, recovered: false, medal: null };
   }
   mergeUnlocks(settings);
   saveSettings(settings);

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <!-- Phaser 4.2.1 full build + Matter. vendor/phaser.min.js == jsDelivr phaser@4.2.1/dist/phaser.min.js. Do not load arcade.js. -->
-<html lang="en" data-ng-engine="phaser4" data-kh-build="kestrel-21">
+<html lang="en" data-ng-engine="phaser4" data-kh-build="kestrel-22">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
-      <meta name="arcade-asset-version" content="kestrel-21">
+      <meta name="arcade-asset-version" content="kestrel-22">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -749,6 +749,11 @@
       text-align: left;
     }
     .sum-why { color: var(--amber); }
+    .sum-medal { font-weight: 800; letter-spacing: 0.04em; white-space: pre-line; }
+    #ng-sum-medal[hidden] { display: none !important; }
+    .sum-medal[data-medal="gold"] { color: #ffd54a; }
+    .sum-medal[data-medal="silver"] { color: #d9e1ee; }
+    .sum-medal[data-medal="bronze"] { color: #e0955a; }
     .ng-overlay {
       position: absolute;
       left: 50%;
@@ -1034,6 +1039,14 @@
         max-height: min(92dvh, 100%);
       }
     }
+    /* Phone width: the SOUND/PAUSE/SET pills sit top-right and used to cover
+       the end of the INT bar. Drop the compact status row below the pill row
+       (margin, so the iOS pack's safe-area inset still applies). */
+    @container cabinet (max-width: 720px) {
+      body:not([data-phase="MENU"]):not([data-phase="SUMMARY"]) .mc-hud {
+        margin-top: 46px;
+      }
+    }
     @media (orientation: portrait) {
       .cabinet { max-width: none; }
       #arcade-fs-wrapper {
@@ -1255,6 +1268,7 @@
           <h2>BUILD YOUR STACK</h2>
           <p>Unlock parts by flying KH-n, scoring, and grabbing pickups. Equipped loadout flies on the pad and in the corridor. Default silhouette stays a tall white-ish stack with gold tip accents and solid black strakes.</p>
           <p id="ng-hangar-count">36,000 combinations</p>
+          <p id="ng-hangar-medals" class="sum-break sum-medal" aria-live="polite">MEDALS  KH-1 —</p>
           <div class="hangar-cat">
             <p class="ng-kicker">Nose / fairing</p>
             <div class="hangar-parts" id="hangar-nose">
@@ -1373,6 +1387,7 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
         <h2 id="ng-summary-title">MISSION COMPLETE</h2>
         <p id="ng-summary-body"></p>
         <div id="ng-sum-why" class="sum-break sum-why" hidden></div>
+        <div id="ng-sum-medal" class="sum-break sum-medal" data-medal="none" hidden></div>
         <div id="ng-sum-ascent" class="sum-break"></div>
         <div id="ng-sum-jacklyn" class="sum-break"></div>
         <div id="ng-sum-delta" class="sum-break"></div>
