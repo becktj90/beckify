@@ -2,9 +2,9 @@
 
 Native SwiftUI field EE toolbox for iPhone and iPad. Bundle ID `com.beckify.toolbox`, display name **Beckify**, iOS 17+.
 
-Two more App Store products live in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast — **Kestrel Heavy** (`com.beckify.kestrelheavy`) — a native SwiftUI shell that plays the Phaser 4 arcade from a local bundle — and **Beckify Drive** (`com.beckify.drive`) — a Bluetooth LE OBD-II dashboard with a native CarPlay scene. None of them is this toolbox. See [`LookCheck/README.md`](LookCheck/README.md), [`KestrelHeavy/README.md`](KestrelHeavy/README.md), and [`BeckifyDrive/README.md`](BeckifyDrive/README.md).
+Two more App Store products live in the same Xcode project: **Look Check** (`com.beckify.lookcheck`) — camera/library, Analyze, surprise roast — and **Beckify Drive** (`com.beckify.drive`) — a Bluetooth LE OBD-II dashboard with a native CarPlay scene. Neither is this toolbox. Kestrel Heavy moved to [becktj90/kestrel-heavy](https://github.com/becktj90/kestrel-heavy) (Unity) and is no longer in this project. See [`LookCheck/README.md`](LookCheck/README.md) and [`BeckifyDrive/README.md`](BeckifyDrive/README.md).
 
-> **Archive / Xcode Cloud:** Archive-iOS and any Xcode Cloud Archive workflow for Toolbox **must** use scheme **Beckify** (`com.beckify.toolbox`). Do **not** archive Toolbox with scheme **LookCheck** or **KestrelHeavy**. Those are separate ASC apps with their own Archive schemes. Keep Archive workflows separate. Kestrel Heavy is not a Toolbox catalog game; the website `/games/kestrel-heavy` stays.
+> **Archive / Xcode Cloud:** Archive-iOS and any Xcode Cloud Archive workflow for Toolbox **must** use scheme **Beckify** (`com.beckify.toolbox`). Do **not** archive Toolbox with scheme **LookCheck** or **BeckifyDrive**. Those are separate ASC apps with their own Archive schemes. Keep Archive workflows separate. The website `/games/kestrel-heavy` stays.
 
 Home is two areas — **Field** (jobsite, first) and **Toolkit** (basics, bench, references) — not a flat grid of every tool. Search covers both and labels the area. Sensors live under Field → Instruments. Field home (not while searching) shows a **Pinned** strip: Voltage Drop, Wire Size & Ampacity, Motor FLA, Receptacle Selector, Wi-Fi Path, Conduit Fill.
 
@@ -32,10 +32,9 @@ Session state (`ExplicitCalculationState`, `LiveCalculationState`) is pure Swift
 
 ```text
 ios/
-  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify, LookCheck, KestrelHeavy, BeckifyDrive
+  Beckify.xcodeproj/     Xcode 15+ project — schemes Beckify, LookCheck, BeckifyDrive
   Beckify/               SwiftUI Toolbox app (Calculators + Sensors)
   LookCheck/             Standalone Look Check App Store app (`com.beckify.lookcheck`)
-  KestrelHeavy/          Standalone Kestrel Heavy App Store app (`com.beckify.kestrelheavy`)
   BeckifyDrive/          Standalone Beckify Drive app (`com.beckify.drive`) — OBD dashboard + CarPlay
   BeckifyMath/           Pure-Swift math + NEC tables + look-check JSON + XCTest
   docs/APP_STORE.md            Toolbox listing copy and App Store Connect checklist
@@ -188,7 +187,7 @@ Accessibility and field-use verification steps are tracked in [`docs/ACCESSIBILI
 
 1. Install Xcode 15 or later.
 2. Open `ios/Beckify.xcodeproj`.
-3. Select the **Beckify** scheme (Toolbox), **LookCheck** (standalone roast app), **KestrelHeavy** (standalone arcade), or **BeckifyDrive** (OBD dashboard and CarPlay).
+3. Select the **Beckify** scheme (Toolbox), **LookCheck** (standalone roast app), or **BeckifyDrive** (OBD dashboard and CarPlay).
 4. Select an iPhone or iPad simulator.
 5. Signing: Debug and Release set `DEVELOPMENT_TEAM` to `9TR6R5LV8M` (Apple’s team prefix at identifier registration). Confirm that Team in Signing & Capabilities on a Mac.
 6. Run.
@@ -232,25 +231,6 @@ xcodebuild \
   build
 ```
 
-Standalone Kestrel Heavy (same project, **KestrelHeavy** scheme — local Phaser pack, not beckify.com):
-
-```bash
-cd ios
-xcodebuild \
-  -project Beckify.xcodeproj \
-  -destination 'generic/platform=iOS Simulator' \
-  -scheme KestrelHeavy \
-  -configuration Debug \
-  CODE_SIGNING_ALLOWED=NO \
-  build
-```
-
-Refresh the packed cabinet after arcade changes:
-
-```bash
-python3 ios/scripts/pack_kestrelheavy_game.py
-```
-
 ### Archive → TestFlight (scheme Beckify only)
 
 Push to `main`. Xcode Cloud then starts both Toolbox workflows:
@@ -260,9 +240,9 @@ Push to `main`. Xcode Cloud then starts both Toolbox workflows:
 
 **Archive - iOS** is the TestFlight path. It must archive scheme **Beckify** (`com.beckify.toolbox`, App ID `6807908745`). A green archive is what App Store Connect can process for TestFlight. This repo does not submit that build.
 
-Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`), **KestrelHeavy** (`com.beckify.kestrelheavy`), or **BeckifyDrive** (`com.beckify.drive`). Those products keep their own Archive schemes and bundle IDs. Beckify Drive does not change Toolbox marketing **1.0.6** / build **305**.
+Do not point either workflow at **LookCheck** (`com.beckify.lookcheck`) or **BeckifyDrive** (`com.beckify.drive`). Those products keep their own Archive schemes and bundle IDs. Beckify Drive does not change Toolbox marketing **1.0.6** / build **305**.
 
-Repo tip is **1.0.6** / build **310** (`MARKETING_VERSION` **1.0.6**, `CURRENT_PROJECT_VERSION` **310**). Create Connect version **1.0.6** if needed before upload (Connect may still show an older version Trevor created; **1.0** and **1.0.1** are closed — Connect rejected **1.0.1 (160)** with ITMS-90186 / ITMS-90062). If TestFlight already has build **≥310**, bump `CURRENT_PROJECT_VERSION` first. **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). Xcode Cloud Build and Archive on **174** failed to compile `PhasorImpedanceView.swift` and `PlotChrome.swift` and did not upload. Xcode Cloud Build - iOS on **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive of **158** and **159** compiled and failed while preparing the App Store Connect upload. Next Archive binary is **1.0.6 (310)** (must be **>230**). A higher build on **1.0.1** will not upload.
+Repo tip is **1.0.6** / build **311** (`MARKETING_VERSION` **1.0.6**, `CURRENT_PROJECT_VERSION` **311**). Create Connect version **1.0.6** if needed before upload (Connect may still show an older version Trevor created; **1.0** and **1.0.1** are closed — Connect rejected **1.0.1 (160)** with ITMS-90186 / ITMS-90062). If TestFlight already has build **≥311**, bump `CURRENT_PROJECT_VERSION` first. **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01). Xcode Cloud Build and Archive on **174** failed to compile `PhasorImpedanceView.swift` and `PlotChrome.swift` and did not upload. Xcode Cloud Build - iOS on **164** failed to compile `SpectrumPlot.swift` (`showsRelativeDBFSScale` captured by a closure before initialization) and did not upload. Build **163** failed earlier on `BreathFluteView.swift` (`supportedPolarPatterns` is optional). Archive of **158** and **159** compiled and failed while preparing the App Store Connect upload. Archives of build **310** on #351/#352/#353 failed at *Preparing build for App Store Connect* because #350 had already uploaded **310**; every Toolbox commit that should archive needs a new `CURRENT_PROJECT_VERSION`. Next Archive binary is **1.0.6 (311)** (must be **>230**). A higher build on **1.0.1** will not upload.
 
 #### Mac fallback
 
@@ -292,7 +272,7 @@ This Linux checkout did not run `xcodebuild`, sign a binary, install the app on 
 
 ## What still needs a Mac + Apple login
 
-App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays free to use, no ads. Optional tips in Settings are the only in-app purchases. Calculators are not paywalled. **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). **Version 1.0.1 is also closed:** App Store Connect rejected **1.0.1 (160)** (**ITMS-90186** train '1.0.1' closed for new builds; **ITMS-90062** short version must be higher than approved **1.0.1**). Bumping the build number on **1.0.1** will not fix that. TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Repo tip is **1.0.6** / **310**; create Connect version **1.0.6** if needed (Connect may still show an older version Trevor created); next binary **1.0.6 (310)** (repo `MARKETING_VERSION` **1.0.6**, `CURRENT_PROJECT_VERSION` **310**). If TestFlight already has build **≥310**, bump CPV first. **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01); repo was **1.0.2** / **216**. If the Archive - iOS workflow’s next build number is not the project version, set it to **310** or higher in App Store Connect. Archive the **Beckify** scheme, not LookCheck, KestrelHeavy, or BeckifyDrive. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). Kestrel Heavy repo build is **1.0 (4)** and a TestFlight record exists — if TestFlight already has **≥4**, bump before the next Archive, otherwise the next binary is **1.0 (4)**. This Linux environment did not compile, sign, or upload **1.0.6 (310)**.
+App Store Connect already has a Beckify record: App ID `6807908745`, bundle ID `com.beckify.toolbox`, SKU `beckify-toolbox`, privacy URL https://beckify.com/privacy (live). Price stays free to use, no ads. Optional tips in Settings are the only in-app purchases. Calculators are not paywalled. **Version 1.0 is approved** — that train is closed (**ITMS-90186** / **ITMS-90062**; Transporter rejected **1.0 (121)**). **Version 1.0.1 is also closed:** App Store Connect rejected **1.0.1 (160)** (**ITMS-90186** train '1.0.1' closed for new builds; **ITMS-90062** short version must be higher than approved **1.0.1**). Bumping the build number on **1.0.1** will not fix that. TestFlight already had **1.0.1 (149)** as of ~2026-09-17/18 (Trevor; this repo did not query App Store Connect). Repo tip is **1.0.6** / **311**; create Connect version **1.0.6** if needed (Connect may still show an older version Trevor created); next binary **1.0.6 (311)** (repo `MARKETING_VERSION` **1.0.6**, `CURRENT_PROJECT_VERSION` **311**). If TestFlight already has build **≥311**, bump CPV first. **1.0.2** hit **ITMS-90382** on build **230** (~2026-10-01); repo was **1.0.2** / **216**. If the Archive - iOS workflow’s next build number is not the project version, set it to **311** or higher in App Store Connect. Archive the **Beckify** scheme, not LookCheck or BeckifyDrive. Look Check stays **1.0 (1)**; Connect/TestFlight exists as **LookCheck5000** (Xcode display name **Look Check**; Archive scheme **LookCheck** — do not rename). This Linux environment did not compile, sign, or upload **1.0.6 (311)**.
 
 - Compile the SwiftUI target and exercise the UI on Simulator / device
 - Create signing certificates / profiles for team `9TR6R5LV8M` on a Mac
