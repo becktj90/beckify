@@ -154,6 +154,14 @@ final class DriveThresholdTests: XCTestCase {
         XCTAssertEqual(DriveTemperatureBand.cold.level, .caution)
     }
 
+    func testCurrentBarScale() {
+        XCTAssertEqual(CurrentBarScale.fullScale(values: []), 100)
+        XCTAssertEqual(CurrentBarScale.fullScale(values: [12, -40]), 100)
+        XCTAssertEqual(CurrentBarScale.fullScale(values: [12, -240]), 300)
+        XCTAssertEqual(CurrentBarScale.fullScale(values: [400]), 400)
+        XCTAssertEqual(CurrentBarScale.fullScale(values: [.infinity, 50]), 100)
+    }
+
     func testFlowStateFollowsSignOnly() {
         XCTAssertEqual(HVFlowState.from(amps: 50), .drive)
         XCTAssertEqual(HVFlowState.from(amps: -5), .regen)
@@ -261,6 +269,10 @@ final class DriveUnitTests: XCTestCase {
         XCTAssertEqual(metric.speed(fromKph: 100), 100)
         XCTAssertEqual(metric.temperature(fromCelsius: -40), -40)
         XCTAssertEqual(metric.altitudeLabel, "m")
+        XCTAssertEqual(metric.pressure(fromKilopascals: 101.325), 1013.25, accuracy: 0.001)
+        XCTAssertEqual(us.pressure(fromKilopascals: 101.325), 29.92, accuracy: 0.01)
+        XCTAssertEqual(us.pressureLabel, "inHg")
+        XCTAssertEqual(metric.pressureDigits, 0)
     }
 }
 
@@ -312,6 +324,26 @@ final class GForceMathTests: XCTestCase {
         XCTAssertEqual(tracker.peak, tracker.current?.magnitude ?? -1, accuracy: 1e-9)
         tracker.clear()
         XCTAssertNil(tracker.current)
+    }
+}
+
+final class CompassAndScaleTests: XCTestCase {
+    func testCardinals() {
+        XCTAssertEqual(CompassMath.cardinal(degrees: 0), "N")
+        XCTAssertEqual(CompassMath.cardinal(degrees: 22.4), "N")
+        XCTAssertEqual(CompassMath.cardinal(degrees: 22.6), "NE")
+        XCTAssertEqual(CompassMath.cardinal(degrees: 180), "S")
+        XCTAssertEqual(CompassMath.cardinal(degrees: 350), "N")
+        XCTAssertEqual(CompassMath.cardinal(degrees: 720 + 270), "W")
+        XCTAssertNil(CompassMath.cardinal(degrees: -1), "CoreLocation uses −1 for invalid")
+    }
+
+    func testGBallScale() {
+        XCTAssertEqual(GBallScale.radius(peak: 0), 0.5)
+        XCTAssertEqual(GBallScale.radius(peak: 0.5), 0.5)
+        XCTAssertEqual(GBallScale.radius(peak: 0.6), 0.75)
+        XCTAssertEqual(GBallScale.radius(peak: 1.01), 1.25)
+        XCTAssertEqual(GBallScale.radius(peak: .nan), 0.5)
     }
 }
 

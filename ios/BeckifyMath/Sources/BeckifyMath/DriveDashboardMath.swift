@@ -158,6 +158,15 @@ public enum HVFlowState: String, Equatable, Sendable {
     }
 }
 
+/// Full scale for the HV current bar: at least 100 A, rounded up to the next
+/// 100 A above anything in view. A display scale, not a pack limit.
+public enum CurrentBarScale {
+    public static func fullScale(values: [Double]) -> Double {
+        let peak = values.filter(\.isFinite).map(abs).max() ?? 0
+        return max(100, (peak / 100).rounded(.up) * 100)
+    }
+}
+
 // MARK: - Sparkline buffer
 
 /// The last `window` seconds of one signal, for a sparkline.
@@ -381,5 +390,18 @@ public struct DriveUnitPreference: Equatable, Sendable {
 
     public var altitudeLabel: String {
         speed == .mph ? "ft" : "m"
+    }
+
+    /// Pressure follows the speed unit too: inHg with mph, hPa with km/h.
+    public func pressure(fromKilopascals kPa: Double) -> Double {
+        speed == .mph ? kPa * 0.295_299_8 : kPa * 10.0
+    }
+
+    public var pressureLabel: String {
+        speed == .mph ? "inHg" : "hPa"
+    }
+
+    public var pressureDigits: Int {
+        speed == .mph ? 2 : 0
     }
 }

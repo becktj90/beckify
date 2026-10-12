@@ -47,6 +47,27 @@ public enum GForceMath {
     }
 }
 
+public enum CompassMath {
+    private static let points = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+    /// Eight-point cardinal for a heading in degrees clockwise from north.
+    public static func cardinal(degrees: Double) -> String? {
+        guard degrees.isFinite, degrees >= 0 else { return nil }
+        let wrapped = degrees.truncatingRemainder(dividingBy: 360)
+        let index = Int((wrapped / 45.0).rounded()) % points.count
+        return points[index]
+    }
+}
+
+/// Full-scale radius for the G-ball plot: 0.5 g, growing in 0.25 g steps so a
+/// hard stop stays on the plot. A display scale, not a limit.
+public enum GBallScale {
+    public static func radius(peak: Double) -> Double {
+        guard peak.isFinite, peak > 0.5 else { return 0.5 }
+        return (peak / 0.25).rounded(.up) * 0.25
+    }
+}
+
 /// Smoothed G readout, a short fading trail, and the session peak.
 public struct GForceTracker: Equatable, Sendable {
     /// Exponential smoothing weight per sample. At 30 Hz, 0.2 settles in about
