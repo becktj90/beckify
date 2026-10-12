@@ -1,7 +1,9 @@
+import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { TOOLS as tools, CATEGORIES as categories, TOOL_ALIASES as aliases, resolveToolSlug } from "../src/data/toolbox-tools.mjs";
 import { SITE_ORIGIN, toCanonicalPath, toCanonicalUrl } from "../src/lib/canonical-url.mjs";
+import { ABOUT_DISCLAIMER, RELATED_TOOLS, TOOL_ABOUT_COPY } from "../src/data/tool-about-copy.mjs";
 import {
   FEATURED_TOOLS,
   FEATURED_TOOL_SLUGS,
@@ -18,6 +20,18 @@ const featuredLinks = (currentSlug) => FEATURED_TOOLS
   .filter((tool) => tool.slug !== currentSlug)
   .map((tool) => `<a href="${toolboxPermalink(tool.slug)}">${escapeXml(tool.label)}</a>`)
   .join("");
+const renderAbout = (slug, description, subject) => {
+  const sections = TOOL_ABOUT_COPY[slug];
+  const p = (text) => `<p>${escapeXml(text)}</p>`;
+  const body = sections
+    ? sections.map((section) => `<h3>${escapeXml(section.heading)}</h3>${(section.paragraphs ?? []).map(p).join("")}${section.code ? `<pre><code>${section.code.map(escapeXml).join("\n")}</code></pre>` : ""}${section.bullets ? `<ul>${section.bullets.map((item) => `<li>${escapeXml(item)}</li>`).join("")}</ul>` : ""}${(section.after ?? []).map(p).join("")}`).join("")
+    : p(description);
+  const related = RELATED_TOOLS[slug];
+  const relatedHtml = related
+    ? `<h3>${escapeXml(related.heading)}</h3><ul>${related.links.map((link) => `<li><a href="${toolboxPermalink(link.slug)}">${escapeXml(link.label)}</a></li>`).join("")}</ul>`
+    : "";
+  return `<h2 id="about-tool">About this ${subject}</h2>${body}${relatedHtml}<p><em>${escapeXml(ABOUT_DISCLAIMER)}</em></p>`;
+};
 const page = ({ title, description, path, toolPath, slug, eyebrow = "Electrical engineering toolbox", showAds = true, kind = "tool" }) => {
   const canonicalUrl = toCanonicalUrl(path);
   const documentTitle = kind === "category" ? categoryDocumentTitle(slug, title) : toolDocumentTitle(slug, title);
@@ -53,25 +67,57 @@ const page = ({ title, description, path, toolPath, slug, eyebrow = "Electrical 
 ${showAds ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5333275222472637" crossorigin="anonymous"></script>` : ""}
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFZ9X595E"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-ZVFZ9X595E');</script>
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
-<style>body{margin:0;background:#05060f;color:#eef0fa;font:16px/1.6 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:32px 22px 48px}a{color:#b7abff}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin:.35rem 0 1.1rem}h2{font-size:1.15rem;margin:0 0 .45rem}.eyebrow{color:#9b8cff;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem;font-weight:700}.crumbs{font-size:.86rem;margin-bottom:2.5rem}.intro{font-size:1.12rem;color:#d5d7e8;max-width:720px}.panel{background:#111326;border:1px solid #30304a;border-radius:14px;padding:20px 22px;margin:24px 0}.panel p{margin:.4rem 0;color:#b7bad2;max-width:720px}.cta{display:inline-block;margin:4px 0 0;padding:12px 18px;border-radius:9px;background:#8b7bff;color:#fff;text-decoration:none;font-weight:700}.links{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:.93rem}iframe{width:100%;height:720px;border:1px solid #30304a;border-radius:14px;margin-top:22px;background:#111326}</style></head>
-<body><main><nav class="crumbs" aria-label="Breadcrumb"><a href="/">Beckify</a> / <a href="/toolbox/">Toolbox</a> / ${escapeXml(title)}</nav><div class="eyebrow">${escapeXml(eyebrow)}</div><h1>${escapeXml(title)}</h1><p class="intro">${escapeXml(description)}</p><section class="panel" aria-labelledby="about-tool"><h2 id="about-tool">About this ${subject}</h2><p>${escapeXml(description)}</p><p>For design, installation, or safety decisions, verify assumptions against the applicable code edition, equipment documentation, and site requirements.</p><a class="cta" href="${toolPath}">Open the interactive ${kind === "tool" ? "tool" : "collection"}</a><div class="links"><a href="/toolbox/">Browse all electrical tools</a>${featuredLinks(slug)}<a href="/sitemap">Browse the Beckify site map</a></div></section><iframe src="${toolPath.includes("#") ? `/toolbox/index.html#${toolPath.split("#")[1]}` : toolPath}" title="${escapeXml(title)}" loading="lazy"></iframe></main></body></html>`;
+<style>body{margin:0;background:#05060f;color:#eef0fa;font:16px/1.6 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:32px 22px 48px}a{color:#b7abff}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin:.35rem 0 1.1rem}h2{font-size:1.15rem;margin:0 0 .45rem}h3{font-size:1rem;margin:1.1rem 0 .3rem}.panel ul{margin:.4rem 0;padding-left:1.2rem;color:#b7bad2;max-width:720px}pre{background:#0a0b1a;border:1px solid #30304a;border-radius:8px;padding:10px 14px;overflow-x:auto;color:#d5d7e8}.eyebrow{color:#9b8cff;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem;font-weight:700}.crumbs{font-size:.86rem;margin-bottom:2.5rem}.intro{font-size:1.12rem;color:#d5d7e8;max-width:720px}.panel{background:#111326;border:1px solid #30304a;border-radius:14px;padding:20px 22px;margin:24px 0}.panel p{margin:.4rem 0;color:#b7bad2;max-width:720px}.cta{display:inline-block;margin:4px 0 0;padding:12px 18px;border-radius:9px;background:#8b7bff;color:#fff;text-decoration:none;font-weight:700}.links{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:.93rem}iframe{width:100%;height:720px;border:1px solid #30304a;border-radius:14px;margin-top:22px;background:#111326}</style></head>
+<body><main><nav class="crumbs" aria-label="Breadcrumb"><a href="/">Beckify</a> / <a href="/toolbox/">Toolbox</a> / ${escapeXml(title)}</nav><div class="eyebrow">${escapeXml(eyebrow)}</div><h1>${escapeXml(title)}</h1><p class="intro">${escapeXml(description)}</p><section class="panel" aria-labelledby="about-tool">${renderAbout(slug, description, subject)}<a class="cta" href="${toolPath}">Open the interactive ${kind === "tool" ? "tool" : "collection"}</a><div class="links"><a href="/toolbox/">Browse all electrical tools</a>${featuredLinks(slug)}<a href="/sitemap">Browse the Beckify site map</a></div></section><iframe src="${toolPath.includes("#") ? `/toolbox/index.html#${toolPath.split("#")[1]}` : toolPath}" title="${escapeXml(title)}" loading="lazy"></iframe></main></body></html>`;
 };
 
+// lastmod: git commit date of the source that renders the URL, falling back
+// to the build date when history is unavailable (no git, or a path with none).
+const buildDate = new Date().toISOString().slice(0, 10);
+const lastChange = (...files) => {
+  const dates = files.map((file) => {
+    try {
+      return execFileSync("git", ["log", "-1", "--format=%cs", "--", file], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    } catch {
+      return "";
+    }
+  }).filter(Boolean);
+  return dates.sort().at(-1) ?? buildDate;
+};
+const toolboxLastmod = lastChange("src/data/toolbox-tools.mjs", "public/toolbox/index.html");
+
+// Tiers: 1.0 home; 0.9 toolbox hub + money pages; 0.7 other calculators and
+// hubs; 0.5 journals, arcade, legal, and section aliases.
+const MONEY_PAGE_SLUGS = new Set(["voltage-drop", "conduit-fill", "transformer", "motor"]);
+const toolEntry = (slug, { alias = false } = {}) => {
+  const money = MONEY_PAGE_SLUGS.has(slug);
+  return [`/toolbox/${slug}/`, "monthly", money ? "0.9" : alias ? "0.5" : "0.7", toolboxLastmod];
+};
 const urls = [
-  ["/", "weekly", "1.0"], ["/about", "monthly", "0.7"], ["/privacy", "monthly", "0.7"], ["/games", "weekly", "0.7"], ["/games/kestrel-heavy", "monthly", "0.7"], ["/projects", "weekly", "0.8"], ["/projects/vespa-p200e", "monthly", "0.8"], ["/projects/honda-xr650r", "monthly", "0.8"], ["/control-systems", "weekly", "0.9"], ["/toolbox/", "weekly", "1.0"], ["/sitemap", "monthly", "0.7"],
-  ...categories.map(([slug], index) => [`/toolbox/category/${slug}/`, index === 5 ? "weekly" : "monthly", "0.8"]),
-  ...tools.map(([slug]) => [`/toolbox/${slug}/`, FEATURED_TOOL_SLUGS.has(slug) || slug === "digital-logic-workbench" ? "weekly" : "monthly", FEATURED_TOOL_SLUGS.has(slug) || slug === "digital-logic-workbench" ? "0.9" : "0.8"]),
-  ...aliases.map(([slug]) => [`/toolbox/${slug}/`, FEATURED_TOOL_SLUGS.has(slug) ? "weekly" : "monthly", FEATURED_TOOL_SLUGS.has(slug) ? "0.9" : "0.5"]),
+  ["/", "weekly", "1.0", lastChange("src/pages/home.tsx", "index.html")],
+  ["/about", "yearly", "0.5", lastChange("src/pages/about.tsx")],
+  ["/privacy", "yearly", "0.5", lastChange("src/pages/privacy.tsx")],
+  ["/games", "monthly", "0.5", lastChange("src/pages/games.tsx")],
+  ["/games/kestrel-heavy", "monthly", "0.5", lastChange("src/pages/kestrel-heavy.tsx")],
+  ["/projects", "monthly", "0.5", lastChange("src/pages/projects.tsx")],
+  ["/projects/vespa-p200e", "yearly", "0.5", lastChange("src/pages/vespa-p200e.tsx")],
+  ["/projects/honda-xr650r", "yearly", "0.5", lastChange("src/pages/honda-xr650r.tsx")],
+  ["/control-systems", "monthly", "0.7", lastChange("src/pages/control-systems.tsx")],
+  ["/toolbox/", "weekly", "0.9", toolboxLastmod],
+  ["/sitemap", "monthly", "0.5", lastChange("src/pages/sitemap.tsx")],
+  ...categories.map(([slug]) => [`/toolbox/category/${slug}/`, "monthly", "0.7", toolboxLastmod]),
+  ...tools.map(([slug]) => toolEntry(slug)),
+  ...aliases.map(([slug]) => toolEntry(slug, { alias: true })),
 ];
 const seen = new Set();
 const uniqueUrls = [];
-for (const [path, changefreq, priority] of urls) {
+for (const [path, changefreq, priority, lastmod] of urls) {
   const canonicalPath = toCanonicalPath(path);
   if (seen.has(canonicalPath)) continue;
   seen.add(canonicalPath);
-  uniqueUrls.push([canonicalPath, changefreq, priority]);
+  uniqueUrls.push([canonicalPath, changefreq, priority, lastmod]);
 }
-const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${uniqueUrls.map(([path, changefreq, priority]) => `  <url>\n    <loc>${escapeXml(toCanonicalUrl(path))}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`).join("\n")}\n</urlset>\n`;
+const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${uniqueUrls.map(([path, changefreq, priority, lastmod]) => `  <url>\n    <loc>${escapeXml(toCanonicalUrl(path))}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`).join("\n")}\n</urlset>\n`;
 await writeFile(resolve(root, "public/sitemap.xml"), xml);
 
 const permalinkEntries = [...tools, ...aliases].map(([slug]) => {

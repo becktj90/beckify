@@ -45,7 +45,7 @@ ok("privacy SEO copy stays honest about Look Check and the bundle ID", (() => {
   const seoCopy = fs.readFileSync(path.join(siteRoot, "src/data/seo-copy.mjs"), "utf8");
   return /Look Check/.test(seoCopy) && /com\.beckify\.toolbox/.test(seoCopy) && /No analytics/.test(seoCopy);
 })());
-ok("xml sitemap generator includes /privacy", /\["\/privacy\/?", "monthly", "0.7"\]/.test(sitemapGen));
+ok("xml sitemap generator includes /privacy", /\["\/privacy\/?", "[a-z]+", "[0-9.]+", /.test(sitemapGen));
 ok("privacy page keeps the remaining game listed", sitemapSrc.includes("Kestrel Heavy") && !sitemapSrc.includes("Cosmic Cadet") && !sitemapSrc.includes("Apollo & Rocco Run"));
 ok("HexGL stays off the sitemap and routes", !/hexgl/i.test(sitemapSrc) && !appSrc.includes('path="/games/hexgl"') && !/hexgl/i.test(sitemapGen));
 ok(

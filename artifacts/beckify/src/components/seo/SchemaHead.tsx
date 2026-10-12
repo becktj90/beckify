@@ -18,6 +18,12 @@ export interface SeoProps {
    * duplicate of whatever content this route happens to render.
    */
   robots?: string;
+  /**
+   * Emit the WebPage and extra schema nodes as one `@graph` script and swap
+   * out the static `#beckify-site-graph` shell block while mounted, so the
+   * rendered DOM carries a single structured-data block (the homepage).
+   */
+  singleGraph?: boolean;
 }
 
 const upsertMeta = (selector: string, attributes: Record<string, string>, content: string) => {
@@ -31,7 +37,7 @@ const upsertMeta = (selector: string, attributes: Record<string, string>, conten
   element.setAttribute("content", content);
 };
 
-export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMAGE, type = "website", schema, robots = "index,follow,max-image-preview:large" }: SeoProps) {
+export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMAGE, type = "website", schema, robots = "index,follow,max-image-preview:large", singleGraph = false }: SeoProps) {
   useEffect(() => {
     const canonicalUrl = toCanonicalUrl(path);
     document.title = title;
@@ -65,23 +71,41 @@ export function SchemaHead({ title, description, path = "/", image = DEFAULT_IMA
         name: title,
         description,
         url: canonicalUrl,
-        isPartOf: { "@type": "WebSite", name: "Beckify", url: toCanonicalUrl("/") },
+        isPartOf: singleGraph
+          ? { "@id": `${toCanonicalUrl("/")}#website` }
+          : { "@type": "WebSite", name: "Beckify", url: toCanonicalUrl("/") },
       },
       ...(schema ? (Array.isArray(schema) ? schema : [schema]) : []),
     ];
-    schemas.forEach((value) => {
+    const staticGraph = singleGraph ? document.getElementById("beckify-site-graph") : null;
+    const staticGraphParent = staticGraph?.parentNode ?? null;
+    const staticGraphNext = staticGraph?.nextSibling ?? null;
+    const append = (value: unknown) => {
       const script = document.createElement("script");
       script.type = "application/ld+json";
       script.dataset.beckifySchema = "true";
       script.textContent = JSON.stringify(value);
       document.head.appendChild(script);
-    });
+    };
+    if (singleGraph) {
+      // Shell block is replaced by one merged graph; nodes keep their own @id.
+      staticGraph?.remove();
+      append({
+        "@context": "https://schema.org",
+        "@graph": schemas.map(({ "@context": _context, ...node }) => node),
+      });
+    } else {
+      schemas.forEach(append);
+    }
 
     return () => {
+      if (staticGraph && staticGraphParent && !staticGraph.isConnected) {
+        staticGraphParent.insertBefore(staticGraph, staticGraphNext?.parentNode === staticGraphParent ? staticGraphNext : null);
+      }
       document.head.querySelectorAll('meta[data-beckify-seo="true"]').forEach((node) => node.remove());
       document.head.querySelectorAll('script[data-beckify-schema="true"]').forEach((node) => node.remove());
     };
-  }, [description, image, path, robots, schema, title, type]);
+  }, [description, image, path, robots, schema, singleGraph, title, type]);
 
   return null;
 }
