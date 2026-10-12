@@ -6,6 +6,7 @@ public enum DashboardSection: String, CaseIterable, Sendable {
     case battery
     case motor
     case powerElectronics
+    case energy
     case phone
 
     public var title: String {
@@ -14,6 +15,7 @@ public enum DashboardSection: String, CaseIterable, Sendable {
         case .battery: return "Battery"
         case .motor: return "Motor"
         case .powerElectronics: return "Power electronics"
+        case .energy: return "Energy & range"
         case .phone: return "Phone sensors"
         }
     }
@@ -25,6 +27,7 @@ public enum DashboardSection: String, CaseIterable, Sendable {
         case .battery: return "battery.100"
         case .motor: return "bolt.fill"
         case .powerElectronics: return "cpu"
+        case .energy: return "leaf.fill"
         case .phone: return "iphone"
         }
     }
@@ -32,7 +35,7 @@ public enum DashboardSection: String, CaseIterable, Sendable {
     public static func sections(for layout: DriveLayout) -> [DashboardSection] {
         switch layout {
         case .powertrain: return [.vehicle, .phone]
-        case .ev: return [.battery, .motor, .powerElectronics, .phone]
+        case .ev: return [.battery, .motor, .powerElectronics, .energy, .phone]
         }
     }
 }
@@ -59,6 +62,13 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
     case inverterTemp
     case dcdcOutput
     case charger
+    // EV energy & range (estimates)
+    case efficiency
+    case weatherRange
+    case regenScore
+    case tripEnergy
+    case precondition
+    case degradation
     // Phone
     case gpsSpeed
     case altitude
@@ -66,6 +76,7 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
     case gForce
     case barometer
     case phoneBattery
+    case grade
     case trip
 
     public var title: String {
@@ -86,6 +97,13 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
         case .inverterTemp: return "Inverter temp"
         case .dcdcOutput: return "DC-DC output"
         case .charger: return "Onboard charger"
+        case .efficiency: return "Efficiency"
+        case .weatherRange: return "Weather-adjusted range"
+        case .regenScore: return "Regen score"
+        case .tripEnergy: return "Trip energy"
+        case .precondition: return "Fast-charge temp"
+        case .degradation: return "Capacity trend"
+        case .grade: return "Grade"
         case .gpsSpeed: return "GPS speed"
         case .altitude: return "Altitude"
         case .compass: return "Heading"
@@ -109,7 +127,9 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
             return layout == .ev ? .motor : nil
         case .inverterTemp, .dcdcOutput, .charger:
             return layout == .ev ? .powerElectronics : nil
-        case .gpsSpeed, .altitude, .compass, .gForce, .barometer, .phoneBattery, .trip:
+        case .efficiency, .weatherRange, .regenScore, .tripEnergy, .precondition, .degradation:
+            return layout == .ev ? .energy : nil
+        case .gpsSpeed, .altitude, .compass, .gForce, .barometer, .phoneBattery, .grade, .trip:
             return .phone
         }
     }
@@ -117,7 +137,7 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
     /// Wide cards take a full row in the grid.
     public var isWide: Bool {
         switch self {
-        case .hvCurrent, .gForce, .trip: return true
+        case .hvCurrent, .gForce, .trip, .tripEnergy, .degradation, .weatherRange: return true
         default: return false
         }
     }

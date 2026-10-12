@@ -349,7 +349,9 @@ final class CompassAndScaleTests: XCTestCase {
 
 final class DashboardLayoutTests: XCTestCase {
     func testSectionsPerLayout() {
-        XCTAssertEqual(DashboardSection.sections(for: .ev), [.battery, .motor, .powerElectronics, .phone])
+        XCTAssertEqual(DashboardSection.sections(for: .ev), [.battery, .motor, .powerElectronics, .energy, .phone])
+        XCTAssertNil(DashboardCardID.efficiency.section(for: .powertrain), "estimates need HV current")
+        XCTAssertEqual(DashboardCardID.grade.section(for: .powertrain), .phone)
         XCTAssertEqual(DashboardSection.sections(for: .powertrain), [.vehicle, .phone])
         XCTAssertEqual(DashboardCardID.moduleVolts.section(for: .ev), .powerElectronics)
         XCTAssertEqual(DashboardCardID.moduleVolts.section(for: .powertrain), .vehicle)
@@ -375,7 +377,7 @@ final class DashboardLayoutTests: XCTestCase {
     func testHideAndRoundTrip() {
         var layout = DashboardLayout.standard
         layout.setHidden(.barometer, true)
-        layout.move(in: .phone, for: .powertrain, from: IndexSet(integer: 6), to: 0)
+        layout.move(in: .phone, for: .powertrain, from: IndexSet(integer: 7), to: 0)
         XCTAssertFalse(layout.cards(in: .phone, for: .ev).contains(.barometer))
         XCTAssertTrue(layout.cards(in: .phone, for: .ev, includeHidden: true).contains(.barometer))
         let restored = DashboardLayout.decoded(from: layout.encoded())
