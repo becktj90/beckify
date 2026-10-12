@@ -1,32 +1,30 @@
 import Foundation
 
 /// User-initiated cloud vision tasks that POST to `api.beckify.com`.
-/// Nameplate and panel Analyze use this type. Look Check keeps `PhotoLookCheck`
-/// (`.look` exists so the POST body and path stay aligned with that contract).
+/// Nameplate and panel Analyze use this type.
 public enum BeckifyVisionTask: String, Equatable, Sendable {
-    case look
     case nameplate
     case panel
 }
 
 /// HTTPS contract for Motor Nameplate OCR and Panel Directory cloud Analyze.
 ///
-/// Mirrors `PhotoLookCheck` (`imageBase64` + `mimeType` + `task`, HTTPS-only,
-/// default `https://api.beckify.com`). Limits and host rules alias that type
-/// so Look Check stays the source of truth. Do not rewrite Look Check to use
-/// this surface. Photos leave the device only when the user taps Analyze.
-/// Never use `beckify.com` (GitHub Pages returns 405).
+/// POST body is `imageBase64` + `mimeType` + `task`, HTTPS-only, default
+/// `https://api.beckify.com`. The base URL, upload limits and host helpers here
+/// are shared with the Spanish translator. Photos leave the device only when
+/// the user taps Analyze. Never use `beckify.com` (GitHub Pages returns 405).
 public enum BeckifyVisionAPI {
-    public static let defaultAPIBase = PhotoLookCheck.defaultAPIBase
-    public static let maxPickBytes = PhotoLookCheck.maxPickBytes
-    public static let maxUploadBytes = PhotoLookCheck.maxUploadBytes
-    public static let maxUploadEdge = PhotoLookCheck.maxUploadEdge
+    /// Same host the website injects via `meta[name="beckify-api-base-url"]`.
+    /// Do not use `https://beckify.com` — GitHub Pages cannot POST (`405`).
+    public static let defaultAPIBase = "https://api.beckify.com"
+    public static let maxPickBytes = 12 * 1024 * 1024
+    public static let maxUploadBytes = 8 * 1024 * 1024
+    public static let maxUploadEdge = 2048
     public static let disclaimer =
         "Photos upload only when you tap Analyze."
 
     public static func analyzePath(for task: BeckifyVisionTask) -> String {
         switch task {
-        case .look: return "/api/analyze-look"
         case .nameplate: return "/api/analyze-nameplate"
         case .panel: return "/api/analyze-panel"
         }
@@ -50,27 +48,30 @@ public enum BeckifyVisionAPI {
         return URL(string: base + analyzePath(for: task))
     }
 
+    /// Normalized `https://host[:port]/path[?query]` (trailing slash dropped),
+    /// or nil when blank or not HTTPS.
     public static func httpsBase(_ raw: String?) -> String? {
-        PhotoLookCheck.httpsBase(raw)
+        let trimmed = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        guard let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(), scheme == "https" else {
+            return nil
+        }
+        var path = url.path
+        if path.hasSuffix("/") { path.removeLast() }
+        var out = url.scheme! + "://" + (url.host ?? "")
+        if let port = url.port { out += ":\(port)" }
+        out += path
+        if let query = url.query, !query.isEmpty { out += "?" + query }
+        return out
     }
 
-    /// POST body matching website `analyzeLook` / nameplate / panel helpers.
-    /// Look Check includes `roastMode` (default `bro`) so this stays equal to
-    /// `PhotoLookCheck.requestBody`.
+    /// POST body matching the website nameplate / panel helpers.
     public static func requestBody(
         imageBase64: String,
         mimeType: String,
-        task: BeckifyVisionTask,
-        roastMode: LookRoastMode = .bro
+        task: BeckifyVisionTask
     ) -> [String: String] {
-        if task == .look {
-            return PhotoLookCheck.requestBody(
-                imageBase64: imageBase64,
-                mimeType: mimeType,
-                roastMode: roastMode
-            )
-        }
-        return [
+        [
             "imageBase64": imageBase64,
             "mimeType": mimeType,
             "task": task.rawValue,
@@ -80,15 +81,13 @@ public enum BeckifyVisionAPI {
     public static func requestJSON(
         imageBase64: String,
         mimeType: String,
-        task: BeckifyVisionTask,
-        roastMode: LookRoastMode = .bro
+        task: BeckifyVisionTask
     ) throws -> Data {
         try JSONSerialization.data(
             withJSONObject: requestBody(
                 imageBase64: imageBase64,
                 mimeType: mimeType,
-                task: task,
-                roastMode: roastMode
+                task: task
             ),
             options: []
         )
@@ -96,11 +95,20 @@ public enum BeckifyVisionAPI {
 
     /// Apex GitHub Pages host only — not `api.beckify.com`.
     public static func hostIsGitHubPages(_ raw: String?) -> Bool {
-        PhotoLookCheck.hostIsGitHubPages(raw)
+        let trimmed = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let host: String
+        if let url = URL(string: trimmed), let urlHost = url.host, !urlHost.isEmpty {
+            host = urlHost
+        } else {
+            host = trimmed
+        }
+        let folded = host.lowercased()
+        return folded == "beckify.com" || folded == "www.beckify.com"
     }
 
     /// Bearer tokens stay off the default Beckify host, even if that host is
-    /// pasted as a "custom" URL. Look Check keeps its own PhotoLookCheck rule.
+    /// pasted as a "custom" URL.
     public static func authorizationToken(customEndpoint: String?, token: String) -> String {
         guard let custom = httpsBase(customEndpoint) else { return "" }
         if hostIsGitHubPages(custom) { return "" }
@@ -130,18 +138,15 @@ public enum BeckifyVisionAPI {
         if status == 413 {
             return message?.isEmpty == false
                 ? message!
-                : task == .look
-                    ? "The photo is too large for Analyze Look (8 MB after JPEG encode)."
-                    : "The photo is too large for Analyze (8 MB after JPEG encode)."
+                : "The photo is too large for Analyze (8 MB after JPEG encode)."
         }
         if status == 504 {
             return "The vision provider timed out. Please try again."
         }
         if status == 404 || status == 405 {
             let path = analyzePath(for: task)
-            let action = task == .look ? "Analyze Look" : "Analyze"
             if hostIsGitHubPages(endpoint) {
-                return "The Beckify \(noun) API is unavailable (HTTP \(status)). GitHub Pages cannot accept \(action). Use https://api.beckify.com or a custom HTTPS endpoint."
+                return "The Beckify \(noun) API is unavailable (HTTP \(status)). GitHub Pages cannot accept Analyze. Use https://api.beckify.com or a custom HTTPS endpoint."
             }
             return "The Beckify \(noun) API is unavailable (HTTP \(status)). A stale or missing \(path) route also returns this. Use https://api.beckify.com or a custom HTTPS endpoint."
         }
@@ -157,11 +162,16 @@ public enum BeckifyVisionAPI {
     }
 
     public static func dataURL(jpegBase64: String) -> String {
-        PhotoLookCheck.dataURL(jpegBase64: jpegBase64)
+        "data:image/jpeg;base64,\(jpegBase64)"
     }
 
     public static func mimeType(fromDataURL dataURL: String, fallback: String = "image/jpeg") -> String {
-        PhotoLookCheck.mimeType(fromDataURL: dataURL, fallback: fallback)
+        if dataURL.hasPrefix("data:image/png") { return "image/png" }
+        if dataURL.hasPrefix("data:image/webp") { return "image/webp" }
+        if dataURL.hasPrefix("data:image/jpeg") || dataURL.hasPrefix("data:image/jpg") {
+            return "image/jpeg"
+        }
+        return fallback
     }
 
     /// Unwrap `{ analysis | draft | raw }` the way website `visionDraftInput` does.
@@ -280,7 +290,6 @@ public enum BeckifyVisionAPI {
 
     private static func errorNoun(for task: BeckifyVisionTask) -> String {
         switch task {
-        case .look: return "look check"
         case .nameplate: return "nameplate analysis"
         case .panel: return "panel analysis"
         }
@@ -288,7 +297,6 @@ public enum BeckifyVisionAPI {
 
     private static func failureNoun(for task: BeckifyVisionTask) -> String {
         switch task {
-        case .look: return "Look check"
         case .nameplate: return "Nameplate analysis"
         case .panel: return "Panel analysis"
         }

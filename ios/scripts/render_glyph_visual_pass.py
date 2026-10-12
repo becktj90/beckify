@@ -445,19 +445,6 @@ def draw_glyph(well: Well, kind: str, proposed: bool):
         well.fill_mask([("rrect", (plate, 4 * well.scale))], holes)
         return
 
-    if kind == "lookCheck":
-        top = quad((x + w * 0.06, my), (mx, y + h * 0.08), (x + w * 0.94, my))
-        bot = quad((x + w * 0.94, my), (mx, y + h * 0.92), (x + w * 0.06, my))
-        eye = top + bot[1:]
-        if not p:
-            well.polyline(eye, False, closed=True)
-            pr = w * 0.14
-            well.ellipse_stroke([mx - pr, my - pr, mx + pr, my + pr], False)
-            return
-        pr = w * 0.14
-        well.fill_mask([("poly", eye)], [("ellipse", [mx - pr, my - pr, mx + pr, my + pr])])
-        return
-
     if kind == "heaterDesign":
         boxr = [x + w * 0.08, y + h * 0.18, x + w * 0.92, y + h * 0.82]
         bw, bh = boxr[2] - boxr[0], boxr[3] - boxr[1]
