@@ -45,8 +45,8 @@ final class PhoneSceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = UIHostingController(rootView: DriveRootView())
-        window.overrideUserInterfaceStyle = .dark
+        // Dark by default; DashboardView applies the user's appearance setting.
+        window.rootViewController = UIHostingController(rootView: DashboardView())
         self.window = window
         window.makeKeyAndVisible()
     }

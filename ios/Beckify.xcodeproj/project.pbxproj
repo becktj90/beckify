@@ -120,7 +120,20 @@
 		AECF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AECF00000000000000000007 /* PrivacyInfo.xcprivacy */; };
 		AECF00000000000000000011 /* BeckifyMath in Frameworks */ = {isa = PBXBuildFile; productRef = AECF00000000000000000009 /* BeckifyMath */; };
 		BDCF0000000000000000000A /* BeckifyDriveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000001 /* BeckifyDriveApp.swift */; };
-		BDCF0000000000000000000B /* DriveRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000002 /* DriveRootView.swift */; };
+		BDCF00000000000000000020 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000030 /* DashboardView.swift */; };
+		BDCF00000000000000000021 /* DashboardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000031 /* DashboardModel.swift */; };
+		BDCF00000000000000000022 /* DashboardLayoutStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000032 /* DashboardLayoutStore.swift */; };
+		BDCF00000000000000000023 /* DashboardCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000033 /* DashboardCards.swift */; };
+		BDCF00000000000000000024 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000034 /* MetricCard.swift */; };
+		BDCF00000000000000000025 /* SpeedHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000035 /* SpeedHero.swift */; };
+		BDCF00000000000000000026 /* EVSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000036 /* EVSections.swift */; };
+		BDCF00000000000000000027 /* GForceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000037 /* GForceView.swift */; };
+		BDCF00000000000000000028 /* TripCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000038 /* TripCard.swift */; };
+		BDCF00000000000000000029 /* AdapterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000039 /* AdapterSheet.swift */; };
+		BDCF0000000000000000002A /* DashboardSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003A /* DashboardSettingsSheet.swift */; };
+		BDCF0000000000000000002B /* PIDInspectorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003B /* PIDInspectorSheet.swift */; };
+		BDCF0000000000000000002C /* DashboardPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003C /* DashboardPreviews.swift */; };
+		BDCF0000000000000000002D /* PhoneSensorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003D /* PhoneSensorStore.swift */; };
 		BDCF0000000000000000000C /* DriveTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000003 /* DriveTheme.swift */; };
 		BDCF0000000000000000000D /* OBDBluetoothSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000004 /* OBDBluetoothSession.swift */; };
 		BDCF0000000000000000000E /* CarPlayDriveScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000005 /* CarPlayDriveScene.swift */; };
@@ -270,7 +283,20 @@
 		AECF00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AECF00000000000000000008 /* LookCheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LookCheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDCF00000000000000000001 /* BeckifyDriveApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeckifyDriveApp.swift; sourceTree = "<group>"; };
-		BDCF00000000000000000002 /* DriveRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveRootView.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000030 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000031 /* DashboardModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardModel.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000032 /* DashboardLayoutStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardLayoutStore.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000033 /* DashboardCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCards.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000034 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000035 /* SpeedHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedHero.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000036 /* EVSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EVSections.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000037 /* GForceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GForceView.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000038 /* TripCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripCard.swift; sourceTree = "<group>"; };
+		BDCF00000000000000000039 /* AdapterSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdapterSheet.swift; sourceTree = "<group>"; };
+		BDCF0000000000000000003A /* DashboardSettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSettingsSheet.swift; sourceTree = "<group>"; };
+		BDCF0000000000000000003B /* PIDInspectorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIDInspectorSheet.swift; sourceTree = "<group>"; };
+		BDCF0000000000000000003C /* DashboardPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardPreviews.swift; sourceTree = "<group>"; };
+		BDCF0000000000000000003D /* PhoneSensorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSensorStore.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000003 /* DriveTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTheme.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000004 /* OBDBluetoothSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDBluetoothSession.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000005 /* CarPlayDriveScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayDriveScene.swift; sourceTree = "<group>"; };
@@ -361,11 +387,40 @@
 			path = LookCheck;
 			sourceTree = "<group>";
 		};
+		BDCF00000000000000000040 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				BDCF00000000000000000030 /* DashboardView.swift */,
+				BDCF00000000000000000031 /* DashboardModel.swift */,
+				BDCF00000000000000000032 /* DashboardLayoutStore.swift */,
+				BDCF00000000000000000033 /* DashboardCards.swift */,
+				BDCF00000000000000000034 /* MetricCard.swift */,
+				BDCF00000000000000000035 /* SpeedHero.swift */,
+				BDCF00000000000000000036 /* EVSections.swift */,
+				BDCF00000000000000000037 /* GForceView.swift */,
+				BDCF00000000000000000038 /* TripCard.swift */,
+				BDCF00000000000000000039 /* AdapterSheet.swift */,
+				BDCF0000000000000000003A /* DashboardSettingsSheet.swift */,
+				BDCF0000000000000000003B /* PIDInspectorSheet.swift */,
+				BDCF0000000000000000003C /* DashboardPreviews.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		BDCF00000000000000000041 /* Sensors */ = {
+			isa = PBXGroup;
+			children = (
+				BDCF0000000000000000003D /* PhoneSensorStore.swift */,
+			);
+			path = Sensors;
+			sourceTree = "<group>";
+		};
 		BDCF00000000000000000016 /* BeckifyDrive */ = {
 			isa = PBXGroup;
 			children = (
 				BDCF00000000000000000001 /* BeckifyDriveApp.swift */,
-				BDCF00000000000000000002 /* DriveRootView.swift */,
+				BDCF00000000000000000040 /* Dashboard */,
+				BDCF00000000000000000041 /* Sensors */,
 				BDCF00000000000000000003 /* DriveTheme.swift */,
 				BDCF00000000000000000004 /* OBDBluetoothSession.swift */,
 				BDCF00000000000000000005 /* CarPlayDriveScene.swift */,
@@ -853,10 +908,23 @@
 			buildActionMask = 2147483647;
 			files = (
 				BDCF0000000000000000000A /* BeckifyDriveApp.swift in Sources */,
-				BDCF0000000000000000000B /* DriveRootView.swift in Sources */,
 				BDCF0000000000000000000C /* DriveTheme.swift in Sources */,
 				BDCF0000000000000000000D /* OBDBluetoothSession.swift in Sources */,
 				BDCF0000000000000000000E /* CarPlayDriveScene.swift in Sources */,
+				BDCF00000000000000000020 /* DashboardView.swift in Sources */,
+				BDCF00000000000000000021 /* DashboardModel.swift in Sources */,
+				BDCF00000000000000000022 /* DashboardLayoutStore.swift in Sources */,
+				BDCF00000000000000000023 /* DashboardCards.swift in Sources */,
+				BDCF00000000000000000024 /* MetricCard.swift in Sources */,
+				BDCF00000000000000000025 /* SpeedHero.swift in Sources */,
+				BDCF00000000000000000026 /* EVSections.swift in Sources */,
+				BDCF00000000000000000027 /* GForceView.swift in Sources */,
+				BDCF00000000000000000028 /* TripCard.swift in Sources */,
+				BDCF00000000000000000029 /* AdapterSheet.swift in Sources */,
+				BDCF0000000000000000002A /* DashboardSettingsSheet.swift in Sources */,
+				BDCF0000000000000000002B /* PIDInspectorSheet.swift in Sources */,
+				BDCF0000000000000000002C /* DashboardPreviews.swift in Sources */,
+				BDCF0000000000000000002D /* PhoneSensorStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
