@@ -27,8 +27,6 @@ import {
   Phone,
   Zap,
   Smartphone,
-  Gauge,
-  Camera,
   type LucideIcon,
 } from "lucide-react";
 
@@ -85,8 +83,8 @@ export const HOME_NAV_CARDS: HubCard[] = [
     icon: Wrench,
   },
   {
-    title: "iPhone & iPad Apps",
-    description: "Beckify (field electrical toolbox), Beckify Drive (OBD and CarPlay), and Look Check.",
+    title: "Beckify for iPhone & iPad",
+    description: "The native field electrical toolbox on the App Store. Free, no ads.",
     href: "/apps",
     icon: Smartphone,
   },
@@ -241,8 +239,7 @@ export const GAME = GAMES[0];
 /** ------------------------------------------------------------------------
  * IOS APPS
  *
- * Native SwiftUI apps from ios/. Keep in step with ios/docs/APP_STORE.md,
- * ios/BeckifyDrive/docs/APP_STORE.md and ios/LookCheck/docs/APP_STORE.md.
+ * Native SwiftUI app from ios/. Keep in step with ios/docs/APP_STORE.md.
  * Only set `appStoreUrl` once the listing is live; without it the card
  * shows the status label instead of a download button.
  * -------------------------------------------------------------------- */
@@ -276,37 +273,5 @@ export const IOS_APPS: IosApp[] = [
     meta: "iPhone & iPad · Productivity · Free, no ads",
     appStoreUrl: "https://apps.apple.com/app/id6807908745",
     icon: Wrench,
-  },
-  {
-    name: "Beckify Drive",
-    bundleId: "com.beckify.drive",
-    tagline: "EV and OBD gauges",
-    description:
-      "A glanceable driving dashboard for a Bluetooth LE OBD-II adapter and your phone's own sensors, with a native CarPlay scene. Vehicle readings stay on the phone.",
-    highlights: [
-      "Chevy Bolt EV and EUV battery, motor, and 12 V telemetry; generic Mode 01 for other cars",
-      "Energy and range estimates, regen score, and fast-charge temperature coach",
-      "GPS speed, G-force plot, barometer, and trip stats from phone sensors",
-      "Every value labeled live, stale, or not reported; estimates say so",
-    ],
-    meta: "iPhone · CarPlay · Utilities · Free, no ads",
-    status: "App Store release coming soon",
-    icon: Gauge,
-  },
-  {
-    name: "Look Check",
-    bundleId: "com.beckify.lookcheck",
-    tagline: "Surprise photo roast",
-    description:
-      "Take a photo or pick one from your library, tap Analyze, and get a photo verdict plus a spoken comedy roast. Entertainment only. Photos leave your phone only when you tap Analyze.",
-    highlights: [
-      "Verdict on lighting, framing, expression, and sharpness",
-      "A different roast tone on every Analyze, with a shareable card",
-      "Anyone who appears under 18 is not rated",
-      "No account, no ads, no in-app purchases",
-    ],
-    meta: "iPhone & iPad · Entertainment · Free, 12+",
-    status: "App Store release coming soon",
-    icon: Camera,
   },
 ];

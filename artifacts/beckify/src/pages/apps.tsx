@@ -34,19 +34,19 @@ export default function AppsPage() {
       <section id="apps" className="space-y-8 scroll-mt-24">
         <FadeIn>
           <SectionHeader
-            title="iPhone & iPad Apps"
+            title="Beckify for iPhone & iPad"
             level="h1"
-            subtitle="Native SwiftUI apps — not website wrappers. Free, no ads, no accounts."
+            subtitle="The native field electrical toolbox — not a website wrapper. Free, no ads."
             icon={(props: { className?: string }) => <BeckifyIcon name="toolbox" {...props} />}
           />
         </FadeIn>
 
         <FadeIn delay={0.1}>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6">
             {IOS_APPS.map((app) => (
-              <article key={app.bundleId} className="card-surface flex flex-col p-6">
+              <article key={app.bundleId} className="card-surface flex flex-col border-l-2 border-l-[var(--copper)] p-6 md:p-8">
                 <div className="flex items-center gap-3">
-                  <app.icon className="h-5 w-5 text-[var(--accent)]" />
+                  <app.icon className="h-5 w-5 text-[var(--copper)]" />
                   <h2 className="font-display text-xl font-bold text-[var(--foreground)]">{app.name}</h2>
                 </div>
                 <p className="type-label mt-1 text-[var(--accent)]">{app.tagline}</p>

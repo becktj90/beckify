@@ -71,9 +71,9 @@ export const PAGE_SEO = {
       "Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Look Check uploads a photo only when you tap Analyze Look. Sensors and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts.",
   },
   "/apps": {
-    title: "Beckify iPhone and iPad apps — electrical toolbox, Drive, and Look Check",
+    title: "Beckify for iPhone and iPad — field electrical toolbox on the App Store",
     description:
-      "Native iOS apps by Trevor Beck: Beckify, a field electrical toolbox; Beckify Drive, a Bluetooth OBD-II and CarPlay dashboard; and Look Check, a surprise photo roast. Free, no ads.",
+      "Beckify is a native iPhone and iPad electrical toolbox: voltage drop, wire ampacity, conduit fill, motor FLA, and more. Free, no ads. Download on the App Store.",
   },
   "/projects": {
     title: "EV conversions and engineering build logs",

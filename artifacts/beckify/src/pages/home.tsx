@@ -46,7 +46,7 @@ export default function Home() {
                   className="absolute inset-0 pointer-events-none"
                   style={{
                     background:
-                      "radial-gradient(ellipse at 20% 50%, rgba(139,123,255,0.08) 0%, transparent 65%)",
+                      "radial-gradient(ellipse at 20% 50%, rgba(64,186,214,0.08) 0%, transparent 65%)",
                   }}
                 />
                 <PenroseCanvas className="pointer-events-none absolute inset-0 h-full w-full opacity-50 md:opacity-20" />
@@ -117,14 +117,14 @@ export default function Home() {
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: "radial-gradient(ellipse at 80% 20%, rgba(139,123,255,0.12) 0%, transparent 60%)",
+                    background: "radial-gradient(ellipse at 80% 20%, rgba(64,186,214,0.12) 0%, transparent 60%)",
                   }}
                 />
                 <a href="/toolbox/" className="relative z-10 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-auto">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, rgba(139,123,255,0.25) 0%, rgba(79,139,255,0.15) 100%)" }}
+                      style={{ background: "linear-gradient(135deg, rgba(64,186,214,0.25) 0%, rgba(96,156,230,0.15) 100%)" }}
                     >
                       <BeckifyIcon name="toolbox" className="w-4.5 h-4.5 text-[var(--accent)]" />
                     </div>
@@ -185,24 +185,24 @@ export default function Home() {
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: "radial-gradient(ellipse at 20% 20%, rgba(139,123,255,0.12) 0%, transparent 60%)",
+                    background: "radial-gradient(ellipse at 20% 20%, rgba(64,186,214,0.12) 0%, transparent 60%)",
                   }}
                 />
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-auto">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, rgba(139,123,255,0.25) 0%, rgba(79,139,255,0.15) 100%)" }}
+                      style={{ background: "linear-gradient(135deg, rgba(64,186,214,0.25) 0%, rgba(96,156,230,0.15) 100%)" }}
                     >
                       <Smartphone className="w-4.5 h-4.5 text-[var(--accent)]" />
                     </div>
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
                   <div className="mt-4 space-y-1.5">
-                    <p className="type-label text-[var(--accent)]">Native iOS</p>
-                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">iPhone &amp; iPad Apps</h2>
+                    <p className="type-label text-[var(--accent)]">App Store</p>
+                    <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Beckify for iPhone</h2>
                     <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
-                      Beckify field toolbox, Beckify Drive for OBD and CarPlay, and Look Check. Free, no ads.
+                      The Beckify field electrical toolbox for iPhone and iPad. Free, no ads.
                     </p>
                   </div>
                 </div>
@@ -215,23 +215,23 @@ export default function Home() {
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: "radial-gradient(ellipse at 80% 20%, rgba(79,139,255,0.12) 0%, transparent 60%)",
+                    background: "radial-gradient(ellipse at 80% 20%, rgba(96,156,230,0.12) 0%, transparent 60%)",
                   }}
                 />
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-auto">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, rgba(79,139,255,0.25) 0%, rgba(139,123,255,0.15) 100%)" }}
+                      style={{ background: "linear-gradient(135deg, rgba(224,156,86,0.25) 0%, rgba(224,156,86,0.1) 100%)" }}
                     >
-                      <BeckifyIcon name="projects" className="w-4.5 h-4.5 text-[var(--accent-2)]" />
+                      <BeckifyIcon name="projects" className="w-4.5 h-4.5 text-[var(--copper)]" />
                     </div>
                     <ArrowUpRight className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent-2)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-200" />
                   </div>
                   <div className="mt-4 space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <Zap className="w-3 h-3 text-[var(--accent-2)]" />
-                      <span className="type-label text-[var(--accent-2)]">Builds</span>
+                      <Zap className="w-3 h-3 text-[var(--copper)]" />
+                      <span className="type-label text-[var(--copper)]">Builds</span>
                     </div>
                     <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Projects</h2>
                     <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
@@ -248,14 +248,14 @@ export default function Home() {
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: "radial-gradient(ellipse at 80% 80%, rgba(139,123,255,0.15) 0%, transparent 60%)",
+                    background: "radial-gradient(ellipse at 80% 80%, rgba(64,186,214,0.15) 0%, transparent 60%)",
                   }}
                 />
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-auto">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, rgba(139,123,255,0.2) 0%, rgba(139,123,255,0.08) 100%)" }}
+                      style={{ background: "linear-gradient(135deg, rgba(64,186,214,0.2) 0%, rgba(64,186,214,0.08) 100%)" }}
                     >
                       <BeckifyIcon name="games" className="w-4.5 h-4.5 text-[var(--accent)]" />
                     </div>
@@ -283,14 +283,14 @@ export default function Home() {
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: "radial-gradient(ellipse at 20% 80%, rgba(79,139,255,0.14) 0%, transparent 60%)",
+                    background: "radial-gradient(ellipse at 20% 80%, rgba(96,156,230,0.14) 0%, transparent 60%)",
                   }}
                 />
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-auto">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, rgba(79,139,255,0.25) 0%, rgba(139,123,255,0.12) 100%)" }}
+                      style={{ background: "linear-gradient(135deg, rgba(96,156,230,0.25) 0%, rgba(64,186,214,0.12) 100%)" }}
                     >
                       <Zap className="w-4.5 h-4.5 text-[var(--accent-2)]" />
                     </div>

@@ -5,7 +5,7 @@
  * Change a color, font, radius, or shadow here and it updates everywhere on
  * the site. This is the ONE place to edit the visual system.
  *
- * Theme: deep-space / nebula. Near-black background, glowing violet/blue
+ * Theme: deep-space / nebula. Near-black background, glowing teal/blue (Beckify app palette)
  * accents, starfield backdrop. See .starfield and .nebula-glow below.
  *
  * Typography — modern scientific / space instrument:
@@ -49,27 +49,29 @@
 
   --radius-card: 1rem;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 28px -8px rgba(0, 0, 0, 0.55);
-  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.35), 0 20px 48px -12px rgba(139, 123, 255, 0.22);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.35), 0 20px 48px -12px rgba(64, 186, 214, 0.22);
 }
 
 :root {
-  /* Base neutrals — deep space */
-  --background: #05060f;
+  /* Base neutrals — app dark surfaces, still deep space */
+  --background: #080b10;
   --surface: rgba(255, 255, 255, 0.035);
-  --foreground: #eef0fa;
-  --muted: #9497b8;
+  --foreground: #e8eef5;
+  --muted: #94a2b2;
   --border: rgba(255, 255, 255, 0.09);
 
-  /* Accent — nebula violet -> blue */
-  --accent: #8b7bff;
-  --accent-2: #4f8bff;
+  /* Accent — Beckify app instrument teal -> blue (ios Theme.accent / accent2) */
+  --accent: #40bad6;
+  --accent-2: #609ce6;
+  /* Copper conductor cue from the app's Theme.energized — secondary emphasis. */
+  --copper: #e09c56;
   /* White text on either accent measured 3.25-3.29:1 — below the 4.5:1
      WCAG AA minimum for normal-size text. The page background color reused
      as text gives 6.1-6.2:1 on both, comfortably clearing AA, without
      changing the accent colors themselves. */
   --accent-foreground: var(--background);
-  --accent-soft: rgba(139, 123, 255, 0.14);
-  --accent-ring: rgba(139, 123, 255, 0.4);
+  --accent-soft: rgba(64, 186, 214, 0.14);
+  --accent-ring: rgba(64, 186, 214, 0.4);
 
   /* Spacing / sizing tokens */
   --content-max-width: 72rem;
@@ -279,11 +281,11 @@ html {
 
 @keyframes mark-breathe {
   0%, 100% {
-    filter: drop-shadow(0 0 14px rgba(139, 123, 255, 0.5)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.4));
+    filter: drop-shadow(0 0 14px rgba(64, 186, 214, 0.5)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.4));
     transform: scale(1);
   }
   50% {
-    filter: drop-shadow(0 0 28px rgba(139, 123, 255, 0.8)) drop-shadow(0 0 46px rgba(79, 139, 255, 0.4));
+    filter: drop-shadow(0 0 28px rgba(64, 186, 214, 0.8)) drop-shadow(0 0 46px rgba(96, 156, 230, 0.4));
     transform: scale(1.035);
   }
 }
@@ -314,8 +316,8 @@ html {
 }
 
 @keyframes wordmark-glow {
-  0%, 100% { filter: drop-shadow(0 0 18px rgba(139, 123, 255, 0.3)) drop-shadow(0 0 40px rgba(79, 139, 255, 0.12)); }
-  50% { filter: drop-shadow(0 0 30px rgba(139, 123, 255, 0.55)) drop-shadow(0 0 60px rgba(79, 139, 255, 0.28)); }
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(64, 186, 214, 0.3)) drop-shadow(0 0 40px rgba(96, 156, 230, 0.12)); }
+  50% { filter: drop-shadow(0 0 30px rgba(64, 186, 214, 0.55)) drop-shadow(0 0 60px rgba(96, 156, 230, 0.28)); }
 }
 
 .brand-underline {
@@ -450,8 +452,8 @@ html {
   right: 8%;
   width: 90px;
   height: 90px;
-  background: radial-gradient(circle at 35% 30%, #b9a6ff 0%, #6f5bff 45%, #211a4d 100%);
-  box-shadow: 0 0 40px 6px rgba(139, 123, 255, 0.35), inset -10px -10px 20px rgba(0,0,0,0.5);
+  background: radial-gradient(circle at 35% 30%, #a8e4f2 0%, #2a9bbd 45%, #0f2a3d 100%);
+  box-shadow: 0 0 40px 6px rgba(64, 186, 214, 0.35), inset -10px -10px 20px rgba(0,0,0,0.5);
   animation: float-slow 18s ease-in-out infinite;
 }
 
@@ -469,7 +471,7 @@ html {
   left: 10%;
   width: 26px;
   height: 26px;
-  background: radial-gradient(circle at 40% 35%, #eef0fa 0%, #9497b8 60%, #4a4c66 100%);
+  background: radial-gradient(circle at 40% 35%, #e8eef5 0%, #94a2b2 60%, #4a5668 100%);
   box-shadow: 0 0 18px 2px rgba(255,255,255,0.15);
   animation: float-slow 13s ease-in-out infinite reverse;
 }
@@ -535,7 +537,7 @@ html {
   left: 30%;
   width: 34rem;
   height: 34rem;
-  background: radial-gradient(circle, #6f5bff 0%, transparent 70%);
+  background: radial-gradient(circle, #2a9bbd 0%, transparent 70%);
   opacity: 0.22;
   animation: nebula-drift-3 38s ease-in-out infinite;
 }
@@ -641,7 +643,7 @@ html {
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
     0 8px 24px rgba(0, 0, 0, 0.4),
-    0 24px 56px -12px rgba(139, 123, 255, 0.28);
+    0 24px 56px -12px rgba(64, 186, 214, 0.28);
 }
 
 /* Native fullscreen needs explicit sizing. iPhone Safari's Fullscreen API
@@ -807,7 +809,7 @@ nav.sticky {
   z-index: 2;
   pointer-events: none;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgba(117, 211, 255, 0.1), inset 0 0 48px rgba(96, 89, 222, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(117, 211, 255, 0.1), inset 0 0 48px rgba(64, 186, 214, 0.07);
 }
 
 .game-control,
