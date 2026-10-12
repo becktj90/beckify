@@ -59,7 +59,8 @@ final class WeatherService: ObservableObject, WeatherProviding {
         lastAttempt = now
         status = .loading
         let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
-        task = Task { [weak self] in
+        // Runs on the main actor; only the network await leaves it.
+        task = Task { @MainActor [weak self] in
             let reading: OpenMeteoCurrent?
             do {
                 let (data, response) = try await session.data(for: request)
@@ -68,9 +69,7 @@ final class WeatherService: ObservableObject, WeatherProviding {
             } catch {
                 reading = nil
             }
-            await MainActor.run {
-                self?.finish(reading)
-            }
+            self?.finish(reading)
         }
     }
 
