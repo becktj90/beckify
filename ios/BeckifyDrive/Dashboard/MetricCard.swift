@@ -37,7 +37,8 @@ struct MetricCard<Accessory: View>: View {
                 Text(title)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(DriveTheme.muted)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 4)
                 if estimated {
                     EstimateBadge()

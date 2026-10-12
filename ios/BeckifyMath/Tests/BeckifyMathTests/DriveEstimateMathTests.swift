@@ -366,3 +366,51 @@ final class CarPlayUnitsTests: XCTestCase {
         XCTAssertEqual(copy.temperature, "Pack 22°C")
     }
 }
+
+final class VehicleSpecAndGenericEVTests: XCTestCase {
+    func testProfilesMapToLayoutsAndSpecs() {
+        XCTAssertEqual(VehicleProfile.generic.dashboardLayout, .powertrain)
+        XCTAssertEqual(VehicleProfile.genericEV.dashboardLayout, .evStandard)
+        XCTAssertEqual(VehicleProfile.boltEV.dashboardLayout, .ev)
+        XCTAssertEqual(VehicleProfile.boltEUV.dashboardLayout, .ev)
+        XCTAssertNil(VehicleProfile.genericEV.spec, "no estimates without a vehicle spec")
+        XCTAssertNil(VehicleProfile.generic.spec)
+        XCTAssertEqual(VehicleProfile.boltEUV.spec, .bolt)
+        XCTAssertFalse(VehicleProfile.genericEV.usesBoltPIDs)
+        XCTAssertEqual(VehicleProfile.genericEV.nominalPackChoicesKWh, [])
+    }
+
+    func testGenericEVPollsStandardPIDsOnly() {
+        let cycle = OBDCommandPlan.liveCycle(profile: .genericEV, support: OBDSupportMap())
+        XCTAssertEqual(cycle, OBDCommandPlan.liveCycle(profile: .generic, support: OBDSupportMap()))
+        XCTAssertFalse(cycle.contains { $0.hasPrefix("22") || $0.hasPrefix("ATSH") })
+    }
+
+    func testGenericEVCardsAreEVRelevant() {
+        let layout = DashboardLayout.standard
+        let vehicle = layout.cards(in: .vehicle, for: .evStandard)
+        XCTAssertEqual(vehicle, [.ambient, .moduleVolts, .remainingLife])
+        XCTAssertEqual(DashboardSection.sections(for: .evStandard), [.vehicle, .phone])
+        for card in [DashboardCardID.fuel, .coolant, .engineLoad, .throttle, .hvCurrent, .efficiency, .packTemp] {
+            XCTAssertNil(card.section(for: .evStandard), "\(card) needs fuel, an engine, or Bolt PIDs")
+        }
+        XCTAssertEqual(DashboardCardID.remainingLife.section(for: .powertrain), .vehicle, "hybrids answer 015B too")
+        XCTAssertNil(DashboardCardID.remainingLife.section(for: .ev), "Bolt shows remaining life (HD) instead")
+    }
+
+    func testSpecLabelsAndWeatherUseSpec() {
+        let bolt = VehicleSpec.bolt
+        XCTAssertEqual(bolt.voltsLabel, "350 V")
+        XCTAssertEqual(bolt.wheelLabel, "0.32 m")
+        XCTAssertEqual(bolt.massLabel, "1,696 kg")
+        var heavy = bolt
+        heavy.massKg = 3_000
+        heavy.dragCoefficient = 0.40
+        heavy.frontalAreaM2 = 3.2
+        let boltWind = RangeWeatherModel.adjust(baseMiles: 200, celsius: nil, speedKph: 100, headwindMps: 6, spec: bolt)?.headwindFraction ?? 0
+        let heavyWind = RangeWeatherModel.adjust(baseMiles: 200, celsius: nil, speedKph: 100, headwindMps: 6, spec: heavy)?.headwindFraction ?? 0
+        XCTAssertLessThan(boltWind, 0)
+        XCTAssertNotEqual(boltWind, heavyWind, accuracy: 0.001)
+        XCTAssertEqual(boltWind, RangeWeatherModel.headwindFraction(speedKph: 100, headwindMps: 6) ?? 9, accuracy: 1e-12, "Bolt default unchanged")
+    }
+}

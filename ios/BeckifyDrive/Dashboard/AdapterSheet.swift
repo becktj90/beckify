@@ -56,7 +56,9 @@ struct DriveAdapterSheet: View {
                     Text(profile.title).tag(profile)
                 }
             }
-            .pickerStyle(.segmented)
+            // Four profiles do not fit a segmented control on an iPhone SE.
+            .pickerStyle(.menu)
+            .tint(DriveTheme.accent)
             Text(session.profile.summary)
                 .font(.footnote)
                 .foregroundStyle(DriveTheme.muted)

@@ -12,10 +12,10 @@ struct SpeedHero: View {
 
     var body: some View {
         Group {
-            if model.layout == .ev {
-                evHero
-            } else {
-                powertrainHero
+            switch model.layout {
+            case .ev: evHero
+            case .evStandard: standardEVHero
+            case .powertrain: powertrainHero
             }
         }
         .frame(maxWidth: .infinity)
@@ -48,6 +48,31 @@ struct SpeedHero: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed and engine RPM")
         .accessibilityValue(spokenPowertrain(rpm: rpm.value))
+    }
+
+    // MARK: EV on standard PIDs
+
+    /// Speed inside an arc. Standard Mode 01 has no RPM or charge on most EVs.
+    private var standardEVHero: some View {
+        let kph = model.heroSpeed?.kph
+        return Gauge(value: min(kph ?? 0, SpeedScale.maxKph), in: 0...SpeedScale.maxKph) {
+            Text("Speed")
+        } currentValueLabel: {
+            VStack(spacing: 2) {
+                SpeedReadout(speed: model.heroSpeed, units: units, large: true)
+                Text("Standard OBD · no charge or power on this profile")
+                    .font(.caption)
+                    .foregroundStyle(DriveTheme.muted)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+            }
+        }
+        .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: kph != nil))
+        .animation(reduceMotion ? nil : .snappy, value: kph)
+        .frame(width: ringSize, height: ringSize)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Speed")
+        .accessibilityValue(heroSpokenSpeed)
     }
 
     // MARK: EV
@@ -141,6 +166,11 @@ struct SpeedHero: View {
 /// Display scale for the RPM arc. Not a redline.
 enum RPMScale {
     static let max = 8_000.0
+}
+
+/// Display scale for the speed arc (160 km/h, about 100 mph). Not a limit.
+enum SpeedScale {
+    static let maxKph = 160.0
 }
 
 /// Big speed number with its unit and source (OBD or GPS).

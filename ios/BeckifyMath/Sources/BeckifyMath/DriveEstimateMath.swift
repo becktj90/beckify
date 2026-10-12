@@ -51,6 +51,65 @@ public enum DriveEstimates {
     }
 }
 
+// MARK: - Vehicle spec
+
+/// Per-vehicle constants behind the estimates. Adding an EV means one spec
+/// here (with sources) plus its PID rows in `DriveSignalTable`. A profile
+/// without a spec gets no power, torque, regen, or energy estimates.
+public struct VehicleSpec: Equatable, Sendable {
+    public var name: String
+    public var nominalPackVolts: Double
+    public var wheelRadiusMeters: Double
+    public var massKg: Double
+    public var dragCoefficient: Double
+    /// Nil when not published; the weather model then uses its assumed default.
+    public var frontalAreaM2: Double?
+    public var sourceNote: String
+
+    public init(name: String, nominalPackVolts: Double, wheelRadiusMeters: Double, massKg: Double, dragCoefficient: Double, frontalAreaM2: Double?, sourceNote: String) {
+        self.name = name
+        self.nominalPackVolts = nominalPackVolts
+        self.wheelRadiusMeters = wheelRadiusMeters
+        self.massKg = massKg
+        self.dragCoefficient = dragCoefficient
+        self.frontalAreaM2 = frontalAreaM2
+        self.sourceNote = sourceNote
+    }
+
+    /// Bolt EV figures (see `DriveEstimates`). The Bolt EUV shares the pack and
+    /// tire size; its own mass and drag are not entered, so it uses these.
+    public static let bolt = VehicleSpec(
+        name: "Bolt EV",
+        nominalPackVolts: DriveEstimates.boltNominalPackVolts,
+        wheelRadiusMeters: DriveEstimates.boltWheelRadiusMeters,
+        massKg: DriveEstimates.boltTestMassKg,
+        dragCoefficient: RangeWeatherModel.dragCoefficient,
+        frontalAreaM2: nil,
+        sourceNote: "350 V nominal pack (96s × 3.65 V), 215/50R17 tires, 1,616 kg curb + 80 kg driver, Cd 0.308 (GM 2017)"
+    )
+
+    /// Pack volts for a caption, e.g. "350 V".
+    public var voltsLabel: String { String(format: "%.0f V", nominalPackVolts) }
+    public var wheelLabel: String { String(format: "%.2f m", wheelRadiusMeters) }
+    public var massLabel: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        formatter.locale = Locale(identifier: "en_US")
+        return (formatter.string(from: NSNumber(value: massKg)) ?? String(format: "%.0f", massKg)) + " kg"
+    }
+}
+
+extension VehicleProfile {
+    /// Constants for estimates, or nil when this profile has none.
+    public var spec: VehicleSpec? {
+        switch self {
+        case .boltEV, .boltEUV: return .bolt
+        case .generic, .genericEV: return nil
+        }
+    }
+}
+
 // MARK: - Power and torque units
 
 public enum DrivePowerUnit: String, CaseIterable, Codable, Sendable {
@@ -326,7 +385,13 @@ public enum RangeWeatherModel {
 
     /// Range change from headwind at a steady speed (−0.08 = 8 % less range).
     /// Road-load energy per meter: ½ρCdA·v_air² + Crr·m·g.
-    public static func headwindFraction(speedKph: Double?, headwindMps: Double?, massKg: Double = DriveEstimates.boltTestMassKg) -> Double? {
+    public static func headwindFraction(
+        speedKph: Double?,
+        headwindMps: Double?,
+        massKg: Double = DriveEstimates.boltTestMassKg,
+        dragCoefficient: Double = RangeWeatherModel.dragCoefficient,
+        frontalAreaM2: Double = RangeWeatherModel.frontalAreaM2
+    ) -> Double? {
         guard let speedKph, let headwindMps, speedKph >= windMinimumKph, headwindMps.isFinite else { return nil }
         let v = speedKph / 3.6
         let air = max(v + headwindMps, 0)
@@ -348,10 +413,22 @@ public enum RangeWeatherModel {
         }
     }
 
-    public static func adjust(baseMiles: Double?, celsius: Double?, speedKph: Double?, headwindMps: Double?) -> Adjustment? {
+    public static func adjust(
+        baseMiles: Double?,
+        celsius: Double?,
+        speedKph: Double?,
+        headwindMps: Double?,
+        spec: VehicleSpec = .bolt
+    ) -> Adjustment? {
         guard let baseMiles, baseMiles > 0 else { return nil }
         let temperature = temperatureFraction(celsius: celsius)
-        let wind = headwindFraction(speedKph: speedKph, headwindMps: headwindMps)
+        let wind = headwindFraction(
+            speedKph: speedKph,
+            headwindMps: headwindMps,
+            massKg: spec.massKg,
+            dragCoefficient: spec.dragCoefficient,
+            frontalAreaM2: spec.frontalAreaM2 ?? frontalAreaM2
+        )
         guard temperature != nil || wind != nil else { return nil }
         return Adjustment(baseMiles: baseMiles, temperatureFraction: temperature, headwindFraction: wind)
     }

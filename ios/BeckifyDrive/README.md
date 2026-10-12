@@ -23,6 +23,22 @@ Pack voltage is never decoded. Public pack-voltage scales disagree, and the one-
 
 Decode and the 10-second CarPlay publish rule live in `BeckifyMath` (`OBDSessionMath`). Linux runs `swift test` there. This environment does not compile the iOS UI.
 
+## Vehicles
+
+| Profile | Dashboard | PIDs | Estimates |
+|---|---|---|---|
+| Generic OBD | Vehicle (coolant, load, throttle, fuel, ambient, 12 V, remaining life) + phone | Mode 01 | none |
+| Generic EV | Speed hero + Vehicle (ambient, 12 V, battery remaining life 015B) + phone | Mode 01 | none (no HV current) |
+| Bolt EV / Bolt EUV | Power / torque / regen hero, Battery, Motor, Power electronics, Energy & range, phone | Mode 01 + published Bolt Mode 22 | yes, from `VehicleSpec.bolt` |
+
+Generic EV works on any EV that answers standard Mode 01. It never sends maker-specific requests, so charge, pack temperature, current, and every estimate stay off. To add a specific EV, add:
+
+1. Its verified Mode 22 rows to `DriveSignalTable` (header, request, decode, range, source).
+2. A `VehicleSpec` with sourced pack volts, wheel radius, mass, and drag (`DriveEstimateMath.swift`).
+3. A `VehicleProfile` case that maps to both.
+
+Nothing is added from guesswork. The Bolt EUV uses the Bolt EV spec because its own mass and drag are not entered.
+
 ## Data policy: measured vs estimated
 
 This replaces the old "traction kW stays blank" rule.

@@ -96,9 +96,38 @@ jobs:
           CODE_SIGNING_ALLOWED=NO build
 
   drive-screenshots:
-    name: Beckify Drive fixture screenshots
+    name: Beckify Drive screenshots (${{ matrix.label }})
     runs-on: macos-15
-    timeout-minutes: 40
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: iPhone 16
+            slug: iphone-16
+            device: iPhone 16
+            set: full
+            content_size: ""
+          - label: iPhone SE
+            slug: iphone-se
+            device: iPhone SE (3rd generation)
+            set: core
+            content_size: ""
+          - label: iPhone 16 Pro Max
+            slug: iphone-16-pro-max
+            device: iPhone 16 Pro Max
+            set: core
+            content_size: ""
+          - label: iPad Pro 13-inch
+            slug: ipad-pro-13
+            device: iPad Pro 13-inch (M4)
+            set: core
+            content_size: ""
+          - label: iPhone 16, largest text
+            slug: iphone-16-ax5
+            device: iPhone 16
+            set: core
+            content_size: accessibility-extra-extra-extra-large
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -109,7 +138,7 @@ jobs:
         id: simulator
         run: |
           sudo xcodebuild -runFirstLaunch
-          python3 ios/scripts/prepare_navigation_simulator.py '18.5'
+          python3 ios/scripts/prepare_drive_simulator.py '18.5' '${{ matrix.device }}'
       - name: Build Beckify Drive (Debug, fixtures enabled)
         run: >-
           xcodebuild -project ios/Beckify.xcodeproj
@@ -118,44 +147,16 @@ jobs:
           -derivedDataPath '${{ runner.temp }}/BeckifyDriveShots'
           CODE_SIGNING_ALLOWED=NO build
       - name: Capture fixture screenshots
-        env:
-          DESTINATION: ${{ steps.simulator.outputs.destination }}
-          APP: ${{ runner.temp }}/BeckifyDriveShots/Build/Products/Debug-iphonesimulator/BeckifyDrive.app
-        run: |
-          set -euo pipefail
-          udid="${DESTINATION##*id=}"
-          xcrun simctl install "$udid" "$APP"
-          xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
-          mkdir -p drive-screenshots
-          shoot() {
-            local name="$1" appearance="$2" scroll="${3:-}"
-            xcrun simctl ui "$udid" appearance "$appearance"
-            xcrun simctl terminate "$udid" com.beckify.drive 2>/dev/null || true
-            if [ -n "$scroll" ]; then
-              xcrun simctl launch "$udid" com.beckify.drive -BeckifyDriveFixture "$name" -BeckifyDriveScroll "$scroll"
-            else
-              xcrun simctl launch "$udid" com.beckify.drive -BeckifyDriveFixture "$name"
-            fi
-            sleep 5
-            xcrun simctl io "$udid" screenshot "drive-screenshots/${name}${scroll:+-$scroll}.png"
-          }
-          shoot boltDriving dark
-          shoot boltDriving dark battery
-          shoot boltDriving dark energy
-          shoot boltDriving dark phone
-          shoot boltRegen dark
-          shoot fullBolt dark
-          shoot boltPartial dark
-          shoot boltPartial dark battery
-          shoot noAdapter dark
-          shoot partialGeneric dark
-          shoot iceGeneric dark
-          shoot iceGeneric dark phone
-          shoot boltLight light
-          ls -la drive-screenshots
+        run: >-
+          ios/scripts/capture_drive_screenshots.sh
+          '${{ steps.simulator.outputs.udid }}'
+          '${{ runner.temp }}/BeckifyDriveShots/Build/Products/Debug-iphonesimulator/BeckifyDrive.app'
+          'drive-screenshots/${{ matrix.slug }}'
+          '${{ matrix.set }}'
+          '${{ matrix.content_size }}'
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: beckify-drive-screenshots
+          name: beckify-drive-screenshots-${{ matrix.slug }}
           path: drive-screenshots

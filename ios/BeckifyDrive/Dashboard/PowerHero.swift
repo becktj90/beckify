@@ -15,19 +15,20 @@ struct PowerHero: View {
         let power = model.powerKW
         let flow = model.flow
         let freshness = model.value(.hvCurrentAmps).freshness
+        let spec = model.spec ?? .bolt
         if horizontalSizeClass == .regular || verticalSizeClass == .compact {
             HStack(alignment: .top, spacing: 14) {
-                PowerGaugeCard(powerKW: power, flow: flow, freshness: freshness, peakKW: model.insights.peakPowerKW, units: units)
+                PowerGaugeCard(powerKW: power, flow: flow, freshness: freshness, peakKW: model.insights.peakPowerKW, spec: spec, units: units)
                 VStack(spacing: 14) {
                     RegenStateBanner(flow: flow, powerKW: power, units: units)
-                    TorqueCard(torqueNm: model.torqueNm, flow: flow, peakNm: model.insights.peakTorqueNm, speedKnown: model.value(.speedKph).value != nil, units: units)
+                    TorqueCard(torqueNm: model.torqueNm, flow: flow, peakNm: model.insights.peakTorqueNm, speedKnown: model.value(.speedKph).value != nil, spec: spec, units: units)
                 }
             }
         } else {
             VStack(spacing: 14) {
                 RegenStateBanner(flow: flow, powerKW: power, units: units)
-                PowerGaugeCard(powerKW: power, flow: flow, freshness: freshness, peakKW: model.insights.peakPowerKW, units: units)
-                TorqueCard(torqueNm: model.torqueNm, flow: flow, peakNm: model.insights.peakTorqueNm, speedKnown: model.value(.speedKph).value != nil, units: units)
+                PowerGaugeCard(powerKW: power, flow: flow, freshness: freshness, peakKW: model.insights.peakPowerKW, spec: spec, units: units)
+                TorqueCard(torqueNm: model.torqueNm, flow: flow, peakNm: model.insights.peakTorqueNm, speedKnown: model.value(.speedKph).value != nil, spec: spec, units: units)
             }
         }
     }
@@ -54,6 +55,7 @@ struct PowerGaugeCard: View {
     let flow: HVFlowState?
     let freshness: DriveFreshness
     let peakKW: Double
+    let spec: VehicleSpec
     let units: DriveUnitPreference
 
     @ScaledMetric(relativeTo: .largeTitle) private var digitHeight: CGFloat = 58
@@ -103,7 +105,7 @@ struct PowerGaugeCard: View {
             .font(.caption2.weight(.medium))
             .foregroundStyle(DriveTheme.muted)
 
-            Text("350 V nominal pack × measured HV current. Pack voltage is not read, so this runs high when the pack is low and low when it is full.")
+            Text("\(spec.voltsLabel) nominal pack × measured HV current. Pack voltage is not read, so this runs high when the pack is low and low when it is full.")
                 .font(.caption)
                 .foregroundStyle(DriveTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -177,6 +179,7 @@ struct TorqueCard: View {
     let flow: HVFlowState?
     let peakNm: Double
     let speedKnown: Bool
+    let spec: VehicleSpec
     let units: DriveUnitPreference
 
     @ScaledMetric(relativeTo: .largeTitle) private var digitHeight: CGFloat = 40
@@ -228,7 +231,7 @@ struct TorqueCard: View {
         if torqueNm == nil, speedKnown {
             return "Shows above about 11 km/h (7 mph). At standstill power ÷ speed has no meaning."
         }
-        return "Power × 0.32 m wheel radius ÷ speed. No drivetrain loss, so it reads high in drive and low in regen."
+        return "Power × \(spec.wheelLabel) wheel radius ÷ speed. No drivetrain loss, so it reads high in drive and low in regen."
     }
 }
 

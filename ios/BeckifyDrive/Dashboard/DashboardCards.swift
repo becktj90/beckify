@@ -66,6 +66,8 @@ struct DashboardCardView: View {
             reading(.ambientC, title: "Ambient", symbol: "thermometer.sun.fill", kind: .temperature, caption: "Mode 01 PID 46")
         case .moduleVolts:
             moduleVolts
+        case .remainingLife:
+            reading(.hybridRemainingLifePercent, title: "Battery remaining life", symbol: "heart.text.square", kind: .percent(digits: 0), caption: "SAE PID 015B · hybrid / EV battery remaining life · not state of charge and not a warranty report")
         // EV battery
         case .hvCurrent:
             HVCurrentCard(value: model.value(.hvCurrentAmps), history: model.history(.hvCurrentAmps))
@@ -103,9 +105,9 @@ struct DashboardCardView: View {
                 openAdapter: openAdapter
             )
         case .regenScore:
-            RegenScoreCard(tracker: model.insights.regen)
+            RegenScoreCard(tracker: model.insights.regen, spec: model.spec ?? .bolt)
         case .tripEnergy:
-            TripEnergyCard(ledger: model.insights.energy)
+            TripEnergyCard(ledger: model.insights.energy, spec: model.spec ?? .bolt)
         case .precondition:
             PreconditionCard(pack: model.value(.packTempC), advice: model.preconditionAdvice, units: units)
         case .degradation:

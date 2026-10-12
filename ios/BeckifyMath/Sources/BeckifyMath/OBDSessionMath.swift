@@ -28,12 +28,14 @@ import Foundation
 /// (`DriveEstimates`).
 public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
     case generic
+    case genericEV
     case boltEV
     case boltEUV
 
     public var title: String {
         switch self {
         case .generic: return "Generic OBD"
+        case .genericEV: return "Generic EV"
         case .boltEV: return "Bolt EV"
         case .boltEUV: return "Bolt EUV"
         }
@@ -41,7 +43,7 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
 
     public var usesBoltPIDs: Bool {
         switch self {
-        case .generic: return false
+        case .generic, .genericEV: return false
         case .boltEV, .boltEUV: return true
         }
     }
@@ -50,7 +52,7 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
     /// 2017–2019 Bolt EV is 60 kWh; 2020–2023 Bolt EV and Bolt EUV are 65 kWh.
     public var nominalPackChoicesKWh: [Double] {
         switch self {
-        case .generic: return []
+        case .generic, .genericEV: return []
         case .boltEV: return [60, 65]
         case .boltEUV: return [65]
         }
@@ -60,6 +62,8 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
         switch self {
         case .generic:
             return "SAE J1979 Mode 01 for any ELM327-class car. Fuel level stays fuel level. PID 015B, when the ECU answers, is hybrid battery remaining life — not a state-of-charge gauge."
+        case .genericEV:
+            return "Any EV, standard Mode 01 only: speed, 12 V, ambient, accelerator, and PID 015B battery remaining life when the car answers. No maker-specific PIDs, so no charge, pack, current, or power estimates. Phone sensors and trip work as usual."
         case .boltEV:
             return "2017–2023 Bolt EV. Mode 01 speed and 12 V, plus published displayed SoC, pack temp, capacity, HV current, and motor temp. 60 kWh (2017–2019) or 65 kWh (2020–2023) is a planning assumption you type, not a reading."
         case .boltEUV:
@@ -435,8 +439,22 @@ public enum OBDAdapterHint {
 }
 
 public enum DriveLayout: String, Sendable, Equatable {
+    /// An EV with a published enhanced PID set (charge, pack, current).
     case ev
+    /// An EV on standard Mode 01 only.
+    case evStandard
     case powertrain
+}
+
+extension VehicleProfile {
+    /// Which dashboard this profile gets.
+    public var dashboardLayout: DriveLayout {
+        switch self {
+        case .generic: return .powertrain
+        case .genericEV: return .evStandard
+        case .boltEV, .boltEUV: return .ev
+        }
+    }
 }
 
 public struct DriveTile: Equatable, Sendable, Identifiable {

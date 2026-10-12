@@ -8,6 +8,12 @@ struct DriveInsights {
     var gpsTrip = DriveTripStats()
     var regen = RegenScoreTracker()
     var energy = TripEnergyLedger()
+
+    init(spec: VehicleSpec? = .bolt) {
+        let spec = spec ?? .bolt
+        regen = RegenScoreTracker(massKg: spec.massKg, packVolts: spec.nominalPackVolts)
+        energy = TripEnergyLedger(massKg: spec.massKg, packVolts: spec.nominalPackVolts)
+    }
     var grade = GradeEstimator()
     var gradeSource: AltitudeSource?
     /// Session peaks, for steady gauge scales.
@@ -175,14 +181,19 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
     func resetTrip() {
         trip.reset()
         tripSource = nil
-        insights = DriveInsights()
+        insights = DriveInsights(spec: profile.spec)
         sensors.gForce.clear()
     }
 
     // MARK: Measured reads
 
     var layout: DriveLayout {
-        profile.usesBoltPIDs ? .ev : .powertrain
+        profile.dashboardLayout
+    }
+
+    /// Constants behind the estimates. Nil for profiles without a published PID set.
+    var spec: VehicleSpec? {
+        profile.spec
     }
 
     var isLive: Bool {
@@ -238,7 +249,8 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
     /// Pack power, kW. + drive, − regen. Nil on generic profiles.
     var powerKW: Double? {
         guard layout == .ev else { return nil }
-        return DriveEstimates.packPowerKW(amps: value(.hvCurrentAmps).value)
+        guard let spec else { return nil }
+        return DriveEstimates.packPowerKW(amps: value(.hvCurrentAmps).value, volts: spec.nominalPackVolts)
     }
 
     var flow: HVFlowState? {
@@ -248,7 +260,11 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
 
     /// Wheel torque, N·m, from pack power and OBD speed.
     var torqueNm: Double? {
-        DriveEstimates.wheelTorqueNm(powerKW: powerKW, speedKph: value(.speedKph).value)
+        DriveEstimates.wheelTorqueNm(
+            powerKW: powerKW,
+            speedKph: value(.speedKph).value,
+            radiusMeters: spec?.wheelRadiusMeters ?? DriveEstimates.boltWheelRadiusMeters
+        )
     }
 
     /// Planning range in miles. Needs displayed charge actually read plus both typed inputs.
@@ -277,7 +293,8 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
             baseMiles: planningRangeMiles,
             celsius: weather.temperatureC,
             speedKph: heroSpeed?.kph,
-            headwindMps: headwind
+            headwindMps: headwind,
+            spec: spec ?? .bolt
         )
     }
 
@@ -297,7 +314,7 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
             lastStamp = [:]
             trip.reset()
             tripSource = nil
-            insights = DriveInsights()
+            insights = DriveInsights(spec: session.profile.spec)
         }
         // Samples are stamped when they arrive; keep `now` current so a fresh
         // reply never reads as a future timestamp (which freshness rejects).

@@ -133,6 +133,7 @@ struct WeatherRangeCard: View {
 /// Share of braking energy returned to the pack.
 struct RegenScoreCard: View {
     let tracker: RegenScoreTracker
+    let spec: VehicleSpec
 
     var body: some View {
         let score = tracker.score.map { $0 * 100 }
@@ -146,7 +147,7 @@ struct RegenScoreCard: View {
             estimated: true,
             caption: score == nil
                 ? "Needs a few stops with HV current and speed read. Then: energy back into the pack ÷ motion energy lost slowing down."
-                : "Energy back (350 V × current) ÷ motion energy lost slowing down (1,696 kg assumed). Friction brakes, hills, and drag are not split out.",
+                : "Energy back (\(spec.voltsLabel) × current) ÷ motion energy lost slowing down (\(spec.massLabel) assumed). Friction brakes, hills, and drag are not split out.",
             spokenValue: score.map { "\(Int($0.rounded())) percent" }
         ) {
             if let score {
@@ -162,6 +163,7 @@ struct RegenScoreCard: View {
 /// Trip energy split into driving, climbing, stopped, and regen returned.
 struct TripEnergyCard: View {
     let ledger: TripEnergyLedger
+    let spec: VehicleSpec
 
     private struct Slice: Identifiable {
         let id: String
@@ -217,7 +219,7 @@ struct TripEnergyCard: View {
                     legend("Regen returned", kWh: -ledger.regenKWh, color: DriveTheme.regen)
                 }
             }
-            Text("350 V nominal × measured current, integrated. Climbing is m·g·Δh at 1,696 kg. Climate and battery conditioning cannot be told apart, so they share the stopped bucket; the same draw while moving counts as driving.")
+            Text("\(spec.voltsLabel) nominal × measured current, integrated. Climbing is m·g·Δh at \(spec.massLabel). Climate and battery conditioning cannot be told apart, so they share the stopped bucket; the same draw while moving counts as driving.")
                 .font(.caption)
                 .foregroundStyle(DriveTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)

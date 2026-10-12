@@ -157,6 +157,7 @@ enum DashboardScenario: String, CaseIterable {
     case boltRegen
     case boltPartial
     case iceGeneric
+    case genericEV
     case boltLight
 
     var title: String {
@@ -168,6 +169,7 @@ enum DashboardScenario: String, CaseIterable {
         case .boltRegen: return "Bolt EV · regen"
         case .boltPartial: return "Bolt EV · partial replies"
         case .iceGeneric: return "ICE generic"
+        case .genericEV: return "Generic EV · standard PIDs"
         case .boltLight: return "Bolt EV · light"
         }
     }
@@ -181,12 +183,36 @@ enum DashboardScenario: String, CaseIterable {
         case .boltRegen: return AnyView(DashboardScenarioViews.boltRegen())
         case .boltPartial: return AnyView(DashboardScenarioViews.boltPartial())
         case .iceGeneric: return AnyView(DashboardScenarioViews.iceGeneric())
+        case .genericEV: return AnyView(DashboardScenarioViews.genericEV())
         case .boltLight: return AnyView(DashboardScenarioViews.boltLight())
         }
     }
 }
 
 enum DashboardScenarioViews {
+    /// Any EV on standard Mode 01: no charge, current, or estimates.
+    static func genericEV() -> some View {
+        DashboardView(
+            model: DashboardFixtures.model(
+                profile: .genericEV,
+                book: DashboardFixtures.book([
+                    .speedKph: 88, .moduleVolts: 14.3, .ambientC: 9,
+                    .hybridRemainingLifePercent: 94, .acceleratorPercent: 18,
+                ]),
+                histories: DashboardFixtures.histories([
+                    .moduleVolts: { 14.3 + 0.03 * sin($0 / 3) },
+                    .ambientC: { _ in 9 },
+                    .hybridRemainingLifePercent: { _ in 94 },
+                ]),
+                live: true,
+                trip: DashboardFixtures.trip(minutes: 18, kph: 84),
+                tripSource: .obd,
+                sensors: DashboardFixtures.drivingSensors
+            ),
+            preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
+        )
+    }
+
     static func noAdapter() -> some View {
     var sensors = PhoneSensorStore.PreviewValues()
     sensors.locationAccess = .denied
@@ -391,6 +417,10 @@ enum DashboardScenarioViews {
 
 #Preview("ICE generic") {
     DashboardScenario.iceGeneric.view
+}
+
+#Preview("Generic EV · standard PIDs") {
+    DashboardScenario.genericEV.view
 }
 
 #Preview("Bolt EV · light") {

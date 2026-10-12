@@ -34,7 +34,7 @@ public enum DashboardSection: String, CaseIterable, Sendable {
 
     public static func sections(for layout: DriveLayout) -> [DashboardSection] {
         switch layout {
-        case .powertrain: return [.vehicle, .phone]
+        case .powertrain, .evStandard: return [.vehicle, .phone]
         case .ev: return [.battery, .motor, .powerElectronics, .energy, .phone]
         }
     }
@@ -49,6 +49,8 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
     case fuel
     case ambient
     case moduleVolts
+    /// PID 015B, hybrid/EV battery remaining life (not state of charge).
+    case remainingLife
     // EV battery
     case hvCurrent
     case packTemp
@@ -87,6 +89,7 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
         case .fuel: return "Fuel level"
         case .ambient: return "Ambient"
         case .moduleVolts: return "12 V bus"
+        case .remainingLife: return "Battery remaining life"
         case .hvCurrent: return "HV current"
         case .packTemp: return "Pack temp"
         case .capacity: return "Capacity"
@@ -117,10 +120,14 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
     /// The section this card sits in for a given layout, or nil when it is not shown there.
     public func section(for layout: DriveLayout) -> DashboardSection? {
         switch self {
-        case .coolant, .engineLoad, .throttle, .fuel, .ambient:
+        case .coolant, .engineLoad, .throttle, .fuel:
             return layout == .powertrain ? .vehicle : nil
+        case .ambient:
+            return layout == .ev ? nil : .vehicle
+        case .remainingLife:
+            return layout == .ev ? nil : .vehicle
         case .moduleVolts:
-            return layout == .powertrain ? .vehicle : .powerElectronics
+            return layout == .ev ? .powerElectronics : .vehicle
         case .hvCurrent, .packTemp, .capacity, .remainingLifeHD, .planningRange:
             return layout == .ev ? .battery : nil
         case .motorTemp, .driveState:
