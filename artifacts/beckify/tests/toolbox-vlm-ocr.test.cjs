@@ -49,10 +49,8 @@ assert.ok(api);
 assert.equal(api.TASK_NAMEPLATE, 'nameplate');
 assert.equal(api.TASK_PANEL, 'panel');
 assert.equal(api.TASK_TDR, 'tdr');
-assert.equal(api.TASK_LOOK, 'look');
 assert.equal(typeof api.analyzePanelDirectory, 'function');
 assert.equal(typeof api.analyzeTdr, 'function');
-assert.equal(typeof api.analyzeLook, 'function');
 
 assert.equal(api.httpsBase('http://evil.example'), '');
 assert.equal(api.httpsBase('https://api.beckify.com/'), 'https://api.beckify.com');
@@ -96,7 +94,6 @@ assert.equal(cfg.ready, true);
 assert.equal(api.endpointFor(cfg, 'nameplate'), 'https://proxy.example/ocr');
 assert.equal(api.endpointFor(cfg, 'panel'), 'https://proxy.example/ocr');
 assert.equal(api.endpointFor(cfg, 'tdr'), 'https://proxy.example/ocr');
-assert.equal(api.endpointFor(cfg, 'look'), 'https://proxy.example/ocr');
 
 api.saveSettings({ endpoint: '', token: '' });
 sandbox.BECKIFY_API_BASE_URL = 'https://api.beckify.com';
@@ -105,7 +102,6 @@ assert.equal(cfg.mode, 'proxy');
 assert.equal(api.endpointFor(cfg, 'nameplate'), 'https://api.beckify.com/api/analyze-nameplate');
 assert.equal(api.endpointFor(cfg, 'panel'), 'https://api.beckify.com/api/analyze-panel');
 assert.equal(api.endpointFor(cfg, 'tdr'), 'https://api.beckify.com/api/analyze-tdr');
-assert.equal(api.endpointFor(cfg, 'look'), 'https://api.beckify.com/api/analyze-look');
 assert.equal(api.shouldUpload(false), false);
 
 const vlmDraft = api.analyzePayload({
@@ -248,108 +244,9 @@ sandbox.BECKIFY_API_BASE_URL = '';
   const meta = api.panelMetaFromDraft({ panel: { name: { value: 'PANEL BLT 11' }, voltage: { value: '208/120V' } } });
   assert.equal(meta.panelName, 'PANEL BLT 11');
 
-  const lookGood = api.normalizeLookDraft({
-    verdict: 'looks_good',
-    score: 88.4,
-    headline: 'Strong light',
-    summary: 'You look sharp in this frame.',
-    roast: '  Chin up like you billed overtime for that jawline.  ',
-    metrics: { lighting: 90.2, framing: 70, expression: 84, sharpness: 88 },
-    reasons: ['Even light'],
-    fixes: ['Smile'],
-  });
-  assert.equal(lookGood.task, 'look');
-  assert.equal(lookGood.verdict, 'looks_good');
-  assert.equal(lookGood.score, 88);
-  assert.equal(lookGood.lookScore, 9); // fallback from 88
-  assert.equal(lookGood.summary, 'You look sharp in this frame.');
-  assert.equal(lookGood.roast, 'Chin up like you billed overtime for that jawline.');
-  assert.equal(lookGood.metrics.lighting, 90);
-  assert.equal(lookGood.metrics.overall, 88);
-  const lookDeclined = api.normalizeLookDraft({
-    verdict: 'declined',
-    score: 12,
-    headline: 'No',
-    roast: 'should be stripped',
-    metrics: { lighting: 80, overall: 90 },
-  });
-  assert.equal(lookDeclined.verdict, 'declined');
-  assert.equal(lookDeclined.score, null);
-  assert.equal(lookDeclined.metrics.lighting, null);
-  assert.equal(lookDeclined.metrics.overall, null);
-  assert.equal(lookDeclined.roast, '');
-  assert.equal(lookDeclined.lookScore, null);
-  const lookRoastAbsent = api.normalizeLookDraft({
-    verdict: 'looks_good',
-    score: 80,
-  });
-  assert.equal(lookRoastAbsent.roast, '');
-  assert.equal(lookRoastAbsent.lookScore, null);
-  const lookNoPersonRoast = api.normalizeLookDraft({
-    verdict: 'no_person',
-    score: 55,
-    roast: 'nope',
-    lookScore: 4,
-  });
-  assert.equal(lookNoPersonRoast.roast, '');
-  assert.equal(lookNoPersonRoast.lookScore, null);
-  const lookExplicit = api.normalizeLookDraft({
-    verdict: 'mixed',
-    score: 61,
-    lookScore: 7,
-    roast: 'Lighting said maybe.',
-  });
-  assert.equal(lookExplicit.lookScore, 7);
-  const lookUnknown = api.analyzePayload({ verdict: 'amazing', score: 200 }, 'look');
-  assert.equal(lookUnknown.verdict, 'mixed');
-  assert.equal(lookUnknown.score, 100);
-
-  assert.equal(api.asLookScore(null), null);
-  assert.equal(api.asLookScore(''), null);
-  assert.equal(api.asLookScore('  '), null);
-  assert.equal(api.asLookScore(0), 0);
-  const lookNullMetrics = api.normalizeLookDraft({
-    verdict: 'looks_good',
-    score: 88,
-    metrics: { lighting: null, framing: 70, expression: null, sharpness: 88 },
-  });
-  assert.equal(lookNullMetrics.metrics.lighting, null);
-  assert.equal(lookNullMetrics.metrics.expression, null);
-  assert.equal(lookNullMetrics.metrics.framing, 70);
-  assert.equal(lookNullMetrics.metrics.overall, 88);
-
-  assert.match(html, /id="sec-look-check"/);
-  assert.match(html, /Analyze Look/);
-  assert.match(html, /id="look-camera-input"[^>]*capture="user"/);
-  assert.match(html, /id="look-summary"/);
-  assert.match(html, /id="look-roast"/);
-  assert.match(html, /look-roast-label">Roast</);
-  assert.match(html, /id="look-look-score-wrap"/);
-  assert.match(html, /id="look-look-score"/);
-  assert.match(html, /Look score/);
-  assert.match(html, /id="look-metrics"/);
-  assert.match(html, /js\/look-check\.js/);
   assert.match(html, /id="tdr_privacy"/);
-  const lookJs = fs.readFileSync(path.join(root, 'look-check.js'), 'utf8');
-  assert.match(lookJs, /12 \* 1024 \* 1024/);
-  assert.match(lookJs, /lookRevealLookScore/);
-  assert.match(lookJs, /lookScoreVisible/);
-  assert.match(lookJs, /look-look-score/);
-  assert.match(lookJs, /onended/);
-  assert.match(lookJs, /lookUnlockPlayback/);
-  assert.match(lookJs, /decodeAudioData/);
-  assert.match(lookJs, /lookReleaseKeepAlive/);
-  assert.match(lookJs, /does not upload/);
-  assert.match(lookJs, /analyzeLook/);
-  assert.match(lookJs, /\/api\/analyze-look/);
-  assert.match(lookJs, /beckify-api-base-url/);
-  assert.match(lookJs, /lookFormatHttpError/);
-  assert.match(lookJs, /api\.beckify\.com/);
-  assert.match(lookJs, /stale or missing \/api\/analyze-look/);
-  assert.match(lookJs, /lookHostIsGitHubPages/);
-  assert.match(lookJs, /lookIsImageFile/);
   assert.match(
-    api.formatVisionError(api.VisionHttpError('Cannot POST /api/analyze-look', 404)),
+    api.formatVisionError(api.VisionHttpError('Cannot POST /api/analyze-nameplate', 404)),
     /stale or missing/,
   );
   assert.doesNotMatch(
@@ -357,48 +254,13 @@ sandbox.BECKIFY_API_BASE_URL = '';
     /GitHub Pages/,
   );
   assert.match(
-    api.formatVisionError(api.VisionHttpError('Method Not Allowed', 405, 0, 'https://beckify.com/api/analyze-look')),
+    api.formatVisionError(api.VisionHttpError('Method Not Allowed', 405, 0, 'https://beckify.com/api/analyze-nameplate')),
     /GitHub Pages/,
   );
   assert.match(
     api.formatVisionError(api.VisionHttpError('', 503)),
     /not configured/,
   );
-  assert.equal(typeof api.formatLookError, 'function');
-  assert.match(
-    api.formatLookError(api.VisionHttpError('', 429, 120)),
-    /Too many look checks/i,
-  );
-  assert.doesNotMatch(
-    api.formatLookError(api.VisionHttpError('', 429, 120)),
-    /\bAI\b|OCR/i,
-  );
-  assert.doesNotMatch(
-    api.formatLookError(api.VisionHttpError('', 413)),
-    /\bAI\b|OCR/i,
-  );
-  assert.match(lookJs, /Never pipe shared VLM/);
-  assert.doesNotMatch(lookJs, /onProgress:[\s\S]{0,80}label\)/);
-  assert.match(html, /Photo assessment stays honest/);
-  assert.match(lookJs, /look-camera/);
-  assert.match(lookJs, /lookRenderMetrics/);
-  assert.match(lookJs, /lookCopyLine/);
-  assert.match(lookJs, /Roast:/);
-  const lookPrompt = fs.readFileSync(path.join(__dirname, '..', '..', 'api-server', 'src', 'prompts', 'lookVisionPrompt.ts'), 'utf8');
-  assert.match(lookPrompt, /"roast"/);
-  assert.match(lookPrompt, /BroGPT/);
-  assert.match(lookPrompt, /LookRoastMode/);
-  assert.match(lookPrompt, /parseLookRoastMode/);
-  assert.match(lookPrompt, /"mean"/);
-  assert.match(lookPrompt, /"nice"/);
-  assert.match(lookPrompt, /4–6 spoken sentences|several sentences/);
-  assert.match(lookPrompt, /lookScore/);
-  assert.match(lookPrompt, /under 18/);
-  assert.match(lookPrompt, /No sexual or graphic content/);
-  assert.match(lookPrompt, /never hate speech/);
-  assert.doesNotMatch(lookPrompt, /Never be cruel/);
-  assert.doesNotMatch(lookPrompt, /Prefer kind-honest/);
-  assert.match(html, /look-verdict-card\[hidden\]/);
   const tdrJs = fs.readFileSync(path.join(root, 'tdr-analyzer.js'), 'utf8');
   assert.match(tdrJs, /prepareUploadDataUrl/);
   const schema = sandbox.__nameplateSchemaTestApi;

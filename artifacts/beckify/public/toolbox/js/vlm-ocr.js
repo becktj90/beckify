@@ -10,11 +10,11 @@
 
      1. Custom HTTPS URL in the tool settings (optional Bearer token is kept
         in sessionStorage only — never localStorage, never sent to Beckify).
-        POST { imageBase64, mimeType, task: "nameplate"|"panel"|"tdr"|"look" }
+        POST { imageBase64, mimeType, task: "nameplate"|"panel"|"tdr" }
 
      2. Beckify proxy placeholder: <meta name="beckify-api-base-url"> or
         window.BECKIFY_API_BASE_URL (deploy injects TDR_API_BASE_URL here).
-        HTTPS only. POST {base}/api/analyze-nameplate, /api/analyze-panel, /api/analyze-tdr, or /api/analyze-look
+        HTTPS only. POST {base}/api/analyze-nameplate, /api/analyze-panel, or /api/analyze-tdr
         Server env: OPENAI_API_KEY or ANTHROPIC_API_KEY
         Optional: NAMEPLATE_VISION_PROVIDER, NAMEPLATE_VISION_MODEL
 
@@ -29,7 +29,6 @@
   var TASK_NAMEPLATE = 'nameplate';
   var TASK_PANEL = 'panel';
   var TASK_TDR = 'tdr';
-  var TASK_LOOK = 'look';
   var MAX_BYTES = 8 * 1024 * 1024;
   var MAX_UPLOAD_EDGE = 2048;
   var PROXY_DOWNSTREAM_NOTE = 'The Beckify proxy may forward the photo to OpenAI and/or Anthropic.';
@@ -139,7 +138,6 @@
     var suffix = '/api/analyze-nameplate';
     if (task === TASK_PANEL) suffix = '/api/analyze-panel';
     else if (task === TASK_TDR) suffix = '/api/analyze-tdr';
-    else if (task === TASK_LOOK) suffix = '/api/analyze-look';
     if (config.mode === 'custom') return config.customUrl;
     if (config.mode === 'proxy') return config.proxyUrl + suffix;
     return '';
@@ -314,111 +312,12 @@
     return err.message || 'Vision request failed.';
   }
 
-  /** Look Check UI must never show the word AI (or on-device OCR). Shared VLM errors stay OCR-flavored. */
-  function formatLookError(err) {
-    if (!err) return 'Look check failed.';
-    var status = err.status || 0;
-    if (status === 429) {
-      var wait = err.retryAfter;
-      if (wait >= 60) return 'Too many look checks. Try again in about ' + Math.ceil(wait / 60) + ' min.';
-      if (wait > 0) return 'Too many look checks. Try again in ' + wait + ' s.';
-      return 'Too many look checks right now. Wait a few minutes.';
-    }
-    if (status === 413) return err.message || 'The photo is too large for Analyze Look (8 MB after JPEG encode).';
-    if (status === 504) return 'The look check timed out. Please try again.';
-    if (status === 404 || status === 405) {
-      if (hostIsGitHubPages(err.url)) {
-        return 'The Beckify look-check API is unavailable (HTTP ' + status + '). GitHub Pages cannot accept Analyze Look. Use https://api.beckify.com or a custom HTTPS endpoint.';
-      }
-      return 'The Beckify look-check API is unavailable (HTTP ' + status + '). A stale or missing /api/analyze-look route also returns this. Use https://api.beckify.com or a custom HTTPS endpoint.';
-    }
-    if (status === 503) return err.message || 'The Beckify look-check API is not configured (missing provider key).';
-    return err.message || 'Look check failed.';
-  }
-
   function knownTask(task) {
-    if (task === TASK_PANEL || task === TASK_TDR || task === TASK_LOOK) return task;
+    if (task === TASK_PANEL || task === TASK_TDR) return task;
     return TASK_NAMEPLATE;
   }
 
-  function asLookScore(value) {
-    if (value == null || value === '') return null;
-    if (typeof value === 'string' && !String(value).trim()) return null;
-    var n = Number(value);
-    if (!Number.isFinite(n)) return null;
-    return Math.max(0, Math.min(100, Math.round(n)));
-  }
-
-  function asTenLookScore(value) {
-    if (value == null || value === '') return null;
-    if (typeof value === 'string' && !String(value).trim()) return null;
-    var n = Number(value);
-    if (!Number.isFinite(n)) return null;
-    return Math.max(1, Math.min(10, Math.round(n)));
-  }
-
-  function lookScoreFromPhotoScore(score) {
-    if (score == null) return null;
-    return Math.max(1, Math.min(10, Math.round(score / 10)));
-  }
-
-  function normalizeLookMetrics(raw, overallScore, verdict) {
-    var src = raw && typeof raw === 'object' ? (raw.metrics || raw) : {};
-    var metrics = {
-      lighting: asLookScore(src.lighting),
-      framing: asLookScore(src.framing),
-      expression: asLookScore(src.expression),
-      sharpness: asLookScore(src.sharpness != null ? src.sharpness : src.focus),
-      outfit: asLookScore(src.outfit),
-      overall: asLookScore(src.overall),
-    };
-    if (metrics.overall == null) metrics.overall = overallScore;
-    if (verdict === 'declined') {
-      return { lighting: null, framing: null, expression: null, sharpness: null, outfit: null, overall: null };
-    }
-    if (verdict === 'no_person') metrics.expression = null;
-    return metrics;
-  }
-
-  function normalizeLookRoast(raw, verdict) {
-    if (verdict === 'declined' || verdict === 'no_person') return '';
-    return String((raw && raw.roast) || '').trim();
-  }
-
-  function normalizeLookDraft(raw) {
-    var allowed = { looks_good: 1, mixed: 1, looks_bad: 1, no_person: 1, declined: 1 };
-    var verdict = String((raw && raw.verdict) || '').toLowerCase();
-    if (!allowed[verdict]) verdict = 'mixed';
-    var score = asLookScore(raw && raw.score);
-    if (verdict === 'declined') score = null;
-    var summary = String((raw && (raw.summary || raw.brief)) || '').trim();
-    if (verdict === 'declined' && !summary) summary = String((raw && raw.headline) || '').trim();
-    var roast = normalizeLookRoast(raw, verdict);
-    var lookScore = null;
-    if (roast) {
-      lookScore = asTenLookScore(raw && (raw.lookScore != null ? raw.lookScore : raw.look_score));
-      if (lookScore == null) lookScore = lookScoreFromPhotoScore(score);
-    }
-    return {
-      task: TASK_LOOK,
-      verdict: verdict,
-      score: score,
-      lookScore: lookScore,
-      headline: String((raw && raw.headline) || ''),
-      summary: summary,
-      roast: roast,
-      metrics: normalizeLookMetrics(raw, score, verdict),
-      reasons: Array.isArray(raw && raw.reasons) ? raw.reasons.map(String) : [],
-      fixes: Array.isArray(raw && raw.fixes) ? raw.fixes.map(String) : [],
-      photoNotes: Array.isArray(raw && (raw.photoNotes || raw.photo_notes))
-        ? (raw.photoNotes || raw.photo_notes).map(String)
-        : [],
-      warnings: Array.isArray(raw && raw.warnings) ? raw.warnings.map(String) : [],
-    };
-  }
-
   function analyzePayload(payload, task, source, rawFallback) {
-    if (task === TASK_LOOK) return normalizeLookDraft(payload);
     if (task === TASK_TDR) return payload || {};
     var Schema = schema();
     if (!Schema) throw new Error('Nameplate schema helper did not load.');
@@ -470,17 +369,12 @@
   function analyze(file, opts) {
     opts = opts || {};
     var task = knownTask(opts.task);
-    var isLook = task === TASK_LOOK;
     var config = resolveConfig(opts.enhanceOn);
     if (!opts.enhanceOn) {
-      return Promise.reject(new Error(isLook
-        ? 'Look check needs Analyze enabled.'
-        : 'AI enhance is off. On-device OCR will be used instead.'));
+      return Promise.reject(new Error('AI enhance is off. On-device OCR will be used instead.'));
     }
     if (!config.ready) {
-      return Promise.reject(new Error(isLook
-        ? 'No HTTPS look-check endpoint is configured. Set a custom endpoint or use the Beckify API.'
-        : 'AI enhance is on but no HTTPS endpoint is configured. Use on-device OCR or set a VLM endpoint.'));
+      return Promise.reject(new Error('AI enhance is on but no HTTPS endpoint is configured. Use on-device OCR or set a VLM endpoint.'));
     }
     var url = endpointFor(config, task);
     var lastProgress = 0;
@@ -490,23 +384,21 @@
       lastProgress = next;
       onProgress(next, status || '');
     }
-    // Look Check must never surface shared OCR "AI enhance / AI draft" copy into #look-status.
-    report(0.15, isLook ? 'Preparing photo…' : 'Preparing photo for optional AI enhance…');
+    report(0.15, 'Preparing photo for optional AI enhance…');
     return prepareUploadDataUrl(file).then(function (dataUrl) {
-      report(0.4, isLook ? 'Sending upright photo…' : 'Uploading photo for optional AI enhance…');
+      report(0.4, 'Uploading photo for optional AI enhance…');
       var body = {
         imageBase64: dataUrl,
         mimeType: uploadMimeType(dataUrl, 'image/jpeg'),
         task: task,
       };
       if (task === TASK_PANEL && opts.view) body.view = String(opts.view);
-      if (isLook && opts.roastMode) body.roastMode = String(opts.roastMode);
       var token = config.mode === 'custom' ? config.token : '';
       return postVision(url, body, token).then(function (payload) {
-        report(0.85, isLook ? 'Reading the verdict…' : 'Reading AI draft…');
+        report(0.85, 'Reading AI draft…');
         var analysis = visionDraftInput(payload);
         var draft = analyzePayload(analysis, task, 'vlm-' + config.mode, payload.raw_ocr || analysis.raw_ocr);
-        report(1, isLook ? 'Look check ready.' : 'AI draft ready. Review every field.');
+        report(1, 'AI draft ready. Review every field.');
         return {
           task: task,
           draft: draft,
@@ -516,7 +408,7 @@
           model: payload.model || '',
         };
       }).catch(function (err) {
-        err.message = isLook ? formatLookError(err) : formatVisionError(err);
+        err.message = formatVisionError(err);
         throw err;
       });
     });
@@ -586,11 +478,6 @@
     return analyze(file, next);
   }
 
-  function analyzeLook(file, opts) {
-    var next = Object.assign({}, opts || {}, { task: TASK_LOOK, enhanceOn: true });
-    return analyze(file, next);
-  }
-
   function rowsFromPanelDraft(draft, makeRow) {
     var create = typeof makeRow === 'function' ? makeRow : function () { return {}; };
     return ((draft && draft.rows) || []).map(function (cell) {
@@ -642,7 +529,6 @@
     TASK_NAMEPLATE: TASK_NAMEPLATE,
     TASK_PANEL: TASK_PANEL,
     TASK_TDR: TASK_TDR,
-    TASK_LOOK: TASK_LOOK,
     MAX_BYTES: MAX_BYTES,
     loadSettings: loadSettings,
     saveSettings: saveSettings,
@@ -657,16 +543,9 @@
     analyzeNameplate: analyzeNameplate,
     analyzePanelDirectory: analyzePanelDirectory,
     analyzeTdr: analyzeTdr,
-    analyzeLook: analyzeLook,
-    normalizeLookDraft: normalizeLookDraft,
-    normalizeLookRoast: normalizeLookRoast,
-    asLookScore: asLookScore,
-    asTenLookScore: asTenLookScore,
-    lookScoreFromPhotoScore: lookScoreFromPhotoScore,
     extractJsonObject: extractJsonObject,
     safeExtractJsonObject: safeExtractJsonObject,
     formatVisionError: formatVisionError,
-    formatLookError: formatLookError,
     VisionHttpError: VisionHttpError,
     analyzePayload: analyzePayload,
     prepareUploadDataUrl: prepareUploadDataUrl,
