@@ -7,7 +7,6 @@ import {
   clientKeyFromAddress,
   isRetryableProviderStatus,
   refundBudget,
-  textMaxOutputTokens,
   visionMaxOutputTokens,
   withRetries,
 } from "./usageBudget.js";
@@ -45,7 +44,6 @@ export class MissingProviderKeyError extends Error {
 }
 
 export const VISION_POST_PATHS = [
-  "/api/analyze-look",
   "/api/analyze-nameplate",
   "/api/analyze-panel",
   "/api/analyze-tdr",
@@ -96,7 +94,7 @@ export function getClientKey(req: Request): string {
 
 const sharedAnalyzeBurst = new Map<string, { inFlight: number }>();
 
-/** One in-flight cap for every analyze route, so look+panel cannot stack. */
+/** One in-flight cap for every analyze route, so nameplate+panel cannot stack. */
 export function tryAcquireSharedAnalyzeBurst(
   clientKey: string,
   maxInFlight = MAX_IN_FLIGHT_PER_CLIENT,
@@ -356,96 +354,6 @@ async function fetchJsonWithTimeout<T>(
 function cappedOutputTokens(requested: number | undefined, cap: number): number {
   const value = typeof requested === "number" && requested > 0 ? requested : cap;
   return Math.min(value, cap);
-}
-
-/** Text-only JSON completion — used for Look Check comedy after assessment is frozen. */
-export async function analyzeTextWithOpenAI(args: {
-  model: string;
-  system: string;
-  userText: string;
-  maxTokens?: number;
-  timeoutMs?: number;
-  temperature?: number;
-}): Promise<unknown> {
-  const apiKey = process.env["OPENAI_API_KEY"];
-  if (!apiKey) throw new MissingProviderKeyError("OPENAI_API_KEY");
-
-  const temperature = typeof args.temperature === "number" && Number.isFinite(args.temperature)
-    ? Math.max(0, Math.min(2, args.temperature))
-    : 0;
-
-  const body: Record<string, unknown> = {
-    model: args.model,
-    temperature,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: args.system },
-      { role: "user", content: args.userText },
-    ],
-  };
-  body.max_tokens = cappedOutputTokens(args.maxTokens, textMaxOutputTokens());
-
-  const { ok, status, payload } = await fetchJsonWithTimeout<{
-    choices?: Array<{ finish_reason?: string | null; message?: { content?: string | null } }>;
-    error?: { message?: string };
-  }>("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  }, args.timeoutMs);
-
-  if (!ok) throw new Error(payload.error?.message || `OpenAI request failed with HTTP ${status}.`);
-  assertNotTruncated(payload.choices?.[0]?.finish_reason);
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content) throw new Error("OpenAI returned no analysis content.");
-  return extractJsonObject(content);
-}
-
-export async function analyzeTextWithAnthropic(args: {
-  model: string;
-  system: string;
-  userText: string;
-  maxTokens?: number;
-  timeoutMs?: number;
-  temperature?: number;
-}): Promise<unknown> {
-  const apiKey = process.env["ANTHROPIC_API_KEY"];
-  if (!apiKey) throw new MissingProviderKeyError("ANTHROPIC_API_KEY");
-
-  const temperature = typeof args.temperature === "number" && Number.isFinite(args.temperature)
-    ? Math.max(0, Math.min(1, args.temperature))
-    : 0;
-
-  const { ok, status, payload } = await fetchJsonWithTimeout<{
-    content?: Array<{ text?: string }>;
-    stop_reason?: string | null;
-    error?: { message?: string };
-  }>("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: args.model,
-      max_tokens: cappedOutputTokens(args.maxTokens, textMaxOutputTokens()),
-      temperature,
-      system: args.system,
-      messages: [
-        { role: "user", content: args.userText },
-      ],
-    }),
-  }, args.timeoutMs);
-
-  if (!ok) throw new Error(payload.error?.message || `Anthropic request failed with HTTP ${status}.`);
-  assertNotTruncated(payload.stop_reason);
-  const content = payload.content?.find((part) => typeof part.text === "string")?.text;
-  if (!content) throw new Error("Anthropic returned no analysis content.");
-  return extractJsonObject(content);
 }
 
 export function pickImage(body: { base64Image?: string; imageBase64?: string; image?: string; mimeType?: string; provider?: unknown; model?: unknown; }):
