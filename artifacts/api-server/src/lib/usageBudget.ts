@@ -17,13 +17,13 @@ type WindowBucket = { units: number; resetAt: number };
 const windows = new Map<string, WindowBucket>();
 
 const DEFAULT_LIMITS: Record<AIBudgetKind, { env: string; limit: number }> = {
-  /** Shared image analyses (look, nameplate, panel, TDR) per client per window. */
+  /** Shared image analyses (nameplate, panel, TDR) per client per window. */
   vision: { env: "AI_BUDGET_VISION", limit: 5 },
   /** ElevenLabs characters accepted per client per window. */
   eleven: { env: "AI_BUDGET_ELEVEN_CHARS", limit: 8_000 },
   /** OpenAI speech requests per client per window. Toolbox math is not metered. */
   openai: { env: "AI_BUDGET_OPENAI", limit: 20 },
-  /** Text completions (translate, review, look comedy) per client per window. */
+  /** Text completions (translate, review) per client per window. */
   text: { env: "AI_BUDGET_TEXT", limit: 30 },
 };
 

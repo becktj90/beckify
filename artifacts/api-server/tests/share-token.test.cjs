@@ -54,7 +54,7 @@ assert.equal(share.verifyShareToken(forged, secret), null);
 assert.equal(share.verifyShareToken(token, "another-secret-value"), null);
 assert.equal(share.verifyShareToken("not-a-token", secret), null);
 
-assert.equal(share.validateShareInput({ tool: "look-check", contractor: "A", fields: [{ label: "A", value: "B" }] }).ok, false);
+assert.equal(share.validateShareInput({ tool: "photo-check", contractor: "A", fields: [{ label: "A", value: "B" }] }).ok, false);
 assert.equal(share.validateShareInput({ tool: "conduit-fill", contractor: "", fields: [{ label: "A", value: "B" }] }).ok, false);
 assert.equal(share.validateShareInput({
   tool: "conduit-fill",

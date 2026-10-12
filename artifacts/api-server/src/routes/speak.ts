@@ -10,13 +10,9 @@ import {
   normalizeSpeakLanguage,
   BODIE_ELEVEN_VOICE_SETTINGS,
   BODIE_HALE_VOICE_ID,
-  CASSIAN_ELEVEN_VOICE_SETTINGS,
-  CASSIAN_VALE_SEED,
-  CASSIAN_VALE_VOICE_ID,
   CREW_TALK_ELEVEN_VOICES,
   JUNIE_ELEVEN_VOICE_SETTINGS,
   JUNIE_PELL_VOICE_ID,
-  LOOK_CHECK_SPEAK_MAX_CHARS,
   SLOANE_MERRITT_SEED,
   resolveElevenLabsModel,
   resolveElevenLabsVoiceId,
@@ -42,7 +38,7 @@ interface SpeakBody {
   mode?: unknown;
   /** OpenAI voice-mode alias when it is a string. Numeric ElevenLabs style is ignored. */
   style?: unknown;
-  /** Ignored. ElevenLabs stability is server-side for Bodie, Junie, and Cassian. */
+  /** Ignored. ElevenLabs stability is server-side for Bodie and Junie. */
   stability?: unknown;
   /** Ignored. */
   similarity_boost?: unknown;
@@ -50,7 +46,7 @@ interface SpeakBody {
   similarityBoost?: unknown;
   /** Ignored. */
   speed?: unknown;
-  /** Ignored. Seed is server-side for Cassian and Sloane only. */
+  /** Ignored. Seed is server-side for Sloane only. */
   seed?: unknown;
 }
 
@@ -87,7 +83,7 @@ router.post("/speak", async (req, res) => {
   const text = pickText(body);
   if (!text) {
     return res.status(400).json({
-      error: "Provide text in `text`, `input`, or `translation` (1–500 characters, or up to 900 for a Look Check roast).",
+      error: "Provide text in `text`, `input`, or `translation` (1–500 characters).",
     });
   }
 
@@ -111,10 +107,9 @@ router.post("/speak", async (req, res) => {
     model = rawModel || process.env["TTS_MODEL"] || SPEAK_DEFAULT_MODEL;
   }
 
-  const maxChars = voice === CASSIAN_VALE_VOICE_ID ? LOOK_CHECK_SPEAK_MAX_CHARS : SPEAK_MAX_INPUT_CHARS;
-  if (text.length > maxChars) {
+  if (text.length > SPEAK_MAX_INPUT_CHARS) {
     return res.status(413).json({
-      error: `Text must be ${maxChars} characters or fewer.`,
+      error: `Text must be ${SPEAK_MAX_INPUT_CHARS} characters or fewer.`,
     });
   }
 
@@ -303,7 +298,7 @@ async function synthesizeElevenLabs(
 
 
 /**
- * Bodie, Junie, and Cassian presets stay server-side.
+ * Bodie and Junie presets stay server-side.
  * Client stability, similarity, style, and speed are ignored.
  * Other allowlisted voices use the provider default.
  */
@@ -312,9 +307,7 @@ function elevenVoiceSettings(voiceId: string): Record<string, number | boolean> 
     ? BODIE_ELEVEN_VOICE_SETTINGS
     : voiceId === JUNIE_PELL_VOICE_ID
       ? JUNIE_ELEVEN_VOICE_SETTINGS
-      : voiceId === CASSIAN_VALE_VOICE_ID
-        ? CASSIAN_ELEVEN_VOICE_SETTINGS
-        : undefined;
+      : undefined;
   if (!preset) return undefined;
   return {
     stability: preset.stability,
@@ -325,9 +318,8 @@ function elevenVoiceSettings(voiceId: string): Record<string, number | boolean> 
   };
 }
 
-/** Seed only for Cassian (60606) and Sloane (50505). Client seed is ignored. */
+/** Seed only for Sloane (50505). Client seed is ignored. */
 function pickSpeakSeed(voiceId: string): number | undefined {
-  if (voiceId === CASSIAN_VALE_VOICE_ID) return CASSIAN_VALE_SEED;
   if (voiceId === CREW_TALK_ELEVEN_VOICES.sloaneMerritt) return SLOANE_MERRITT_SEED;
   return undefined;
 }

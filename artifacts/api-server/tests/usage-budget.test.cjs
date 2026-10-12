@@ -103,20 +103,23 @@ async function main() {
   const translate = fs.readFileSync(path.join(src, "routes", "translate.ts"), "utf8");
   const review = fs.readFileSync(path.join(src, "routes", "review-calculation.ts"), "utf8");
   const vision = fs.readFileSync(path.join(src, "lib", "visionClient.ts"), "utf8");
-  const look = fs.readFileSync(path.join(src, "routes", "analyze-look.ts"), "utf8");
+  const nameplate = fs.readFileSync(path.join(src, "routes", "analyze-nameplate.ts"), "utf8");
+  const panel = fs.readFileSync(path.join(src, "routes", "analyze-panel.ts"), "utf8");
   const tdr = fs.readFileSync(path.join(src, "routes", "analyze-tdr.ts"), "utf8");
   const prompt = fs.readFileSync(path.join(src, "prompts", "speakPrompt.ts"), "utf8");
   assert.match(speak, /MAX_REQUESTS_PER_WINDOW = 20/);
   assert.match(translate, /MAX_REQUESTS_PER_WINDOW = 30/);
-  assert.match(prompt, /LOOK_CHECK_SPEAK_MAX_CHARS = 900/);
+  assert.match(prompt, /SPEAK_MAX_INPUT_CHARS = 500/);
   assert.match(review, /Object\.assign\(bucket/);
   assert.doesNotMatch(review, /return \{ \.\.\.bucket/);
   assert.match(review, /getClientKey/);
   assert.match(vision, /beginSharedVisionRequest/);
   assert.match(vision, /clientKeyFromAddress/);
-  assert.match(look, /beginSharedVisionRequest/);
+  assert.match(nameplate, /beginSharedVisionRequest/);
+  assert.match(panel, /beginSharedVisionRequest/);
   assert.match(tdr, /beginSharedVisionRequest/);
-  assert.doesNotMatch(look, /const rateBuckets/);
+  assert.doesNotMatch(nameplate, /const rateBuckets/);
+  assert.doesNotMatch(panel, /const rateBuckets/);
   assert.match(speak, /chargeBudget/);
   assert.match(translate, /chargeBudget\("text"/);
 

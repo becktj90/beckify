@@ -18,7 +18,8 @@ const CREW = {
   sloaneMerritt: "qMmZtYs7EKOOIm0u211n",
   lupitaReyes: "iGXRQ0smdhSFlb6iV1Pr",
 };
-const CASSIAN = "uYsaRSYDSuxmtyipO9Qt";
+/** Retired voice id. It was allowlisted before and must now fail before any provider call. */
+const RETIRED_VOICE = "uYsaRSYDSuxmtyipO9Qt";
 const BODIE_SETTINGS = {
   stability: 0,
   similarity_boost: 0.75,
@@ -31,13 +32,6 @@ const JUNIE_SETTINGS = {
   similarity_boost: 0.72,
   style: 1,
   speed: 0.64,
-  use_speaker_boost: true,
-};
-const CASSIAN_SETTINGS = {
-  stability: 0.38,
-  similarity_boost: 0.82,
-  style: 1,
-  speed: 0.86,
   use_speaker_boost: true,
 };
 
@@ -185,7 +179,9 @@ async function main() {
     await expectUnknown(port, { voice: "uYsaRSYDSuxmtyipO9QT", model: "eleven_v3" });
     await expectUnknown(port, { model: "eleven_v3" });
     await expectUnknown(port, { voice: "not-a-crew-voice", model: "eleven_flash_v2_5" });
-    await expectUnknown(port, { voice: `  ${CASSIAN.toLowerCase()}  `, model: "eleven_v3" });
+    await expectUnknown(port, { voice: `  ${RETIRED_VOICE.toLowerCase()}  `, model: "eleven_v3" });
+    await expectUnknown(port, { voice: RETIRED_VOICE });
+    await expectUnknown(port, { voice: RETIRED_VOICE, model: "eleven_v3" });
 
     const bodie = await speakEleven(port, `  ${CREW.bodieHale}  `);
     assert.deepEqual(bodie.voice_settings, BODIE_SETTINGS);
@@ -225,25 +221,26 @@ async function main() {
     assert.equal(sloane.voice_settings, undefined);
     assert.equal(sloane.seed, 50505);
 
-    const cassian = await speakEleven(port, CASSIAN);
-    assert.deepEqual(cassian.voice_settings, CASSIAN_SETTINGS);
-    assert.equal(cassian.seed, 60606);
-
-    const longBefore = calls.length;
-    const longCassian = await postJson(port, {
+    const longRetiredBefore = calls.length;
+    const longRetired = await postJson(port, {
       text: "a".repeat(600),
-      voice: CASSIAN,
-      model: "eleven_multilingual_v2",
-      seed: 42,
-      stability: 0.01,
+      voice: RETIRED_VOICE,
+      model: "eleven_v3",
     });
-    assert.equal(longCassian.status, 200, JSON.stringify(longCassian.json));
-    assert.equal(longCassian.headers["x-beckify-tts-cacheable"], "1");
-    assert.equal(calls.length, longBefore + 1);
-    const longPayload = JSON.parse(calls[calls.length - 1].init.body);
-    assert.equal(longPayload.model_id, "eleven_v3");
-    assert.equal(longPayload.seed, 60606);
-    assert.deepEqual(longPayload.voice_settings, CASSIAN_SETTINGS);
+    assert.equal(longRetired.status, 400, JSON.stringify(longRetired.json));
+    assert.equal(calls.length, longRetiredBefore);
+
+    const atLimit = await speakEleven(port, CREW.bodieHale);
+    assert.deepEqual(atLimit.voice_settings, BODIE_SETTINGS);
+    const atLimitBefore = calls.length;
+    const fiveHundred = await postJson(port, {
+      text: "c".repeat(500),
+      voice: CREW.sloaneMerritt,
+      model: "eleven_v3",
+    });
+    assert.equal(fiveHundred.status, 200, JSON.stringify(fiveHundred.json));
+    assert.equal(calls.length, atLimitBefore + 1);
+    assert.equal(JSON.parse(calls[calls.length - 1].init.body).seed, 50505);
 
     const tooLongBefore = calls.length;
     const tooLong = await postJson(port, {
@@ -252,6 +249,15 @@ async function main() {
       model: "eleven_v3",
     });
     assert.equal(tooLong.status, 413);
+    assert.deepEqual(tooLong.json, { error: "Text must be 500 characters or fewer." });
+    assert.equal(calls.length, tooLongBefore);
+
+    const tooLongSloane = await postJson(port, {
+      text: "d".repeat(600),
+      voice: CREW.sloaneMerritt,
+      model: "eleven_v3",
+    });
+    assert.equal(tooLongSloane.status, 413);
     assert.equal(calls.length, tooLongBefore);
 
     const openaiBefore = calls.length;

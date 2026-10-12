@@ -1,5 +1,5 @@
 /**
- * Dry-run the vision POST routes. A registered /api/analyze-look must return
+ * Dry-run the vision POST routes. A registered /api/analyze-nameplate must return
  * 400 (bad / missing image), never Express "Cannot POST".
  */
 process.env.VERCEL = "1";
@@ -42,7 +42,6 @@ try {
   assert(health.json?.status === "ok", "GET /api/healthz must include status: ok");
   const posted = health.json?.routes?.post || [];
   for (const path of [
-    "/api/analyze-look",
     "/api/analyze-nameplate",
     "/api/analyze-panel",
     "/api/analyze-tdr",
@@ -53,7 +52,6 @@ try {
   }
 
   for (const path of [
-    "/api/analyze-look",
     "/api/analyze-nameplate",
     "/api/analyze-panel",
     "/api/analyze-tdr",
@@ -96,7 +94,7 @@ try {
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
       0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
     ]).toString("base64");
-    const missingKey = await request("/api/analyze-look", {
+    const missingKey = await request("/api/analyze-nameplate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -106,7 +104,7 @@ try {
     });
     assert(
       missingKey.response.status === 503,
-      `POST /api/analyze-look with no provider key expected 503, got ${missingKey.response.status}`,
+      `POST /api/analyze-nameplate with no provider key expected 503, got ${missingKey.response.status}`,
     );
     assert(
       /missing/i.test(missingKey.json?.error || ""),
@@ -118,7 +116,7 @@ try {
     );
   }
 
-  const optionsNoOrigin = await request("/api/analyze-look", {
+  const optionsNoOrigin = await request("/api/analyze-nameplate", {
     method: "OPTIONS",
     headers: {
       "Access-Control-Request-Method": "POST",
@@ -127,10 +125,10 @@ try {
   });
   assert(
     optionsNoOrigin.response.status === 204,
-    `OPTIONS /api/analyze-look (no Origin, iOS) expected 204, got ${optionsNoOrigin.response.status}`,
+    `OPTIONS /api/analyze-nameplate (no Origin, iOS) expected 204, got ${optionsNoOrigin.response.status}`,
   );
 
-  const optionsSafari = await request("/api/analyze-look", {
+  const optionsSafari = await request("/api/analyze-nameplate", {
     method: "OPTIONS",
     headers: {
       Origin: "https://beckify.com",
@@ -140,7 +138,7 @@ try {
   });
   assert(
     optionsSafari.response.status === 204,
-    `OPTIONS /api/analyze-look (Safari) expected 204, got ${optionsSafari.response.status}`,
+    `OPTIONS /api/analyze-nameplate (Safari) expected 204, got ${optionsSafari.response.status}`,
   );
   assert(
     optionsSafari.response.headers.get("access-control-allow-origin") === "https://beckify.com",
