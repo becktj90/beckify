@@ -464,12 +464,19 @@ public struct DriveCarPlayExtras: Equatable, Sendable {
         self.weatherRange = weatherRange
     }
 
-    public static func make(flow: HVFlowState?, powerKW: Double?, whPerMile: Double?, weatherRangeMiles: Double?) -> DriveCarPlayExtras {
+    public static func make(
+        flow: HVFlowState?,
+        powerKW: Double?,
+        whPerMile: Double?,
+        weatherRangeMiles: Double?,
+        units: DriveUnitPreference = DrivePresentation.carPlayDefaultUnits
+    ) -> DriveCarPlayExtras {
+        let perMile = units.speed == .mph
         let regen: String
         switch flow {
         case .regen:
             if let powerKW, powerKW < 0 {
-                regen = String(format: "Regen %.0f kW est.", -powerKW)
+                regen = String(format: "Regen %.0f ", units.power.convert(kilowatts: -powerKW)) + units.power.label + " est."
             } else {
                 regen = "Regen"
             }
@@ -479,8 +486,12 @@ public struct DriveCarPlayExtras: Equatable, Sendable {
         }
         return DriveCarPlayExtras(
             regen: regen,
-            efficiency: whPerMile.map { String(format: "%.0f Wh/mi est.", $0) } ?? "Not read",
-            weatherRange: weatherRangeMiles.map { String(format: "%.0f mi est.", $0) } ?? "Not read"
+            efficiency: whPerMile.map {
+                String(format: "%.0f ", perMile ? $0 : $0 / DriveUnitPreference.kmPerMile) + (perMile ? "Wh/mi" : "Wh/km") + " est."
+            } ?? "Not read",
+            weatherRange: weatherRangeMiles.map {
+                String(format: "%.0f ", units.distance(fromKilometers: $0 * DriveUnitPreference.kmPerMile)) + units.distanceLabel + " est."
+            } ?? "Not read"
         )
     }
 }

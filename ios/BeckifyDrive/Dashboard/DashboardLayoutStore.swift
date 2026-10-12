@@ -47,7 +47,7 @@ final class DashboardPreferences: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         layout = DashboardLayout.decoded(from: defaults.data(forKey: Key.layout))
-        let system = Self.regionUnits()
+        let system = DriveUnitPreference.region
         units = DriveUnitPreference(
             speed: defaults.string(forKey: Key.speed).flatMap(DriveSpeedUnit.init(rawValue:)) ?? system.speed,
             temperature: defaults.string(forKey: Key.temperature).flatMap(DriveTemperatureUnit.init(rawValue:)) ?? system.temperature,
@@ -66,15 +66,21 @@ final class DashboardPreferences: ObservableObject {
     }
 
     func useSystemUnits() {
-        units = Self.regionUnits()
+        units = .region
         defaults?.removeObject(forKey: Key.speed)
         defaults?.removeObject(forKey: Key.temperature)
         defaults?.removeObject(forKey: Key.power)
         defaults?.removeObject(forKey: Key.torque)
     }
 
-    private static func regionUnits() -> DriveUnitPreference {
-        let system = Locale.current.measurementSystem
+}
+
+extension DriveUnitPreference {
+    /// Units from the iPhone's region (Settings → General → Language & Region).
+    /// CarPlay always uses these; the phone dashboard starts from them until
+    /// the user picks units in its settings.
+    static var region: DriveUnitPreference {
+        let system = Locale.autoupdatingCurrent.measurementSystem
         let identifier = system == .us ? "us" : (system == .uk ? "uk" : "metric")
         return DriveUnitPreference.systemDefault(measurementSystem: identifier)
     }

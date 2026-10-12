@@ -317,3 +317,52 @@ final class DriveCarPlayExtrasTests: XCTestCase {
         XCTAssertEqual(DriveCarPlayExtras.make(flow: .idle, powerKW: 0, whPerMile: nil, weatherRangeMiles: nil).regen, "Idle")
     }
 }
+
+final class CarPlayUnitsTests: XCTestCase {
+    private let now = Date(timeIntervalSince1970: 1_700_000_000)
+    private let metric = DriveUnitPreference.systemDefault(measurementSystem: "metric")
+    private let us = DriveUnitPreference.systemDefault(measurementSystem: "us")
+
+    private func book() -> OBDReadingBook {
+        var book = OBDReadingBook()
+        book.write(.displayedSocPercent, value: 80, at: now)
+        book.write(.speedKph, value: 100, at: now)
+        book.write(.packTempC, value: 22, at: now)
+        book.write(.hvCurrentAmps, value: -40, at: now)
+        return book
+    }
+
+    private func carPlay(_ units: DriveUnitPreference) -> DriveCarPlayCopy {
+        DrivePresentationBuilder.make(
+            profile: .boltEV, book: book(), now: now,
+            planning: PlanningInputs(usableKWh: 65, whPerMile: 250),
+            trip: OBDTripTrack(), link: "Live", units: units
+        ).carPlay
+    }
+
+    func testMetricRegion() {
+        let copy = carPlay(metric)
+        XCTAssertEqual(copy.speed, "100 km/h")
+        XCTAssertEqual(copy.range, "335 km planning")
+        XCTAssertEqual(copy.temperature, "Pack 22°C")
+        XCTAssertEqual(copy.power, "Regen 14 kW est.")
+        let extras = DriveCarPlayExtras.make(flow: .regen, powerKW: -14, whPerMile: 250, weatherRangeMiles: 100, units: metric)
+        XCTAssertEqual(extras, DriveCarPlayExtras(regen: "Regen 14 kW est.", efficiency: "155 Wh/km est.", weatherRange: "161 km est."))
+    }
+
+    func testUSRegion() {
+        let copy = carPlay(us)
+        XCTAssertEqual(copy.speed, "62 mph")
+        XCTAssertEqual(copy.range, "208 mi planning")
+        XCTAssertEqual(copy.temperature, "Pack 72°F")
+        XCTAssertEqual(copy.power, "Regen 19 hp est.")
+        let extras = DriveCarPlayExtras.make(flow: .regen, powerKW: -14, whPerMile: 250, weatherRangeMiles: 100, units: us)
+        XCTAssertEqual(extras, DriveCarPlayExtras(regen: "Regen 19 hp est.", efficiency: "250 Wh/mi est.", weatherRange: "100 mi est."))
+    }
+
+    func testUKRegionIsMphAndCelsius() {
+        let copy = carPlay(DriveUnitPreference.systemDefault(measurementSystem: "uk"))
+        XCTAssertEqual(copy.speed, "62 mph")
+        XCTAssertEqual(copy.temperature, "Pack 22°C")
+    }
+}

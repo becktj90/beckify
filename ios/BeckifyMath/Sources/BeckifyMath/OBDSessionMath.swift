@@ -519,13 +519,17 @@ public struct DrivePresentation: Equatable, Sendable {
     public static let powerGap = "Estimate: 350 V nominal pack × measured HV current. Pack voltage is not read."
 
     /// CarPlay / tile copy for estimated pack power. Nil without measured current.
-    public static func powerEstimateCopy(amps: Double?) -> String? {
+    public static func powerEstimateCopy(amps: Double?, unit: DrivePowerUnit = .kilowatts) -> String? {
         guard let kW = DriveEstimates.packPowerKW(amps: amps) else { return nil }
+        let shown = unit.convert(kilowatts: abs(kW))
         if kW < 0 {
-            return String(format: "Regen %.0f kW est.", -kW)
+            return String(format: "Regen %.0f ", shown) + unit.label + " est."
         }
-        return String(format: "%.0f kW est.", kW)
+        return String(format: "%.0f ", shown) + unit.label + " est."
     }
+
+    /// CarPlay wording when no units are passed: mph, °F, kW.
+    public static let carPlayDefaultUnits = DriveUnitPreference(speed: .mph, temperature: .fahrenheit)
 }
 
 public enum DrivePresentationBuilder {
@@ -535,7 +539,8 @@ public enum DrivePresentationBuilder {
         now: Date,
         planning: PlanningInputs,
         trip: OBDTripTrack,
-        link: String
+        link: String,
+        units: DriveUnitPreference = DrivePresentation.carPlayDefaultUnits
     ) -> DrivePresentation {
         let soc = book.read(.displayedSocPercent, now: now)
         let range = DrivePlanning.rangeMiles(
@@ -545,13 +550,13 @@ public enum DrivePresentationBuilder {
         )
         let speed = book.read(.speedKph, now: now)
         let layout: DriveLayout = profile.usesBoltPIDs ? .ev : .powertrain
-        let powerCopy = layout == .ev ? DrivePresentation.powerEstimateCopy(amps: book.read(.hvCurrentAmps, now: now)) : nil
-        let temperature = temperatureCopy(book: book, now: now, preferPack: profile.usesBoltPIDs)
+        let powerCopy = layout == .ev ? DrivePresentation.powerEstimateCopy(amps: book.read(.hvCurrentAmps, now: now), unit: units.power) : nil
+        let temperature = temperatureCopy(book: book, now: now, preferPack: profile.usesBoltPIDs, units: units)
         let carPlay = DriveCarPlayCopy(
             charge: soc.map { percent($0, digits: 1) } ?? "Not read",
             power: powerCopy ?? "Not read",
-            speed: speed.map { speedCopy($0) } ?? "Not read",
-            range: range.map { "\(Int($0.rounded())) mi planning" } ?? "Not read",
+            speed: speed.map { "\(Int(units.speed(fromKph: $0).rounded())) \(units.speed.label)" } ?? "Not read",
+            range: range.map { "\(Int(units.distance(fromKilometers: $0 * DriveUnitPreference.kmPerMile).rounded())) \(units.distanceLabel) planning" } ?? "Not read",
             temperature: temperature.carPlay,
             link: link
         )
@@ -693,7 +698,10 @@ public enum DrivePresentationBuilder {
         return String(format: "Planning only · %.0f kWh assumed · %.0f Wh/mi · not the vehicle estimate", kWh, wh)
     }
 
-    private static func temperatureCopy(book: OBDReadingBook, now: Date, preferPack: Bool) -> (carPlay: String, label: String) {
+    private static func temperatureCopy(book: OBDReadingBook, now: Date, preferPack: Bool, units: DriveUnitPreference) -> (carPlay: String, label: String) {
+        func shortTemp(_ celsius: Double) -> String {
+            "\(Int(units.temperature(fromCelsius: celsius).rounded()))\(units.temperature.label)"
+        }
         if preferPack, let pack = book.read(.packTempC, now: now) {
             return ("Pack \(shortTemp(pack))", "Pack")
         }
@@ -734,10 +742,6 @@ public enum DrivePresentationBuilder {
         return String(format: "%.0f°C · %.0f°F", celsius, fahrenheit)
     }
 
-    private static func shortTemp(_ celsius: Double) -> String {
-        let fahrenheit = celsius * 9.0 / 5.0 + 32.0
-        return String(format: "%.0f°F", fahrenheit)
-    }
 
     private static func duration(_ seconds: Double) -> String {
         let total = Int(seconds.rounded())

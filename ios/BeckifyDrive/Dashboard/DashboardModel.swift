@@ -221,14 +221,15 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
 
     // MARK: CarPlay
 
-    /// Regen, efficiency, and weather range rows for CarPlay, in its mph wording.
-    var carPlayExtras: DriveCarPlayExtras {
+    /// Regen, efficiency, and weather range rows for CarPlay.
+    func carPlayExtras(units: DriveUnitPreference) -> DriveCarPlayExtras {
         guard layout == .ev else { return .unknown }
         return DriveCarPlayExtras.make(
             flow: flow,
             powerKW: powerKW,
             whPerMile: insights.efficiency.whPerMile(packKWh: planning.usableKWh),
-            weatherRangeMiles: weatherAdjustment?.adjustedMiles
+            weatherRangeMiles: weatherAdjustment?.adjustedMiles,
+            units: units
         )
     }
 

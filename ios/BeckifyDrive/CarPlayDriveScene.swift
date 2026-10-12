@@ -43,8 +43,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let interfaceController else { return }
         let now = Date()
         guard force || CarPlayPublishPolicy.shouldPublish(since: lastPublish, now: now) else { return }
-        let copy = OBDBluetoothSession.shared.presentation.carPlay
-        let extras = DashboardModel.shared.carPlayExtras
+        let (copy, extras) = CarPlayCopySource.current()
         guard force || copy != lastCopy || extras != lastExtras else { return }
         lastCopy = copy
         lastExtras = extras
@@ -109,7 +108,7 @@ final class CarPlayDashboardSceneDelegate: UIResponder, CPTemplateApplicationDas
         guard let dashboardController else { return }
         let now = Date()
         guard force || CarPlayPublishPolicy.shouldPublish(since: lastPublish, now: now) else { return }
-        let copy = OBDBluetoothSession.shared.presentation.carPlay
+        let copy = CarPlayCopySource.current().copy
         guard force || copy != lastCopy else { return }
         lastCopy = copy
         lastPublish = now
@@ -130,5 +129,25 @@ final class CarPlayDashboardSceneDelegate: UIResponder, CPTemplateApplicationDas
     private static func symbol(_ name: String) -> UIImage {
         let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .semibold)
         return UIImage(systemName: name, withConfiguration: config) ?? UIImage()
+    }
+}
+
+/// CarPlay text in the iPhone's region units (Settings → General → Language
+/// & Region), read on every publish so a region change shows up within 10 s.
+/// The phone dashboard's own unit toggles do not apply here.
+enum CarPlayCopySource {
+    static func current() -> (copy: DriveCarPlayCopy, extras: DriveCarPlayExtras) {
+        let units = DriveUnitPreference.region
+        let session = OBDBluetoothSession.shared
+        let copy = DrivePresentationBuilder.make(
+            profile: session.profile,
+            book: session.book,
+            now: Date(),
+            planning: session.planning,
+            trip: session.trip,
+            link: session.carPlayLink,
+            units: units
+        ).carPlay
+        return (copy, DashboardModel.shared.carPlayExtras(units: units))
     }
 }
