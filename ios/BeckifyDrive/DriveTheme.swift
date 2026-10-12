@@ -163,6 +163,7 @@ struct EstimateBadge: View {
             .padding(.horizontal, 5)
             .padding(.vertical, 1)
             .overlay(Capsule().strokeBorder(DriveTheme.estimated.opacity(0.6), lineWidth: 1))
+            .fixedSize()
             .accessibilityLabel("estimate")
     }
 }

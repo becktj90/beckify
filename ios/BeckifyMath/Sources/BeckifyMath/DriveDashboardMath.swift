@@ -238,6 +238,26 @@ public struct SparklineBuffer: Equatable, Sendable {
     }
 }
 
+/// Y range for a sparkline. Auto-scaling alone turns a ±0.03 V ripple on a
+/// 14 V bus into a full-height wave, so the range never gets narrower than
+/// 5 % of the value (at least 1 unit). A baseline (zero for HV current) is
+/// always kept in view.
+public enum SparklineScale {
+    public static func domain(values: [Double], baseline: Double? = nil) -> ClosedRange<Double>? {
+        var finite = values.filter(\.isFinite)
+        guard !finite.isEmpty else { return nil }
+        if let baseline, baseline.isFinite { finite.append(baseline) }
+        guard var low = finite.min(), var high = finite.max() else { return nil }
+        let mid = (low + high) / 2
+        let minimumSpan = max(abs(mid) * 0.05, 1)
+        if high - low < minimumSpan {
+            low = mid - minimumSpan / 2
+            high = mid + minimumSpan / 2
+        }
+        return low...high
+    }
+}
+
 // MARK: - Trip
 
 /// On-device trip: distance, duration, moving average, and max speed.

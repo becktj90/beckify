@@ -29,21 +29,18 @@ struct MetricCard<Accessory: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: symbol)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(shows ? color : DriveTheme.muted)
-                    .accessibilityHidden(true)
-                Text(title)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(DriveTheme.muted)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 4)
-                if estimated {
-                    EstimateBadge()
+            // One row when the title fits whole; otherwise the badges drop to
+            // their own row so the title never hyphenates (iPhone SE, large text).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) {
+                    titleLabel.fixedSize()
+                    Spacer(minLength: 4)
+                    badges
                 }
-                FreshnessBadge(freshness: freshness)
+                VStack(alignment: .leading, spacing: 4) {
+                    titleLabel
+                    badges
+                }
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(shows ? (value ?? "—") : "—")
@@ -81,6 +78,28 @@ struct MetricCard<Accessory: View>: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
         .accessibilityValue(accessibilityValue)
+    }
+
+    private var titleLabel: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: symbol)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(shows ? color : DriveTheme.muted)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(DriveTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var badges: some View {
+        HStack(spacing: 6) {
+            if estimated {
+                EstimateBadge()
+            }
+            FreshnessBadge(freshness: freshness)
+        }
     }
 
     private var valueColor: Color {
@@ -156,6 +175,7 @@ struct FreshnessBadge: View {
                 .accessibilityHidden(true)
         case .stale(let age):
             Text("\(age) s ago")
+                .fixedSize()
                 .font(.caption2.weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(DriveTheme.muted)
@@ -198,7 +218,7 @@ struct Sparkline: View {
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartLegend(.hidden)
-        .chartYScale(domain: .automatic(includesZero: baseline != nil))
+        .chartYScale(domain: SparklineScale.domain(values: points.map(\.value), baseline: baseline) ?? 0...1)
         .accessibilityHidden(true)
     }
 }

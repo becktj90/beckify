@@ -209,12 +209,21 @@ struct LinkStatusPill: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Adapter: \(title), \(profile)")
             .accessibilityHint("Opens adapter and vehicle settings")
-            HStack(spacing: 6) {
-                Label("CarPlay shows: \(carPlay)", systemImage: "car.fill")
-                    .labelStyle(.titleAndIcon)
-                Text("·")
-                Text(detail)
-                    .lineLimit(2)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) {
+                    Label("CarPlay shows: \(carPlay)", systemImage: "car.fill")
+                        .labelStyle(.titleAndIcon)
+                        .fixedSize()
+                    Text("·")
+                    Text(detail)
+                        .lineLimit(2)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("CarPlay shows: \(carPlay)", systemImage: "car.fill")
+                        .labelStyle(.titleAndIcon)
+                    Text(detail)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .font(.caption)
             .foregroundStyle(DriveTheme.muted)
@@ -236,7 +245,15 @@ struct CardFlow<Content: View>: View {
     let cards: [DashboardCardID]
     @ViewBuilder let content: (DashboardCardID) -> Content
 
-    private let columns = [GridItem(.adaptive(minimum: 158), spacing: 12, alignment: .top)]
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Two or more columns normally; one full-width column at accessibility text sizes.
+    private var columns: [GridItem] {
+        if dynamicTypeSize.isAccessibilitySize {
+            return [GridItem(.flexible(), spacing: 12, alignment: .top)]
+        }
+        return [GridItem(.adaptive(minimum: 158), spacing: 12, alignment: .top)]
+    }
 
     var body: some View {
         VStack(spacing: 12) {

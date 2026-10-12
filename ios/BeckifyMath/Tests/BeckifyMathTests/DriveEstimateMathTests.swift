@@ -414,3 +414,22 @@ final class VehicleSpecAndGenericEVTests: XCTestCase {
         XCTAssertEqual(boltWind, RangeWeatherModel.headwindFraction(speedKph: 100, headwindMps: 6) ?? 9, accuracy: 1e-12, "Bolt default unchanged")
     }
 }
+
+final class SparklineScaleTests: XCTestCase {
+    func testTinyRippleDoesNotFillTheCard() {
+        let domain = SparklineScale.domain(values: [14.27, 14.33, 14.30])
+        XCTAssertNotNil(domain)
+        XCTAssertEqual(domain!.upperBound - domain!.lowerBound, 1, accuracy: 1e-9, "1 V floor beats 5 % of 14.3 V")
+        XCTAssertTrue(domain!.contains(14.27) && domain!.contains(14.33))
+        let warm = SparklineScale.domain(values: [180, 181])!
+        XCTAssertEqual(warm.upperBound - warm.lowerBound, 9.025, accuracy: 1e-9, "5 % of 180.5")
+    }
+
+    func testRealSwingsAndBaselineKept() {
+        XCTAssertEqual(SparklineScale.domain(values: [40, 140]), 40...140)
+        XCTAssertEqual(SparklineScale.domain(values: [40, 140], baseline: 0), 0...140)
+        XCTAssertEqual(SparklineScale.domain(values: [-62, -20], baseline: 0), -62...0)
+        XCTAssertNil(SparklineScale.domain(values: []))
+        XCTAssertNil(SparklineScale.domain(values: [.nan]))
+    }
+}

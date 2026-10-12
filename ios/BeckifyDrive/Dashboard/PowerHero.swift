@@ -262,7 +262,7 @@ struct RegenStateBanner: View {
                 Text(detail)
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(DriveTheme.muted)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             if flow == .regen, let powerKW {
