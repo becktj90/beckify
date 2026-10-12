@@ -8,6 +8,10 @@ final class BeckifyDriveAppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        #if DEBUG
+        // Fixture launches (CI screenshots) never touch Bluetooth.
+        if DriveLaunchFixture.scenario != nil { return true }
+        #endif
         OBDBluetoothSession.shared.activate()
         return true
     }
@@ -47,7 +51,27 @@ final class PhoneSceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         // Dark by default; DashboardView applies the user's appearance setting.
         window.rootViewController = UIHostingController(rootView: DashboardView())
+        #if DEBUG
+        if let scenario = DriveLaunchFixture.scenario {
+            window.rootViewController = UIHostingController(rootView: scenario.view)
+        }
+        #endif
         self.window = window
         window.makeKeyAndVisible()
     }
 }
+
+#if DEBUG
+/// Debug-only launch arguments for the CI screenshot job:
+/// `-BeckifyDriveFixture boltDriving` opens a fixture state (see
+/// `DashboardScenario`), and `-BeckifyDriveScroll energy` scrolls to a section.
+enum DriveLaunchFixture {
+    static var scenario: DashboardScenario? {
+        UserDefaults.standard.string(forKey: "BeckifyDriveFixture").flatMap(DashboardScenario.init(rawValue:))
+    }
+
+    static var scrollSection: DashboardSection? {
+        UserDefaults.standard.string(forKey: "BeckifyDriveScroll").flatMap(DashboardSection.init(rawValue:))
+    }
+}
+#endif

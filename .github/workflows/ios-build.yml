@@ -74,3 +74,88 @@ jobs:
         with:
           name: beckify-navigation-results-ios-${{ matrix.ios }}
           path: ${{ runner.temp }}/BeckifyNavigation.xcresult
+
+  drive-build:
+    name: Beckify Drive ${{ matrix.configuration }} build
+    runs-on: macos-15
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build Beckify Drive without signing
+        run: >-
+          xcodebuild -project ios/Beckify.xcodeproj
+          -scheme BeckifyDrive -configuration ${{ matrix.configuration }}
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath '${{ runner.temp }}/BeckifyDriveDerivedData'
+          CODE_SIGNING_ALLOWED=NO build
+
+  drive-screenshots:
+    name: Beckify Drive fixture screenshots
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+      - name: Prepare simulator
+        id: simulator
+        run: |
+          sudo xcodebuild -runFirstLaunch
+          python3 ios/scripts/prepare_navigation_simulator.py '18.5'
+      - name: Build Beckify Drive (Debug, fixtures enabled)
+        run: >-
+          xcodebuild -project ios/Beckify.xcodeproj
+          -scheme BeckifyDrive -configuration Debug
+          -destination '${{ steps.simulator.outputs.destination }}'
+          -derivedDataPath '${{ runner.temp }}/BeckifyDriveShots'
+          CODE_SIGNING_ALLOWED=NO build
+      - name: Capture fixture screenshots
+        env:
+          DESTINATION: ${{ steps.simulator.outputs.destination }}
+          APP: ${{ runner.temp }}/BeckifyDriveShots/Build/Products/Debug-iphonesimulator/BeckifyDrive.app
+        run: |
+          set -euo pipefail
+          udid="${DESTINATION##*id=}"
+          xcrun simctl install "$udid" "$APP"
+          xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
+          mkdir -p drive-screenshots
+          shoot() {
+            local name="$1" appearance="$2" scroll="${3:-}"
+            xcrun simctl ui "$udid" appearance "$appearance"
+            xcrun simctl terminate "$udid" com.beckify.drive 2>/dev/null || true
+            if [ -n "$scroll" ]; then
+              xcrun simctl launch "$udid" com.beckify.drive -BeckifyDriveFixture "$name" -BeckifyDriveScroll "$scroll"
+            else
+              xcrun simctl launch "$udid" com.beckify.drive -BeckifyDriveFixture "$name"
+            fi
+            sleep 5
+            xcrun simctl io "$udid" screenshot "drive-screenshots/${name}${scroll:+-$scroll}.png"
+          }
+          shoot boltDriving dark
+          shoot boltDriving dark battery
+          shoot boltDriving dark energy
+          shoot boltDriving dark phone
+          shoot boltRegen dark
+          shoot fullBolt dark
+          shoot boltPartial dark
+          shoot boltPartial dark battery
+          shoot noAdapter dark
+          shoot partialGeneric dark
+          shoot iceGeneric dark
+          shoot iceGeneric dark phone
+          shoot boltLight light
+          ls -la drive-screenshots
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: beckify-drive-screenshots
+          path: drive-screenshots

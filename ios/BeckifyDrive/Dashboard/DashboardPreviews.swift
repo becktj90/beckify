@@ -147,7 +147,47 @@ enum DashboardFixtures {
     }
 }
 
-#Preview("No adapter") {
+/// Named fixture states. Xcode previews and the CI screenshot job
+/// (`-BeckifyDriveFixture <name>`) render the same ones.
+enum DashboardScenario: String, CaseIterable {
+    case noAdapter
+    case partialGeneric
+    case fullBolt
+    case boltDriving
+    case boltRegen
+    case boltPartial
+    case iceGeneric
+    case boltLight
+
+    var title: String {
+        switch self {
+        case .noAdapter: return "No adapter"
+        case .partialGeneric: return "Partial data · generic"
+        case .fullBolt: return "Full Bolt EV · parked"
+        case .boltDriving: return "Bolt EV · driving"
+        case .boltRegen: return "Bolt EV · regen"
+        case .boltPartial: return "Bolt EV · partial replies"
+        case .iceGeneric: return "ICE generic"
+        case .boltLight: return "Bolt EV · light"
+        }
+    }
+
+    var view: AnyView {
+        switch self {
+        case .noAdapter: return AnyView(DashboardScenarioViews.noAdapter())
+        case .partialGeneric: return AnyView(DashboardScenarioViews.partialGeneric())
+        case .fullBolt: return AnyView(DashboardScenarioViews.fullBolt())
+        case .boltDriving: return AnyView(DashboardScenarioViews.boltDriving())
+        case .boltRegen: return AnyView(DashboardScenarioViews.boltRegen())
+        case .boltPartial: return AnyView(DashboardScenarioViews.boltPartial())
+        case .iceGeneric: return AnyView(DashboardScenarioViews.iceGeneric())
+        case .boltLight: return AnyView(DashboardScenarioViews.boltLight())
+        }
+    }
+}
+
+enum DashboardScenarioViews {
+    static func noAdapter() -> some View {
     var sensors = PhoneSensorStore.PreviewValues()
     sensors.locationAccess = .denied
     sensors.motionAccess = .unavailable
@@ -158,9 +198,9 @@ enum DashboardFixtures {
         model: DashboardFixtures.model(profile: .boltEUV, book: OBDReadingBook(), live: false, sensors: sensors),
         preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
     )
-}
+    }
 
-#Preview("Partial data · generic") {
+    static func partialGeneric() -> some View {
     DashboardView(
         model: DashboardFixtures.model(
             profile: .generic,
@@ -179,9 +219,9 @@ enum DashboardFixtures {
         ),
         preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
     )
-}
+    }
 
-#Preview("Full Bolt EV · parked") {
+    static func fullBolt() -> some View {
     DashboardView(
         model: DashboardFixtures.model(
             profile: .boltEV,
@@ -203,9 +243,9 @@ enum DashboardFixtures {
         ),
         preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
     )
-}
+    }
 
-#Preview("Bolt EV · driving") {
+    static func boltDriving() -> some View {
     DashboardView(
         model: DashboardFixtures.model(
             profile: .boltEV,
@@ -232,9 +272,9 @@ enum DashboardFixtures {
         ),
         preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
     )
-}
+    }
 
-#Preview("Bolt EV · regen") {
+    static func boltRegen() -> some View {
     DashboardView(
         model: DashboardFixtures.model(
             profile: .boltEV,
@@ -258,9 +298,9 @@ enum DashboardFixtures {
         ),
         preferences: DashboardPreferences(preview: DriveUnitPreference(speed: .kmh, temperature: .celsius))
     )
-}
+    }
 
-#Preview("Bolt EV · partial replies") {
+    static func boltPartial() -> some View {
     var sensors = PhoneSensorStore.PreviewValues()
     sensors.locationAccess = .notAsked
     sensors.motionAccess = .notAsked
@@ -281,9 +321,9 @@ enum DashboardFixtures {
         ),
         preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
     )
-}
+    }
 
-#Preview("ICE generic") {
+    static func iceGeneric() -> some View {
     var sensors = DashboardFixtures.drivingSensors
     sensors.gTrail = DashboardFixtures.cornerTrail
     return DashboardView(
@@ -308,9 +348,9 @@ enum DashboardFixtures {
         ),
         preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
     )
-}
+    }
 
-#Preview("Bolt EV · light") {
+    static func boltLight() -> some View {
     DashboardView(
         model: DashboardFixtures.model(
             profile: .boltEV,
@@ -322,5 +362,38 @@ enum DashboardFixtures {
         preferences: DashboardPreferences(preview: DashboardFixtures.usUnits, appearance: .system)
     )
     .preferredColorScheme(.light)
+    }
+}
+
+#Preview("No adapter") {
+    DashboardScenario.noAdapter.view
+}
+
+#Preview("Partial data · generic") {
+    DashboardScenario.partialGeneric.view
+}
+
+#Preview("Full Bolt EV · parked") {
+    DashboardScenario.fullBolt.view
+}
+
+#Preview("Bolt EV · driving") {
+    DashboardScenario.boltDriving.view
+}
+
+#Preview("Bolt EV · regen") {
+    DashboardScenario.boltRegen.view
+}
+
+#Preview("Bolt EV · partial replies") {
+    DashboardScenario.boltPartial.view
+}
+
+#Preview("ICE generic") {
+    DashboardScenario.iceGeneric.view
+}
+
+#Preview("Bolt EV · light") {
+    DashboardScenario.boltLight.view
 }
 #endif

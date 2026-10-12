@@ -35,51 +35,61 @@ private struct DashboardContent: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    LinkStatusPill(
-                        title: model.linkTitle,
-                        detail: model.linkDetail,
-                        carPlay: model.carPlayLink,
-                        profile: model.profile.title,
-                        state: linkState
-                    ) {
-                        showAdapter = true
-                    }
-                    if model.layout == .ev {
-                        PowerHero(model: model, units: preferences.units)
-                    }
-                    SpeedHero(model: model, units: preferences.units)
-                    ForEach(DashboardSection.sections(for: model.layout), id: \.self) { section in
-                        let cards = preferences.layout.cards(in: section, for: model.layout)
-                        if !cards.isEmpty {
-                            VStack(alignment: .leading, spacing: 10) {
-                                DashboardSectionHeader(section: section)
-                                CardFlow(cards: cards) { card in
-                                    DashboardCardView(
-                                        card: card,
-                                        model: model,
-                                        sensors: sensors,
-                                        units: preferences.units,
-                                        openAdapter: { showAdapter = true }
-                                    )
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        LinkStatusPill(
+                            title: model.linkTitle,
+                            detail: model.linkDetail,
+                            carPlay: model.carPlayLink,
+                            profile: model.profile.title,
+                            state: linkState
+                        ) {
+                            showAdapter = true
+                        }
+                        if model.layout == .ev {
+                            PowerHero(model: model, units: preferences.units)
+                        }
+                        SpeedHero(model: model, units: preferences.units)
+                        ForEach(DashboardSection.sections(for: model.layout), id: \.self) { section in
+                            let cards = preferences.layout.cards(in: section, for: model.layout)
+                            if !cards.isEmpty {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    DashboardSectionHeader(section: section)
+                                        .id(section)
+                                    CardFlow(cards: cards) { card in
+                                        DashboardCardView(
+                                            card: card,
+                                            model: model,
+                                            sensors: sensors,
+                                            units: preferences.units,
+                                            openAdapter: { showAdapter = true }
+                                        )
+                                    }
                                 }
                             }
                         }
+                        Text(DrivePresentation.designAid)
+                            .font(.footnote)
+                            .foregroundStyle(DriveTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 4)
                     }
-                    Text(DrivePresentation.designAid)
-                        .font(.footnote)
-                        .foregroundStyle(DriveTheme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 4)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+                    .padding(.bottom, 32)
+                    .frame(maxWidth: 1_000)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 32)
-                .frame(maxWidth: 1_000)
-                .frame(maxWidth: .infinity)
+                .background { DashboardBackground() }
+                #if DEBUG
+                .task {
+                    guard let section = DriveLaunchFixture.scrollSection else { return }
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    proxy.scrollTo(section, anchor: .top)
+                }
+                #endif
             }
-            .background { DashboardBackground() }
             .navigationTitle("Beckify Drive")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
