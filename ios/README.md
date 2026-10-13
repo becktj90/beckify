@@ -204,7 +204,7 @@ xcodebuild \
   build
 ```
 
-Beckify Drive (same project, **BeckifyDrive** scheme — native CarPlay templates, not a web view). A signed device build needs the driving-task entitlement on `com.beckify.drive` first. See [`BeckifyDrive/docs/APP_STORE.md`](BeckifyDrive/docs/APP_STORE.md).
+Beckify Drive (same project, **BeckifyDrive** scheme — native CarPlay templates, not a web view). Apple granted the CarPlay Driving Task entitlement on 2026-10-13. A signed device build needs **CarPlay Driving Task** enabled on App ID `com.beckify.drive` first. See [`BeckifyDrive/docs/APP_STORE.md`](BeckifyDrive/docs/APP_STORE.md).
 
 ```bash
 cd ios

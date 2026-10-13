@@ -1,6 +1,6 @@
 # App Store scaffolding — Beckify Drive
 
-Listing copy for **Beckify Drive** (bundle ID `com.beckify.drive`). This is not the Toolbox app. Toolbox stays `com.beckify.toolbox`, scheme **Beckify**, marketing **1.0.2**, build **162**. Do not archive Toolbox with scheme **BeckifyDrive**, and do not point Toolbox Xcode Cloud workflows at this scheme.
+Listing copy for **Beckify Drive** (bundle ID `com.beckify.drive`). This is not the Toolbox app. Toolbox stays `com.beckify.toolbox`, scheme **Beckify**, marketing **1.0.7**, build **313**. Do not archive Toolbox with scheme **BeckifyDrive**, and do not point Toolbox Xcode Cloud workflows at this scheme.
 
 This Linux checkout has not compiled the SwiftUI or CarPlay UI, signed a binary, or uploaded a build.
 
@@ -55,13 +55,13 @@ First release. Phone dashboard and a CarPlay driving-task scene for a BLE OBD-II
 
 ## CarPlay entitlement — Trevor
 
-**Status:** Driving Task request submitted to Apple and pending. Do not file a second request; steps 3 onward wait on Apple.
+**Status:** Apple granted the CarPlay Driving Task entitlement to the team on 2026-10-13 (email "CarPlay Driving Task App entitlement confirmation"). Steps 1–3 are done; do not file another request. The Beckify Drive record and version **1.0** already exist in App Store Connect (step 8). Next: step 4 (enable the capability on the App ID), then steps 5–7, 9 and 10.
 
-The repo already contains the stub. A signed run still fails until Apple puts the capability on the App ID. Unsigned simulator compile (`CODE_SIGNING_ALLOWED=NO`) does not need the profile.
+The repo already contains the entitlement. A signed build fails with a provisioning error until **CarPlay Driving Task** is enabled on App ID `com.beckify.drive` (step 4). Unsigned simulator compile (`CODE_SIGNING_ALLOWED=NO`) does not need the profile.
 
 1. Read the current guide: [Requesting CarPlay entitlements](https://developer.apple.com/documentation/carplay/requesting-carplay-entitlements) and the CarPlay Developer Guide. Agree to the CarPlay entitlement addendum.
 2. Request **Driving Task** at [developer.apple.com/contact/carplay](https://developer.apple.com/contact/carplay/). Describe Beckify Drive as an on-device OBD dashboard (charge, power, speed, temperature) for the driver. Do not describe it as navigation, and do not request `com.apple.developer.carplay-maps`.
-3. Wait for Apple to add `com.apple.developer.carplay-driving-task` to the team. The app will not appear on the CarPlay home screen until that entitlement is in the provisioning profile. Once it is shipped, every install shows the CarPlay icon — there is no per-user switch.
+3. Apple adds `com.apple.developer.carplay-driving-task` to the team (done 2026-10-13). The app will not appear on the CarPlay home screen until that entitlement is in the provisioning profile. Once it is shipped, every install shows the CarPlay icon — there is no per-user switch.
 4. In [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list), register App ID `com.beckify.drive` (explicit, not a wildcard) if it does not exist. Enable the **CarPlay Driving Task** capability. Save.
 5. Create a new Development profile and a new Distribution profile for that App ID. Download them or let Xcode automatic signing refresh.
 6. On a Mac, open `ios/Beckify.xcodeproj`, scheme **BeckifyDrive**, Team **9TR6R5LV8M**. Signing & Capabilities should list CarPlay. Code Signing Entitlements is already `BeckifyDrive/BeckifyDrive.entitlements`. Do not delete that key to “make signing work” and then ship — CarPlay will not launch without it.
