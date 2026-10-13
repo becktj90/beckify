@@ -1,6 +1,6 @@
 # App Store scaffolding — Beckify Drive
 
-Listing copy for **Beckify Drive** (bundle ID `com.beckify.drive`). This is not the Toolbox app. Toolbox stays `com.beckify.toolbox`, scheme **Beckify**, marketing **1.0.2**, build **162**. Do not archive Toolbox with scheme **BeckifyDrive**, and do not point Toolbox Xcode Cloud workflows at this scheme.
+Listing copy for **Beckify Drive** (bundle ID `com.beckify.drive`). This is not the Toolbox app. Toolbox stays `com.beckify.toolbox`, scheme **Beckify**, marketing **1.0.7**, build **313**. Do not archive Toolbox with scheme **BeckifyDrive**, and do not point Toolbox Xcode Cloud workflows at this scheme.
 
 This Linux checkout has not compiled the SwiftUI or CarPlay UI, signed a binary, or uploaded a build.
 
@@ -19,7 +19,7 @@ This Linux checkout has not compiled the SwiftUI or CarPlay UI, signed a binary,
 
 ## Why this is its own target
 
-Apple’s CarPlay guide (June 2026) says a CarPlay app must be designed primarily for its category. Driving Task is `com.apple.developer.carplay-driving-task` (iOS 16+). Putting that entitlement on `com.beckify.toolbox` would ask Apple to treat the field EE toolbox as a driving app and would make Toolbox signing depend on a capability Trevor has not been granted. Beckify Drive is the driving-task app. Toolbox signing is unchanged.
+Apple’s CarPlay guide (June 2026) says a CarPlay app must be designed primarily for its category. Driving Task is `com.apple.developer.carplay-driving-task` (iOS 16+). Putting that entitlement on `com.beckify.toolbox` would ask Apple to treat the field EE toolbox as a driving app and would make Toolbox signing depend on the CarPlay capability. Apple granted Driving Task for Beckify Drive (2026-10-13); it is enabled only on `com.beckify.drive`. Beckify Drive is the driving-task app. Toolbox signing is unchanged.
 
 ## Listing copy
 
@@ -55,17 +55,17 @@ First release. Phone dashboard and a CarPlay driving-task scene for a BLE OBD-II
 
 ## CarPlay entitlement — Trevor
 
-**Status:** Driving Task request submitted to Apple and pending. Do not file a second request; steps 3 onward wait on Apple.
+**Status:** Apple granted the CarPlay Driving Task entitlement to the team on 2026-10-13 (email "CarPlay Driving Task App entitlement confirmation"). Steps 1–3 are done; do not file another request. The Beckify Drive record and version **1.0** already exist in App Store Connect (step 8). Next: step 4 (enable the capability on the App ID), then steps 5–7, 9 and 10.
 
-The repo already contains the stub. A signed run still fails until Apple puts the capability on the App ID. Unsigned simulator compile (`CODE_SIGNING_ALLOWED=NO`) does not need the profile.
+The repo already contains the entitlement. A signed build fails with a provisioning error until **CarPlay Driving Task** is enabled on App ID `com.beckify.drive` (step 4). Unsigned simulator compile (`CODE_SIGNING_ALLOWED=NO`) does not need the profile.
 
 1. Read the current guide: [Requesting CarPlay entitlements](https://developer.apple.com/documentation/carplay/requesting-carplay-entitlements) and the CarPlay Developer Guide. Agree to the CarPlay entitlement addendum.
 2. Request **Driving Task** at [developer.apple.com/contact/carplay](https://developer.apple.com/contact/carplay/). Describe Beckify Drive as an on-device OBD dashboard (charge, power, speed, temperature) for the driver. Do not describe it as navigation, and do not request `com.apple.developer.carplay-maps`.
-3. Wait for Apple to add `com.apple.developer.carplay-driving-task` to the team. The app will not appear on the CarPlay home screen until that entitlement is in the provisioning profile. Once it is shipped, every install shows the CarPlay icon — there is no per-user switch.
+3. Apple adds `com.apple.developer.carplay-driving-task` to the team (done 2026-10-13). The app will not appear on the CarPlay home screen until that entitlement is in the provisioning profile. Once it is shipped, every install shows the CarPlay icon — there is no per-user switch.
 4. In [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list), register App ID `com.beckify.drive` (explicit, not a wildcard) if it does not exist. Enable the **CarPlay Driving Task** capability. Save.
 5. Create a new Development profile and a new Distribution profile for that App ID. Download them or let Xcode automatic signing refresh.
 6. On a Mac, open `ios/Beckify.xcodeproj`, scheme **BeckifyDrive**, Team **9TR6R5LV8M**. Signing & Capabilities should list CarPlay. Code Signing Entitlements is already `BeckifyDrive/BeckifyDrive.entitlements`. Do not delete that key to “make signing work” and then ship — CarPlay will not launch without it.
-7. If automatic signing errors with “provisioning profile doesn’t include the CarPlay entitlement,” the capability is not on the App ID yet. Stop there and finish steps 2–5. Do not strip the entitlement to unblock Toolbox; Toolbox does not use this file.
+7. If automatic signing errors with “provisioning profile doesn’t include the CarPlay entitlement,” the capability is not on the App ID yet. Stop there and finish steps 4–5 (the entitlement is already granted; do not request it again). Do not strip the entitlement to unblock Toolbox; Toolbox does not use this file.
 8. In App Store Connect, create the Beckify Drive record (bundle `com.beckify.drive`, SKU `beckify-drive`). Privacy URL `https://beckify.com/privacy`. Price free, no IAP. Create version **1.0**.
 9. Archive scheme **BeckifyDrive** (not Beckify or KestrelHeavy). Upload **1.0 (1)**. Attach screenshots from a Mac simulator or device. This checkout did not capture them.
 10. In App Review notes, say: design aid; Bluetooth is the user’s OBD adapter; no cloud upload of vehicle data; the only network call is Open-Meteo weather with a location rounded to about 1 km; power and torque are labeled estimates; CarPlay templates refresh at most every 10 seconds; missing manufacturer PIDs show “Not read” rather than a guessed battery health. CarPlay must be usable without telling the driver to pick up the phone — connection is established before the drive, and the CarPlay screen shows status only.
