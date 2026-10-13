@@ -51,7 +51,8 @@ async function main() {
   ok("new-glenn-runner stays a static directory", seoCopy.includes('"games/new-glenn-runner"'));
   ok("new-glenn-runner redirects to kestrel-heavy/", staticRoutes.includes('["games/new-glenn-runner", "/games/kestrel-heavy/"]'));
   ok("gear redirects to toolbox/", staticRoutes.includes('["gear", "/toolbox/"]'));
-  ok("products/shop/store redirect stubs exist", ["products", "shop", "store"].every((slug) => staticRoutes.includes(`["${slug}", "/toolbox/"]`)));
+  ok("affiliate products redirect to toolbox", staticRoutes.includes('["products", "/toolbox/"]'));
+  ok("shop/store redirect stubs use storefront", ["shop", "store"].every((slug) => staticRoutes.includes(`["${slug}", SHOP_ORIGIN]`)));
   ok("404.html is a dedicated noindex page", /noindex/i.test(notFoundHtml) && /Page not found/i.test(notFoundHtml));
 
   const schemaHead = fs.readFileSync(path.join(root, "src/components/seo/SchemaHead.tsx"), "utf8");

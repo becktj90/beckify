@@ -12,6 +12,7 @@ const NAV_ICON_NAMES: Record<string, BeckifyIconName> = {
   Apps: "about",
   Projects: "projects",
   Games: "games",
+  Shop: "shop",
 };
 
 function NavLink({
@@ -75,8 +76,8 @@ function NavLink({
  * Logo anchors left; nav links sit on the right with a high-contrast filled
  * active state. Backdrop-blur keeps it legible over the starfield.
  *
- * The full label+icon link row only fits from `lg` up (measured: it needs
- * ~940px at full label width). Below that, the bar shows logo + search +
+ * The full label+icon link row only fits from `xl` up (measured: it needs
+ * ~1050px at full label width). Below that, the bar shows logo + search +
  * a single menu button, and the same links reappear as full-width rows in a
  * slide-out sheet — this is what actually fixes the site-wide horizontal
  * scroll that a purely-responsive icon row still hit on phones.
@@ -127,8 +128,8 @@ export const Nav = () => {
           <div className="flex items-center gap-1">
             <EngineeringAssistant />
 
-            {/* Full link row: only from lg up, where it's been measured to fit. */}
-            <div className="hidden lg:flex items-center gap-1">
+            {/* Full link row: only from xl up, where it's been measured to fit. */}
+            <div className="hidden xl:flex items-center gap-1">
               {NAV_LINKS.map(({ href, label, external }) => (
                 <NavLink
                   key={href}
@@ -141,13 +142,13 @@ export const Nav = () => {
               ))}
             </div>
 
-            {/* Below lg: a single menu button opens the same links as a sheet. */}
+            {/* Below xl: a single menu button opens the same links as a sheet. */}
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <button
                   type="button"
                   aria-label="Open navigation menu"
-                  className="lg:hidden flex items-center justify-center w-11 h-11 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/08 transition-colors"
+                  className="xl:hidden flex items-center justify-center w-11 h-11 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/08 transition-colors"
                 >
                   <BeckifyIcon name="menu" className="w-5 h-5" />
                 </button>

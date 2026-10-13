@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Activity, BrainCircuit, Lightbulb, SlidersHorizontal, Spline } from "lucide-react";
+import { FEATURED_PRODUCTS, shopProductUrl } from "@/data/shop.mjs";
 import { Layout } from "@/components/Layout";
 import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -425,6 +426,7 @@ export default function ControlSystemsPage() {
           </div>
         </div>
       </FadeIn>
+      <p className="mt-8 text-sm text-[var(--muted)] print:hidden">Keep the reference on your bench: <a className="text-[var(--accent)] underline" href={shopProductUrl(FEATURED_PRODUCTS[2].handle)}>Control Systems Desk Mat</a>.</p>
     </Layout>
   );
 }

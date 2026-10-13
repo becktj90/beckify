@@ -1,3 +1,4 @@
+import { SHOP_ORIGIN } from "@/data/shop.mjs";
 import { Wifi } from "lucide-react";
 import { Link } from "wouter";
 import { CONTACT_LINKS, SITE_VERSION } from "@/data/site-content";
@@ -20,6 +21,7 @@ export const Footer = () => (
         <Link href="/privacy" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
           Privacy
         </Link>
+        <a href={SHOP_ORIGIN} className="p-2 -m-2 transition-colors hover:text-[var(--accent)]">Shop</a>
         {CONTACT_LINKS.map(({ href, label, icon: Icon, external }) => (
           <a
             key={href}

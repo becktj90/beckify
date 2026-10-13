@@ -6,6 +6,7 @@ import { PenroseCanvas } from "@/components/PenroseCanvas";
 import { Starfield } from "@/components/Starfield";
 import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 import { Nav } from "@/components/sections/Nav";
+import { Shop } from "@/components/sections/Shop";
 import { Footer } from "@/components/sections/Footer";
 import { SITE } from "@/data/site-content";
 import { PUBLIC_CALCULATOR_COUNT, PUBLIC_GAME_COUNT } from "@/data/site-stats";
@@ -308,6 +309,8 @@ export default function Home() {
             </FadeIn>
 
           </div>
+
+          <Shop />
 
           <MinimalAdUnit type="adsense" placement="toolbox-sidebar" />
           <Footer />

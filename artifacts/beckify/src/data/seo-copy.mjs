@@ -170,7 +170,8 @@ export function pageSeo(path) {
 
 export function seoForStaticRoute(route) {
   if (route === "games/new-glenn-runner") return PAGE_SEO["/games/kestrel-heavy"];
-  if (route === "gear" || route === "products" || route === "shop" || route === "store") {
+  if (route === "shop" || route === "store") return { title: "Beckify Shop", description: "Electrical engineering and math inspired goods from Beckify." };
+  if (route === "gear" || route === "products") {
     return PAGE_SEO["/toolbox/"];
   }
   return PAGE_SEO[`/${route}`] ?? null;

@@ -26,9 +26,9 @@ console.log("\n--- Removed product catalogs ---");
 const catalogPath = /(?:["'`])\/(?:gear|made-in-america)(?:["'`/])/;
 const publicSurface = [homeSrc, siteContent, sitemapSrc, footerSrc, houseAds].join("\n");
 ok("removed /gear and /made-in-america from public links", !catalogPath.test(publicSurface));
-// /gear /products /shop /store stay as redirect-only stubs to /toolbox/ (GSC inbound).
+// Affiliate paths redirect to toolbox; merchandise paths open Shopify.
 // made-in-america stays fully gone. No catalog page modules.
-const redirectPaths = ["gear", "products", "shop", "store"];
+const redirectPaths = ["gear", "products"];
 ok(
   "removed catalog page modules from the React router",
   !/pages\/(?:gear|made-in-america|products|shop|store)/.test(appSrc) &&
@@ -54,6 +54,8 @@ ok(
 );
 ok("catalog page modules are gone", !fs.existsSync(path.join(root, "src/pages/gear.tsx")) && !fs.existsSync(path.join(root, "src/pages/made-in-america.tsx")));
 ok("lookbook data and GearCard are gone", !fs.existsSync(path.join(root, "src/data/gear-recommendations.ts")) && !fs.existsSync(path.join(root, "src/components/gear/GearCard.tsx")));
+
+ok("shop and store open the external storefront", ["shop", "shop/", "store", "store/"].every((slug) => appSrc.includes(`<Route path="/${slug}" component={StoreRedirect} />`)) && ["shop", "store"].every((slug) => staticRoutes.includes(`["${slug}", SHOP_ORIGIN]`)));
 
 console.log("\n--- Vespa BOM ---");
 const amazonHrefs = [...vespaSrc.matchAll(/href:\s*"(https:\/\/www\.amazon\.com[^"]+)"/g)].map((m) => m[1]);
