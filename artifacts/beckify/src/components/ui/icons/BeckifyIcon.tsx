@@ -9,6 +9,7 @@ export type BeckifyIconName =
   | "map"
   | "menu"
   | "projects"
+  | "shop"
   | "signal"
   | "toolbox";
 
@@ -18,6 +19,7 @@ type BeckifyIconProps = SVGProps<SVGSVGElement> & {
 };
 
 const PATHS: Record<BeckifyIconName, string[]> = {
+  shop: ["M5 8h14l1 12H4L5 8Z", "M9 8V6a3 3 0 0 1 6 0v2"],
   home: ["M4 11.5 12 4l8 7.5", "M6.5 10v9h11v-9", "M10 19v-5h4v5"],
   about: ["M5 5h14v14H5z", "m8 9 2 2-2 2", "M12.5 13H16"],
   toolbox: ["M4 8h16v12H4z", "M8 8V5h8v3", "M8 13h8", "M10 11v4m4-4v4"],

@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import { toCanonicalPath, toCanonicalUrl } from "../src/lib/canonical-url.mjs";
 import { STATIC_ROUTE_PATHS, seoForStaticRoute } from "../src/data/seo-copy.mjs";
 
+import { SHOP_ORIGIN } from "../src/data/shop.mjs";
+
 const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist/public");
 const shell = resolve(dist, "index.html");
@@ -23,15 +25,15 @@ const redirectRoutes = new Map([
   // Removed affiliate catalog (2026-09-04). Send leftover inbound links to toolbox.
   ["gear", "/toolbox/"],
   ["products", "/toolbox/"],
-  ["shop", "/toolbox/"],
-  ["store", "/toolbox/"],
+  ["shop", SHOP_ORIGIN],
+  ["store", SHOP_ORIGIN],
 ]);
 
 // The app sets page metadata after hydration, but route-specific static HTML
 // lets crawlers and link previews identify the requested page before JavaScript.
 const redirectShell = (targetPath, title) => {
-  const canonicalUrl = toCanonicalUrl(targetPath);
-  const localPath = toCanonicalPath(targetPath);
+  const canonicalUrl = targetPath.startsWith("https://") ? targetPath : toCanonicalUrl(targetPath);
+  const localPath = targetPath.startsWith("https://") ? targetPath : toCanonicalPath(targetPath);
   const encodedTitle = escapeHtml(title);
   return `<!DOCTYPE html>
 <html lang="en">

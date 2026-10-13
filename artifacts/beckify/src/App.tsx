@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StoreRedirect } from "@/components/StoreRedirect";
 import Home from "@/pages/home";
 
 /**
@@ -72,10 +73,10 @@ function Router() {
         <Route path="/gear/">{() => <Redirect to="/toolbox/" />}</Route>
         <Route path="/products">{() => <Redirect to="/toolbox/" />}</Route>
         <Route path="/products/">{() => <Redirect to="/toolbox/" />}</Route>
-        <Route path="/shop">{() => <Redirect to="/toolbox/" />}</Route>
-        <Route path="/shop/">{() => <Redirect to="/toolbox/" />}</Route>
-        <Route path="/store">{() => <Redirect to="/toolbox/" />}</Route>
-        <Route path="/store/">{() => <Redirect to="/toolbox/" />}</Route>
+        <Route path="/shop" component={StoreRedirect} />
+        <Route path="/shop/" component={StoreRedirect} />
+        <Route path="/store" component={StoreRedirect} />
+        <Route path="/store/" component={StoreRedirect} />
         <Route path="/sitemap" component={SiteMapPage} />
         <Route path="/sitemap/" component={SiteMapPage} />
         <Route path="/share/:token" component={SharePage} />

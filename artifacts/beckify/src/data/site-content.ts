@@ -27,12 +27,15 @@ import {
   Phone,
   Zap,
   Smartphone,
+  ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
 
 /** ------------------------------------------------------------------------
  * SITE-WIDE SETTINGS
  * -------------------------------------------------------------------- */
+import { SHOP_ORIGIN } from "./shop.mjs";
+
 export const SITE_VERSION = "v3.0.0";
 
 /** ------------------------------------------------------------------------
@@ -58,6 +61,7 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/apps", label: "Apps", icon: Smartphone },
   { href: "/projects", label: "Projects", icon: Rocket },
   { href: "/games", label: "Games", icon: Gamepad2 },
+  { href: SHOP_ORIGIN, label: "Shop", icon: ShoppingBag, external: true },
 ];
 
 /** ------------------------------------------------------------------------

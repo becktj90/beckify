@@ -165,7 +165,29 @@ Hosted on **GitHub Pages** (`.github/workflows/deploy.yml`), not Vercel.
   overwrite it with `index.html` (that caused soft-404 homepage bodies). See
   `docs/GH_PAGES_404_DEPLOY_SNIPPET.md` — replace the SPA-fallback `cp` in
   `deploy.yml` with `bash artifacts/beckify/scripts/finalize-gh-pages.sh`.
-- Removed paths `/gear`, `/products`, `/shop`, and `/store` publish thin redirect
-  stubs to `/toolbox/` via `scripts/generate-static-routes.mjs`. They stay out
+- Removed affiliate paths `/gear` and `/products` publish thin redirect
+  stubs to `/toolbox/`. Merchandise paths `/shop` and `/store` redirect to Shopify via `scripts/generate-static-routes.mjs`. They stay out
   of `sitemap.xml`. GitHub Pages cannot emit HTTP 301 to another path.
 
+
+## Store integration
+
+`src/data/shop.mjs` owns the storefront origin and three featured product cards.
+Navigation, footer, home cards, controls reference link, and static `/shop/` and
+`/store/` redirects use it. Products open Shopify for current price, availability,
+size selection, cart, and checkout. No storefront credentials are needed.
+
+To connect `shop.beckify.com` without moving the main site:
+
+1. Add a DNS CNAME record named `shop` pointing to `shops.myshopify.com`.
+2. In Shopify Settings → Domains, connect `shop.beckify.com` and complete any
+   ownership verification Shopify requests. Wait until HTTPS is active.
+3. Verify storefront and product links, then change `SHOP_ORIGIN` in
+   `src/data/shop.mjs` to `https://shop.beckify.com` and rebuild.
+
+Keep the root/www GitHub Pages records and repository CNAME unchanged.
+DNS instructions: https://help.shopify.com/en/manual/domains/add-a-domain/connecting-domains/connect-subdomain
+
+On the Shopify theme, add a footer link named **Tools & Projects** to
+`https://beckify.com/`. Refresh featured images here when production artwork
+changes; prices are intentionally read on the store rather than duplicated.
