@@ -184,7 +184,7 @@ Accessibility and field-use verification steps are tracked in [`docs/ACCESSIBILI
 
 ## Mac — open and run
 
-1. Install Xcode 15 or later.
+1. Install Xcode 15 or later (Xcode 26 or later to upload builds to App Store Connect).
 2. Open `ios/Beckify.xcodeproj`.
 3. Select the **Beckify** scheme (Toolbox) or **BeckifyDrive** (OBD dashboard and CarPlay).
 4. Select an iPhone or iPad simulator.
@@ -205,6 +205,16 @@ xcodebuild \
 ```
 
 Beckify Drive (same project, **BeckifyDrive** scheme — native CarPlay templates, not a web view). Apple granted the CarPlay Driving Task entitlement on 2026-10-13. A signed device build needs **CarPlay Driving Task** enabled on App ID `com.beckify.drive` first. See [`BeckifyDrive/docs/APP_STORE.md`](BeckifyDrive/docs/APP_STORE.md).
+
+**One-command Drive builds (Mac with Xcode, signed in under Settings → Accounts):**
+
+```sh
+cd ios
+make drive-device       # build, install and launch on the plugged-in iPhone
+make drive-testflight   # archive and upload to TestFlight (build number = yyMMddHHmmss)
+```
+
+Both run `scripts/drive_ship.sh`: automatic signing for team 9TR6R5LV8M, a pull of `main` when the tree is clean, and a plain-English hint (plus the developer portal opening) if the CarPlay capability is still off on `com.beckify.drive`. Output goes to `ios/build/drive/` (ignored).
 
 ```bash
 cd ios
