@@ -141,19 +141,28 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func elementRow(text: String, tiles: [DriveCarPlayTile], scale: CGFloat) -> CPListImageRowItem {
         let size = CPListImageRowItemImageGridElement.maximumImageSize
         let elements = tiles.map { tile in
-            // The title carries the full reading, so it doubles as the accessibility text.
-            // (CPListImageRowItemElement.accessibilityLabel is iOS 26.4+ in newer SDKs.)
-            CPListImageRowItemImageGridElement(
+            // Short name under the tile where VoiceOver can read the full value
+            // from the accessibility label (26.4+); the full reading before that.
+            let element = CPListImageRowItemImageGridElement(
                 image: CarPlayTileRenderer.image(tile, size: size, scale: scale),
                 imageShape: .roundedRectangle,
-                // Short name under the tile; the image already shows the reading.
-                title: tile.title,
+                title: Self.hasElementAccessibilityLabel ? tile.title : tile.spoken,
                 accessorySymbolName: nil
             )
+            if #available(iOS 26.4, *) {
+                element.accessibilityLabel = tile.spoken
+            }
+            return element
         }
         return withHandlers(CPListImageRowItem(text: text, imageGridElements: elements, allowsMultipleLines: true), tiles: tiles)
     }
     #endif
+
+    /// `CPListImageRowItemElement.accessibilityLabel` is iOS 26.4+ in newer SDKs.
+    private static var hasElementAccessibilityLabel: Bool {
+        if #available(iOS 26.4, *) { return true }
+        return false
+    }
 
     /// "Power 54 hp est. Peak 82 hp, torque 200 lb-ft, HV amps 115 A."
     private static func spokenCard(_ tile: DriveCarPlayTile) -> String {
@@ -235,11 +244,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let ordered = tiles.filter { $0.kind == focus } + tiles.filter { $0.kind != focus }
         let cards = ordered.map { tile in
             // The card image draws its own name, reading and readouts, so no
-            // CarPlay caption covers the gauge.
+            // CarPlay caption covers the gauge where VoiceOver can use the
+            // accessibility label (26.4+). Before that the caption is the label.
             let card = CPListImageRowItemCardElement(
                 image: CarPlayTileRenderer.clusterImage(tile, size: size, scale: scale),
                 showsImageFullHeight: true,
-                title: nil,
+                title: Self.hasElementAccessibilityLabel ? nil : tile.spoken,
                 subtitle: nil,
                 tintColor: nil
             )
