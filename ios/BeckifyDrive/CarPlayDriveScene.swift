@@ -437,7 +437,8 @@ enum CarPlayCopySource {
             speedSource: speed?.source.rawValue,
             rangeMiles: model.planningRangeMiles,
             weatherRangeMiles: model.weatherAdjustment?.adjustedMiles,
-            whPerMile: model.tripWhPerMile,
+            // Same figure range uses: typed, else measured this trip, else the profile default.
+            whPerMile: model.effectivePlanning.inputs.whPerMile,
             packTempC: model.value(.packTempC).value,
             rpm: model.value(.rpm).value,
             coolantC: model.value(.coolantC).value,
