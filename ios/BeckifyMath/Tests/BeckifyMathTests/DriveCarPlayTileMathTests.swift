@@ -201,6 +201,65 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         XCTAssertEqual(DriveCarPlayTiles.headline(flow: nil, link: "Not connected"), "Not connected")
     }
 
+    func testDetailReadoutsForBoltInUSUnits() {
+        var input = boltDriving()
+        input.hvCurrentAmps = 32
+        input.torqueNm = 271.16
+        input.tripKm = 16.0934
+        input.avgSpeedKph = 48.28
+        input.maxSpeedKph = 112.65
+        input.regenKWh = 0.84
+        input.netKWh = 3.26
+        input.regenScore = 0.62
+        input.motorTempC = 41
+        input.ambientC = 9
+        let tiles = Dictionary(uniqueKeysWithValues: DriveCarPlayTiles.make(input, units: us).map { ($0.kind, $0) })
+        func lines(_ kind: DriveCarPlayTile.Kind) -> [String] {
+            tiles[kind]?.readouts.map { "\($0.label) \($0.value)" } ?? []
+        }
+        // 42 kW peak = 56 hp; 271 N·m = 200 lb-ft.
+        XCTAssertEqual(lines(.power), ["PEAK 56 hp", "TORQUE 200 lb-ft", "HV AMPS 32 A"])
+        XCTAssertEqual(lines(.charge), ["RANGE 167 mi", "PACK 84 °F", "NET USED 3.3 kWh"])
+        XCTAssertEqual(lines(.flow), ["REGEN SCORE 62 %", "RECOVERED 0.8 kWh", "HV AMPS 32 A"])
+        XCTAssertEqual(lines(.speed), ["AVG 30 mph", "TOP 70 mph", "TRIP 10.0 mi"])
+        XCTAssertEqual(lines(.range), ["CHARGE 65 %", "WEATHER 140 mi", "EFFICIENCY 290 Wh/mi"])
+        XCTAssertEqual(lines(.packTemp), ["MOTOR 106 °F", "OUTSIDE 48 °F", "CHARGE 65 %"])
+    }
+
+    func testDetailReadoutsShowDashWhenNotRead() {
+        let tiles = DriveCarPlayTiles.make(DriveCarPlayTileInputs(layout: .ev), units: us)
+        for tile in tiles {
+            XCTAssertEqual(tile.readouts.count, 3, "\(tile.kind)")
+            for readout in tile.readouts {
+                XCTAssertEqual(readout.value, "—", "\(tile.kind) \(readout.label)")
+            }
+            // No gauge, no end labels.
+            XCTAssertNil(tile.scaleLabels, "\(tile.kind)")
+        }
+    }
+
+    func testDetailReadoutsMetric() {
+        var input = boltDriving()
+        input.tripKm = 16.0934
+        input.torqueNm = 271.16
+        let tiles = Dictionary(uniqueKeysWithValues: DriveCarPlayTiles.make(input, units: metric).map { ($0.kind, $0) })
+        XCTAssertEqual(tiles[.speed]?.readouts.last?.value, "16.1 km")
+        XCTAssertEqual(tiles[.power]?.readouts[1].value, "271 Nm")
+        XCTAssertEqual(tiles[.range]?.readouts.last?.value, "180 Wh/km")
+    }
+
+    func testScaleLabels() {
+        let tiles = Dictionary(uniqueKeysWithValues: DriveCarPlayTiles.make(boltDriving(), units: us).map { ($0.kind, $0) })
+        XCTAssertEqual(tiles[.charge]?.scaleLabels, .init(low: "E", high: "F"))
+        XCTAssertEqual(tiles[.power]?.scaleLabels, .init(low: "REGEN", high: "DRIVE"))
+        // 160 km/h scale = 99 mph.
+        XCTAssertEqual(tiles[.speed]?.scaleLabels, .init(low: "0", high: "99"))
+        XCTAssertEqual(tiles[.packTemp]?.scaleLabels, .init(low: "COLD", high: "HOT"))
+        // Symbol tiles have no scale.
+        XCTAssertNil(tiles[.range]?.scaleLabels)
+        XCTAssertNil(tiles[.flow]?.scaleLabels)
+    }
+
     func testTilesAreEquatableForChangeDetection() {
         let a = DriveCarPlayTiles.make(boltDriving(), units: us)
         let b = DriveCarPlayTiles.make(boltDriving(), units: us)

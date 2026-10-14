@@ -147,13 +147,23 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             CPListImageRowItemImageGridElement(
                 image: CarPlayTileRenderer.image(tile, size: size, scale: scale),
                 imageShape: .roundedRectangle,
-                title: tile.spoken,
+                // Short name under the tile; the image already shows the reading.
+                title: tile.title,
                 accessorySymbolName: nil
             )
         }
         return withHandlers(CPListImageRowItem(text: text, imageGridElements: elements, allowsMultipleLines: true), tiles: tiles)
     }
     #endif
+
+    /// "Power 54 hp est. Peak 82 hp, torque 200 lb-ft, HV amps 115 A."
+    private static func spokenCard(_ tile: DriveCarPlayTile) -> String {
+        let extras = tile.readouts
+            .filter { $0.value != DriveCarPlayTiles.missing }
+            .map { "\($0.label.capitalized) \($0.value)" }
+            .joined(separator: ", ")
+        return extras.isEmpty ? tile.spoken : "\(tile.spoken). \(extras)."
+    }
 
     private func legacyRow(text: String, tiles: [DriveCarPlayTile], size: CGSize, scale: CGFloat) -> CPListImageRowItem {
         let images = tiles.map { CarPlayTileRenderer.image($0, size: size, scale: scale) }
@@ -223,13 +233,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let size = CPListImageRowItemCardElement.maximumFullHeightImageSize
         let ordered = tiles.filter { $0.kind == focus } + tiles.filter { $0.kind != focus }
         let cards = ordered.map { tile in
-            CPListImageRowItemCardElement(
+            // The card image draws its own name, reading and readouts, so no
+            // CarPlay caption covers the gauge.
+            let card = CPListImageRowItemCardElement(
                 image: CarPlayTileRenderer.clusterImage(tile, size: size, scale: scale),
                 showsImageFullHeight: true,
-                title: tile.spoken,
-                subtitle: tile.note.isEmpty ? nil : tile.note,
+                title: nil,
+                subtitle: nil,
                 tintColor: nil
             )
+            if #available(iOS 26.4, *) {
+                card.accessibilityLabel = Self.spokenCard(tile)
+            }
+            return card
         }
         let row = CPListImageRowItem(text: nil, cardElements: cards, allowsMultipleLines: false)
         let all = CPListItem(text: "All readings", detailText: "Every value as text, with sources")
@@ -368,6 +384,7 @@ enum CarPlayCopySource {
     static func tileInputs() -> DriveCarPlayTileInputs {
         let model = DashboardModel.shared
         let speed = model.heroSpeed
+        let energy = model.insights.energy
         return DriveCarPlayTileInputs(
             layout: model.layout,
             socPercent: model.value(.displayedSocPercent).value,
@@ -384,7 +401,16 @@ enum CarPlayCopySource {
             coolantC: model.value(.coolantC).value,
             fuelPercent: model.value(.fuelLevelPercent).value,
             moduleVolts: model.value(.moduleVolts).value,
-            ambientC: model.value(.ambientC).value
+            ambientC: model.value(.ambientC).value,
+            hvCurrentAmps: model.value(.hvCurrentAmps).value,
+            torqueNm: model.torqueNm,
+            tripKm: model.trip.startedAt == nil ? nil : model.trip.distanceKilometers,
+            maxSpeedKph: model.trip.maxSpeedKph,
+            avgSpeedKph: model.trip.averageMovingSpeedKph,
+            regenKWh: energy.isEmpty ? nil : energy.regenKWh,
+            netKWh: energy.isEmpty ? nil : energy.netKWh,
+            regenScore: model.insights.regen.score,
+            motorTempC: model.value(.motorTempC).value
         )
     }
 }

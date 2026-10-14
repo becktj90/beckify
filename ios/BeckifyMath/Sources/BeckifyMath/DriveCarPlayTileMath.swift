@@ -66,6 +66,31 @@ public struct DriveCarPlayTile: Equatable, Sendable, Identifiable {
     /// SF Symbol name for the tile's corner icon.
     public var symbol: String
     public var isEstimate: Bool
+    /// Extra readings for the large detail card, e.g. PEAK 42 hp, TORQUE 180 lb-ft.
+    public var readouts: [Readout]
+    /// Words at the two ends of the gauge, e.g. REGEN / DRIVE or E / F.
+    public var scaleLabels: ScaleLabels?
+
+    /// One line of the detail card's readout panel. Value is "—" when not read.
+    public struct Readout: Equatable, Sendable {
+        public var label: String
+        public var value: String
+
+        public init(label: String, value: String) {
+            self.label = label
+            self.value = value
+        }
+    }
+
+    public struct ScaleLabels: Equatable, Sendable {
+        public var low: String
+        public var high: String
+
+        public init(low: String, high: String) {
+            self.low = low
+            self.high = high
+        }
+    }
 
     public var id: String { kind.rawValue }
 
@@ -85,7 +110,9 @@ public struct DriveCarPlayTile: Equatable, Sendable, Identifiable {
         gauge: Gauge?,
         tone: Tone,
         symbol: String,
-        isEstimate: Bool
+        isEstimate: Bool,
+        readouts: [Readout] = [],
+        scaleLabels: ScaleLabels? = nil
     ) {
         self.kind = kind
         self.title = title
@@ -96,6 +123,8 @@ public struct DriveCarPlayTile: Equatable, Sendable, Identifiable {
         self.tone = tone
         self.symbol = symbol
         self.isEstimate = isEstimate
+        self.readouts = readouts
+        self.scaleLabels = scaleLabels
     }
 }
 
@@ -118,6 +147,17 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
     public var fuelPercent: Double?
     public var moduleVolts: Double?
     public var ambientC: Double?
+    /// Detail-card extras. All optional; a missing one reads "—".
+    public var hvCurrentAmps: Double?
+    public var torqueNm: Double?
+    public var tripKm: Double?
+    public var maxSpeedKph: Double?
+    public var avgSpeedKph: Double?
+    public var regenKWh: Double?
+    public var netKWh: Double?
+    /// 0…1 share of braking energy recovered.
+    public var regenScore: Double?
+    public var motorTempC: Double?
 
     public init(
         layout: DriveLayout,
@@ -135,7 +175,16 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         coolantC: Double? = nil,
         fuelPercent: Double? = nil,
         moduleVolts: Double? = nil,
-        ambientC: Double? = nil
+        ambientC: Double? = nil,
+        hvCurrentAmps: Double? = nil,
+        torqueNm: Double? = nil,
+        tripKm: Double? = nil,
+        maxSpeedKph: Double? = nil,
+        avgSpeedKph: Double? = nil,
+        regenKWh: Double? = nil,
+        netKWh: Double? = nil,
+        regenScore: Double? = nil,
+        motorTempC: Double? = nil
     ) {
         self.layout = layout
         self.socPercent = socPercent
@@ -153,6 +202,15 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         self.fuelPercent = fuelPercent
         self.moduleVolts = moduleVolts
         self.ambientC = ambientC
+        self.hvCurrentAmps = hvCurrentAmps
+        self.torqueNm = torqueNm
+        self.tripKm = tripKm
+        self.maxSpeedKph = maxSpeedKph
+        self.avgSpeedKph = avgSpeedKph
+        self.regenKWh = regenKWh
+        self.netKWh = netKWh
+        self.regenScore = regenScore
+        self.motorTempC = motorTempC
     }
 }
 
@@ -179,6 +237,10 @@ public enum DriveCarPlayTiles {
 
     /// Tiles in CarPlay order. Two rows of four on EV profiles.
     public static func make(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> [DriveCarPlayTile] {
+        tiles(input, units: units).map { detailed($0, input, units: units) }
+    }
+
+    static func tiles(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> [DriveCarPlayTile] {
         switch input.layout {
         case .ev:
             return [
@@ -396,6 +458,112 @@ public enum DriveCarPlayTiles {
             unit: units.temperature.label, note: "OBD", gauge: .symbol, tone: .accent,
             symbol: "thermometer.sun", isEstimate: false
         )
+    }
+
+    // MARK: Detail card
+
+    /// Adds the readout panel and gauge end labels for the large card.
+    static func detailed(_ tile: DriveCarPlayTile, _ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        var tile = tile
+        tile.readouts = readouts(tile.kind, input, units: units)
+        tile.scaleLabels = tile.gauge == nil ? nil : scaleLabels(tile.kind, input, units: units)
+        return tile
+    }
+
+    static func readouts(
+        _ kind: DriveCarPlayTile.Kind,
+        _ input: DriveCarPlayTileInputs,
+        units: DriveUnitPreference
+    ) -> [DriveCarPlayTile.Readout] {
+        typealias R = DriveCarPlayTile.Readout
+        let range = R(label: "RANGE", value: distance(input.rangeMiles.map { $0 * DriveUnitPreference.kmPerMile }, units))
+        let weather = R(label: "WEATHER", value: distance(input.weatherRangeMiles.map { $0 * DriveUnitPreference.kmPerMile }, units))
+        let pack = R(label: "PACK", value: temperature(input.packTempC, units))
+        let outside = R(label: "OUTSIDE", value: temperature(input.ambientC, units))
+        let motor = R(label: "MOTOR", value: temperature(input.motorTempC, units))
+        let coolant = R(label: "COOLANT", value: temperature(input.coolantC, units))
+        let charge = R(label: "CHARGE", value: format(input.socPercent, "%.0f %%"))
+        let amps = R(label: "HV AMPS", value: format(input.hvCurrentAmps, "%.0f A"))
+        let net = R(label: "NET USED", value: format(input.netKWh, "%.1f kWh"))
+        let regen = R(label: "RECOVERED", value: format(input.regenKWh, "%.1f kWh"))
+        let trip = R(label: "TRIP", value: distance(input.tripKm, units, decimals: 1))
+        let avg = R(label: "AVG", value: speed(input.avgSpeedKph, units))
+        let top = R(label: "TOP", value: speed(input.maxSpeedKph, units))
+        let speedNow = R(label: "SPEED", value: speed(input.speedKph, units))
+        let rpm = R(label: "RPM", value: format(input.rpm, "%.0f"))
+        let volts = R(label: "12 V", value: format(input.moduleVolts, "%.1f V"))
+        let peak = R(
+            label: "PEAK",
+            value: input.peakPowerKW > 0
+                ? "\(Int(units.power.convert(kilowatts: input.peakPowerKW).rounded())) \(units.power.label)"
+                : missing
+        )
+        let torque = R(
+            label: "TORQUE",
+            value: finite(input.torqueNm).map {
+                "\(Int(units.torque.convert(newtonMeters: abs($0)).rounded())) \(units.torque.label)"
+            } ?? missing
+        )
+        let score = R(label: "REGEN SCORE", value: format(input.regenScore.map { $0 * 100 }, "%.0f %%"))
+        let efficiency = R(label: "EFFICIENCY", value: whPer(input.whPerMile, units))
+
+        switch kind {
+        case .charge: return [range, pack, net]
+        case .power: return [peak, torque, amps]
+        case .flow: return [score, regen, amps]
+        case .speed: return [avg, top, trip]
+        case .range: return [charge, weather, efficiency]
+        case .weatherRange: return [range, outside, pack]
+        case .efficiency: return [trip, net, regen]
+        case .packTemp: return [motor, outside, charge]
+        case .rpm: return [speedNow, coolant, volts]
+        case .coolant: return [outside, rpm, volts]
+        case .fuel: return [trip, avg, top]
+        case .moduleVolts: return [speedNow, outside, trip]
+        case .ambient: return [speedNow, volts, trip]
+        }
+    }
+
+    static func scaleLabels(
+        _ kind: DriveCarPlayTile.Kind,
+        _ input: DriveCarPlayTileInputs,
+        units: DriveUnitPreference
+    ) -> DriveCarPlayTile.ScaleLabels? {
+        typealias S = DriveCarPlayTile.ScaleLabels
+        switch kind {
+        case .charge, .fuel: return S(low: "E", high: "F")
+        case .power: return S(low: "REGEN", high: "DRIVE")
+        case .speed: return S(low: "0", high: String(format: "%.0f", units.speed(fromKph: speedScaleKph)))
+        case .rpm: return S(low: "0", high: "8k")
+        case .packTemp: return S(low: "COLD", high: "HOT")
+        case .moduleVolts: return S(low: "11", high: "15")
+        case .flow, .range, .weatherRange, .efficiency, .coolant, .ambient: return nil
+        }
+    }
+
+    static func format(_ value: Double?, _ pattern: String) -> String {
+        finite(value).map { String(format: pattern, $0) } ?? missing
+    }
+
+    static func temperature(_ celsius: Double?, _ units: DriveUnitPreference) -> String {
+        finite(celsius).map { String(format: "%.0f", units.temperature(fromCelsius: $0)) + " " + units.temperature.label } ?? missing
+    }
+
+    static func speed(_ kph: Double?, _ units: DriveUnitPreference) -> String {
+        guard let kph = finite(kph), kph >= 0 else { return missing }
+        return String(format: "%.0f", units.speed(fromKph: kph)) + " " + units.speed.label
+    }
+
+    static func distance(_ km: Double?, _ units: DriveUnitPreference, decimals: Int = 0) -> String {
+        guard let km = finite(km), km >= 0 else { return missing }
+        return String(format: "%.\(decimals)f", units.distance(fromKilometers: km)) + " " + units.distanceLabel
+    }
+
+    static func whPer(_ whPerMile: Double?, _ units: DriveUnitPreference) -> String {
+        guard let whPerMile = finite(whPerMile), whPerMile > 0 else { return missing }
+        return units.speed == .mph
+            ? String(format: "%.0f Wh/mi", whPerMile)
+            : String(format: "%.0f Wh/km", whPerMile / DriveUnitPreference.kmPerMile)
     }
 
     // MARK: Helpers
