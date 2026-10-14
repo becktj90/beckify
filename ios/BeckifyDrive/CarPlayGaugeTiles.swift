@@ -19,6 +19,34 @@ enum CarPlayTileRenderer {
     }
 }
 
+extension CarPlayTileRenderer {
+    /// Full-bleed card image for the per-tile detail screen: the same retro
+    /// gauge, drawn large on the dashboard background.
+    static func clusterImage(_ tile: DriveCarPlayTile, size: CGSize, scale: CGFloat) -> UIImage {
+        let content = CarPlayGaugeClusterView(tile: tile, size: size)
+            .frame(width: size.width, height: size.height)
+            .environment(\.colorScheme, .dark)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = max(1, scale)
+        return renderer.uiImage ?? UIImage()
+    }
+}
+
+/// A big gauge for CarPlay's detail card, centered in a wide card.
+struct CarPlayGaugeClusterView: View {
+    let tile: DriveCarPlayTile
+    let size: CGSize
+
+    var body: some View {
+        let side = max(1, min(size.width, size.height) * 0.9)
+        ZStack {
+            DriveTheme.background
+            CarPlayGaugeTileView(tile: tile, side: side)
+        }
+        .frame(width: size.width, height: size.height)
+    }
+}
+
 /// One square tile: background glow, gauge, retro digits, unit, corner icon.
 struct CarPlayGaugeTileView: View {
     let tile: DriveCarPlayTile
@@ -226,6 +254,17 @@ struct CarPlayTilesPreview: View {
                 Text("CarPlay preview")
                     .font(.title2.weight(.bold))
                     .foregroundStyle(DriveTheme.text)
+                Text("Tap a tile: detail card")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(DriveTheme.text)
+                HStack(spacing: 8) {
+                    ForEach(Array(DriveCarPlayTiles.make(Self.samples[0].input, units: Self.us).prefix(2))) { tile in
+                        Image(uiImage: CarPlayTileRenderer.clusterImage(tile, size: CGSize(width: 180, height: 150), scale: 3))
+                            .resizable()
+                            .frame(width: 180, height: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                }
                 ForEach(Array(Self.samples.enumerated()), id: \.offset) { _, sample in
                     let tiles = DriveCarPlayTiles.make(sample.input, units: Self.us)
                     VStack(alignment: .leading, spacing: 10) {
