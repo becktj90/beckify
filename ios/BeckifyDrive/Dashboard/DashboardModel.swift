@@ -238,7 +238,7 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         return DriveCarPlayExtras.make(
             flow: flow,
             powerKW: powerKW,
-            whPerMile: insights.efficiency.whPerMile(packKWh: planning.usableKWh),
+            whPerMile: tripWhPerMile,
             weatherRangeMiles: weatherAdjustment?.adjustedMiles,
             units: units
         )
@@ -267,12 +267,34 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         )
     }
 
-    /// Planning range in miles. Needs displayed charge actually read plus both typed inputs.
+    /// Pack size: typed, else the profile's published figure (Bolt: 65 kWh).
+    var effectivePackKWh: Double? {
+        planning.usableKWh ?? DrivePlanning.defaults(for: profile)?.usableKWh
+    }
+
+    /// This trip's Wh/mi, an estimate: displayed-charge burn over distance once
+    /// there is enough of both, else nominal-volt pack energy over at least a mile.
+    var tripWhPerMile: Double? {
+        if let wh = insights.efficiency.whPerMile(packKWh: effectivePackKWh) { return wh }
+        let miles = trip.distanceKilometers / DriveUnitPreference.kmPerMile
+        let energy = insights.energy
+        guard miles >= 1, !energy.isEmpty, energy.netKWh > 0 else { return nil }
+        return energy.netKWh * 1_000 / miles
+    }
+
+    /// Typed pack and Wh/mi, else this trip's Wh/mi, else the profile defaults.
+    var effectivePlanning: DrivePlanning.Effective {
+        DrivePlanning.effective(typed: planning, profile: profile, measuredWhPerMile: tripWhPerMile)
+    }
+
+    /// Planning range in miles. Needs displayed charge actually read; pack size and
+    /// Wh/mi are typed, measured this trip, or the profile's published defaults.
     var planningRangeMiles: Double? {
-        DrivePlanning.rangeMiles(
+        let inputs = effectivePlanning.inputs
+        return DrivePlanning.rangeMiles(
             socPercent: value(.displayedSocPercent).value,
-            usableKWh: planning.usableKWh,
-            whPerMile: planning.whPerMile
+            usableKWh: inputs.usableKWh,
+            whPerMile: inputs.whPerMile
         )
     }
 

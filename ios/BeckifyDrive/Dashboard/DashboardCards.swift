@@ -93,7 +93,7 @@ struct DashboardCardView: View {
             notReported(.charger, id: "charger", symbol: "powerplug.fill")
         // EV energy & range (estimates)
         case .efficiency:
-            EfficiencyCard(tracker: model.insights.efficiency, packKWh: model.planning.usableKWh, units: units)
+            EfficiencyCard(tracker: model.insights.efficiency, packKWh: model.effectivePackKWh, units: units)
         case .weatherRange:
             WeatherRangeCard(
                 model: model,
@@ -248,8 +248,10 @@ struct DashboardCardView: View {
         let miles = model.planningRangeMiles
         let distance = miles.map { units.distance(fromKilometers: $0 * DriveUnitPreference.kmPerMile) }
         let caption: String
-        if miles != nil, let kWh = model.planning.usableKWh, let wh = model.planning.whPerMile {
+        let effective = model.effectivePlanning
+        if miles != nil, let kWh = effective.inputs.usableKWh, let wh = effective.inputs.whPerMile {
             caption = String(format: "Planning only · %.0f kWh assumed · %.0f Wh/mi · not the car's estimate", kWh, wh)
+                + (effective.usesDefaults ? " · published defaults until you type yours under Adapter" : "")
         } else if soc.value == nil {
             caption = "Needs displayed charge from the car, plus pack kWh and Wh/mi you type."
         } else {

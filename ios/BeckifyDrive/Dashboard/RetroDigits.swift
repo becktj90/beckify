@@ -9,11 +9,13 @@ struct RetroDigits: View {
     let height: CGFloat
     let color: Color
     var glow = true
+    /// Pads on the left with unlit "8"s to this many digits, like a 90s LCD.
+    var ghostDigits = 0
 
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let glyphs = Self.glyphs(text)
+        let glyphs = Self.glyphs(text, ghostDigits: ghostDigits)
         let width = glyphs.reduce(CGFloat(0)) { $0 + $1.advance(height: height) }
         Canvas { context, size in
             var x: CGFloat = 0
@@ -33,10 +35,12 @@ struct RetroDigits: View {
         case segments(Set<Segment>)
         case point
         case space
+        /// All seven segments unlit.
+        case ghost
 
         func advance(height: CGFloat) -> CGFloat {
             switch self {
-            case .segments, .space: return height * 0.62
+            case .segments, .space, .ghost: return height * 0.62
             case .point: return height * 0.22
             }
         }
@@ -71,12 +75,27 @@ struct RetroDigits: View {
         }
     }
 
+    static func glyphs(_ text: String, ghostDigits: Int) -> [Glyph] {
+        let lit = glyphs(text)
+        let digits = lit.filter { if case .segments = $0 { return true } else { return false } }.count
+        return Array(repeating: .ghost, count: max(0, ghostDigits - digits)) + lit
+    }
+
+    /// Drawn width for `text` at `height`, ghost padding included.
+    static func width(_ text: String, height: CGFloat, ghostDigits: Int = 0) -> CGFloat {
+        glyphs(text, ghostDigits: ghostDigits).reduce(CGFloat(0)) { $0 + $1.advance(height: height) }
+    }
+
     // MARK: Drawing
 
     private func draw(_ glyph: Glyph, in cell: CGRect, context: inout GraphicsContext) {
         switch glyph {
         case .space:
             return
+        case .ghost:
+            for segment in Segment.allCases {
+                fill(path(segment, in: cell), lit: false, context: &context)
+            }
         case .point:
             let side = height * 0.11
             let dot = Path(roundedRect: CGRect(x: cell.midX - side / 2, y: cell.maxY - side, width: side, height: side), cornerRadius: side * 0.2)
