@@ -14,6 +14,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var interfaceController: CPInterfaceController?
     private var rootTemplate: CPListTemplate?
     private var detailsTemplate: CPInformationTemplate?
+    /// Per-tile detail screen (iOS 26 card row) and which tile it opened on.
+    private var gaugeTemplate: CPListTemplate?
+    private var gaugeFocus: DriveCarPlayTile.Kind?
     private var lastPublish: Date?
     private var lastCopy: DriveCarPlayCopy?
     private var lastExtras: DriveCarPlayExtras?
@@ -46,6 +49,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         self.interfaceController = nil
         rootTemplate = nil
         detailsTemplate = nil
+        gaugeTemplate = nil
+        gaugeFocus = nil
         lastPublish = nil
         lastCopy = nil
         lastExtras = nil
@@ -91,6 +96,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             interfaceController.setRootTemplate(template, animated: false) { _, _ in }
         }
         detailsTemplate?.items = Self.detailItems(copy: copy, extras: extras)
+        refreshGauge(tiles: tiles)
     }
 
     // MARK: Gauges
@@ -145,7 +151,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 accessorySymbolName: nil
             )
         }
-        return withDetailsHandlers(CPListImageRowItem(text: text, imageGridElements: elements, allowsMultipleLines: true))
+        return withHandlers(CPListImageRowItem(text: text, imageGridElements: elements, allowsMultipleLines: true), tiles: tiles)
     }
     #endif
 
@@ -157,20 +163,84 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         } else {
             row = CPListImageRowItem(text: text, images: images)
         }
-        return withDetailsHandlers(row)
+        return withHandlers(row, tiles: tiles)
     }
 
-    private func withDetailsHandlers(_ row: CPListImageRowItem) -> CPListImageRowItem {
+    /// Tapping a tile opens that gauge large; tapping the row itself opens the text list.
+    private func withHandlers(_ row: CPListImageRowItem, tiles: [DriveCarPlayTile]) -> CPListImageRowItem {
+        let kinds = tiles.map(\.kind)
         row.handler = { [weak self] _, completion in
             self?.showDetails()
             completion()
         }
-        row.listImageRowHandler = { [weak self] _, _, completion in
-            self?.showDetails()
+        row.listImageRowHandler = { [weak self] _, index, completion in
+            if kinds.indices.contains(index) {
+                self?.showGauge(kinds[index])
+            } else {
+                self?.showDetails()
+            }
             completion()
         }
         return row
     }
+
+    // MARK: Gauge detail
+
+    /// iOS 26+ opens the tile as a large retro gauge card, the tapped gauge
+    /// first and the rest of the cluster after it. Earlier iOS has no large
+    /// image rows, so it opens the text list.
+    private func showGauge(_ kind: DriveCarPlayTile.Kind) {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *), let interfaceController, let tiles = lastTiles, !tiles.isEmpty {
+            if let gaugeTemplate, interfaceController.templates.contains(gaugeTemplate) { return }
+            gaugeFocus = kind
+            let template = CPListTemplate(title: "Gauges", sections: gaugeSections(tiles: tiles, focus: kind, interfaceController: interfaceController))
+            gaugeTemplate = template
+            interfaceController.pushTemplate(template, animated: true) { _, _ in }
+            return
+        }
+        #endif
+        showDetails()
+    }
+
+    private func refreshGauge(tiles: [DriveCarPlayTile]) {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *), let interfaceController, let gaugeTemplate, let gaugeFocus,
+           interfaceController.templates.contains(gaugeTemplate) {
+            gaugeTemplate.updateSections(gaugeSections(tiles: tiles, focus: gaugeFocus, interfaceController: interfaceController))
+        }
+        #endif
+    }
+
+    #if compiler(>=6.2)
+    @available(iOS 26.0, *)
+    private func gaugeSections(
+        tiles: [DriveCarPlayTile],
+        focus: DriveCarPlayTile.Kind,
+        interfaceController: CPInterfaceController
+    ) -> [CPListSection] {
+        let scale = interfaceController.carTraitCollection.displayScale
+        let size = CPListImageRowItemCardElement.maximumFullHeightImageSize
+        let ordered = tiles.filter { $0.kind == focus } + tiles.filter { $0.kind != focus }
+        let cards = ordered.map { tile in
+            CPListImageRowItemCardElement(
+                image: CarPlayTileRenderer.clusterImage(tile, size: size, scale: scale),
+                showsImageFullHeight: true,
+                title: tile.spoken,
+                subtitle: tile.note.isEmpty ? nil : tile.note,
+                tintColor: nil
+            )
+        }
+        let row = CPListImageRowItem(text: nil, cardElements: cards, allowsMultipleLines: false)
+        let all = CPListItem(text: "All readings", detailText: "Every value as text, with sources")
+        all.accessoryType = .disclosureIndicator
+        all.handler = { [weak self] _, completion in
+            self?.showDetails()
+            completion()
+        }
+        return [CPListSection(items: [row]), CPListSection(items: [all])]
+    }
+    #endif
 
     private static func chunks(_ tiles: [DriveCarPlayTile], of size: Int) -> [[DriveCarPlayTile]] {
         stride(from: 0, to: tiles.count, by: size).map { Array(tiles[$0..<min($0 + size, tiles.count)]) }
