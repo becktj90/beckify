@@ -403,10 +403,14 @@ public enum DrivePlanning {
     public static func effective(typed: PlanningInputs, profile: VehicleProfile, measuredWhPerMile: Double?) -> Effective {
         let fallback = defaults(for: profile)
         let measured = measuredWhPerMile.flatMap { $0.isFinite && $0 >= 50 && $0 <= 2000 ? $0 : nil }
-        let usable = typed.usableKWh ?? fallback?.usableKWh
-        let wh = typed.whPerMile ?? measured ?? fallback?.whPerMile
-        let defaultedPack = typed.usableKWh == nil && fallback != nil
-        let defaultedWh = typed.whPerMile == nil && measured == nil && fallback != nil
+        // A typed value outside the range the math accepts (e.g. 0) is ignored,
+        // so it cannot silently blank range and efficiency.
+        let typedKWh = typed.usableKWh.flatMap { $0 > 0 && $0 <= 200 ? $0 : nil }
+        let typedWh = typed.whPerMile.flatMap { $0 >= 50 && $0 <= 2000 ? $0 : nil }
+        let usable = typedKWh ?? fallback?.usableKWh
+        let wh = typedWh ?? measured ?? fallback?.whPerMile
+        let defaultedPack = typedKWh == nil && fallback != nil
+        let defaultedWh = typedWh == nil && measured == nil && fallback != nil
         return Effective(inputs: PlanningInputs(usableKWh: usable, whPerMile: wh), usesDefaults: defaultedPack || defaultedWh)
     }
 
