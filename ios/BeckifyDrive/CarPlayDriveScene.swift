@@ -1,5 +1,6 @@
 import BeckifyMath
 import CarPlay
+import SwiftUI
 import UIKit
 
 /// Driving-task CarPlay scene. Templates only — no WKWebView, no custom map.
@@ -7,19 +8,19 @@ import UIKit
 /// Attaches to the shared dashboard model so the trip, regen, efficiency, and
 /// weather estimators run while only CarPlay is on screen.
 ///
-/// Root: a list of gauge-tile rows drawn like the phone dashboard
-/// (driving-task apps can't draw their own CarPlay views, so the tiles are
-/// images in list image rows). "All readings" pushes the nine-row text view.
+/// Root: gauge-tile rows drawn like the phone dashboard (driving-task apps
+/// can't draw their own CarPlay views, so the tiles are images in list image
+/// rows), then every other reading as list rows, as many as the car allows.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, OBDSessionObserving {
     private var interfaceController: CPInterfaceController?
     private var rootTemplate: CPListTemplate?
-    private var detailsTemplate: CPInformationTemplate?
+    private var detailsTemplate: CPListTemplate?
     /// Per-tile detail screen (iOS 26 card row) and which tile it opened on.
     private var gaugeTemplate: CPListTemplate?
     private var gaugeFocus: DriveCarPlayTile.Kind?
     private var lastPublish: Date?
     private var lastCopy: DriveCarPlayCopy?
-    private var lastExtras: DriveCarPlayExtras?
+    private var lastReadings: [DriveCarPlayReadingSection]?
     private var lastTiles: [DriveCarPlayTile]?
     private var lastHeadline: String?
     /// GPS speed, weather range and timer-based efficiency change without an
@@ -53,7 +54,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         gaugeFocus = nil
         lastPublish = nil
         lastCopy = nil
-        lastExtras = nil
+        lastReadings = nil
         lastTiles = nil
         lastHeadline = nil
     }
@@ -77,17 +78,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let now = Date()
         guard force || CarPlayPublishPolicy.shouldPublish(since: lastPublish, now: now) else { return }
         let units = DriveUnitPreference.region
-        let (copy, extras) = CarPlayCopySource.current()
-        let tiles = DriveCarPlayTiles.make(CarPlayCopySource.tileInputs(), units: units)
+        let copy = CarPlayCopySource.current().copy
+        let inputs = CarPlayCopySource.tileInputs()
+        let tiles = DriveCarPlayTiles.make(inputs, units: units)
+        let readings = DriveCarPlayReadings.make(inputs, units: units, link: copy.link)
         let headline = DriveCarPlayTiles.headline(flow: DashboardModel.shared.flow, link: copy.link)
-        guard force || copy != lastCopy || extras != lastExtras || tiles != lastTiles || headline != lastHeadline else { return }
+        guard force || copy != lastCopy || readings != lastReadings || tiles != lastTiles || headline != lastHeadline else { return }
         lastCopy = copy
-        lastExtras = extras
+        lastReadings = readings
         lastTiles = tiles
         lastHeadline = headline
         lastPublish = now
 
-        let sections = makeSections(tiles: tiles, headline: headline, interfaceController: interfaceController)
+        let sections = makeSections(tiles: tiles, readings: readings, headline: headline, interfaceController: interfaceController)
         if let rootTemplate {
             rootTemplate.updateSections(sections)
         } else {
@@ -95,14 +98,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             rootTemplate = template
             interfaceController.setRootTemplate(template, animated: false) { _, _ in }
         }
-        detailsTemplate?.items = Self.detailItems(copy: copy, extras: extras)
-        refreshGauge(tiles: tiles)
+        detailsTemplate?.updateSections(readingSections(readings, usedItems: 0, usedSections: 0, linkWhenTruncated: false))
+        refreshGauge(tiles: tiles, readings: readings)
     }
 
     // MARK: Gauges
 
     private func makeSections(
         tiles: [DriveCarPlayTile],
+        readings: [DriveCarPlayReadingSection],
         headline: String,
         interfaceController: CPInterfaceController
     ) -> [CPListSection] {
@@ -126,13 +130,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 legacyRow(text: index == 0 ? headline : Self.rowTitle(chunk), tiles: chunk, size: size, scale: scale)
             }
         }
-        let all = CPListItem(text: "All readings", detailText: "Every value as text, with sources")
-        all.accessoryType = .disclosureIndicator
-        all.handler = { [weak self] _, completion in
-            self?.showDetails()
-            completion()
-        }
-        return [CPListSection(items: rows), CPListSection(items: [all])]
+        return [CPListSection(items: rows)]
+            + readingSections(readings, usedItems: rows.count, usedSections: 1, linkWhenTruncated: true)
     }
 
     #if compiler(>=6.2)
@@ -204,7 +203,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         if #available(iOS 26.0, *), let interfaceController, let tiles = lastTiles, !tiles.isEmpty {
             if let gaugeTemplate, interfaceController.templates.contains(gaugeTemplate) { return }
             gaugeFocus = kind
-            let template = CPListTemplate(title: "Gauges", sections: gaugeSections(tiles: tiles, focus: kind, interfaceController: interfaceController))
+            let sections = gaugeSections(tiles: tiles, readings: lastReadings ?? [], focus: kind, interfaceController: interfaceController)
+            let template = CPListTemplate(title: "Gauges", sections: sections)
             gaugeTemplate = template
             interfaceController.pushTemplate(template, animated: true) { _, _ in }
             return
@@ -213,11 +213,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         showDetails()
     }
 
-    private func refreshGauge(tiles: [DriveCarPlayTile]) {
+    private func refreshGauge(tiles: [DriveCarPlayTile], readings: [DriveCarPlayReadingSection]) {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *), let interfaceController, let gaugeTemplate, let gaugeFocus,
            interfaceController.templates.contains(gaugeTemplate) {
-            gaugeTemplate.updateSections(gaugeSections(tiles: tiles, focus: gaugeFocus, interfaceController: interfaceController))
+            gaugeTemplate.updateSections(gaugeSections(tiles: tiles, readings: readings, focus: gaugeFocus, interfaceController: interfaceController))
         }
         #endif
     }
@@ -226,6 +226,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     @available(iOS 26.0, *)
     private func gaugeSections(
         tiles: [DriveCarPlayTile],
+        readings: [DriveCarPlayReadingSection],
         focus: DriveCarPlayTile.Kind,
         interfaceController: CPInterfaceController
     ) -> [CPListSection] {
@@ -248,13 +249,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return card
         }
         let row = CPListImageRowItem(text: nil, cardElements: cards, allowsMultipleLines: false)
-        let all = CPListItem(text: "All readings", detailText: "Every value as text, with sources")
-        all.accessoryType = .disclosureIndicator
-        all.handler = { [weak self] _, completion in
-            self?.showDetails()
-            completion()
-        }
-        return [CPListSection(items: [row]), CPListSection(items: [all])]
+        // Every other reading under the cards, so the screen is full of data.
+        return [CPListSection(items: [row])]
+            + readingSections(readings, usedItems: 1, usedSections: 1, linkWhenTruncated: true)
     }
     #endif
 
@@ -267,35 +264,70 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         tiles.map(\.title).joined(separator: " · ")
     }
 
-    // MARK: Details
+    // MARK: Readings
+
+    /// Reading rows that fit after `usedItems` items and `usedSections` sections
+    /// (the car sets both limits). Adds an "All readings" link when rows had to
+    /// be left off.
+    private func readingSections(
+        _ readings: [DriveCarPlayReadingSection],
+        usedItems: Int,
+        usedSections: Int,
+        linkWhenTruncated: Bool
+    ) -> [CPListSection] {
+        var itemBudget = Int(CPListTemplate.maximumItemCount) - usedItems
+        var sectionBudget = Int(CPListTemplate.maximumSectionCount) - usedSections
+        let total = readings.reduce(0) { $0 + $1.rows.count }
+        let truncating = linkWhenTruncated && (total > itemBudget || readings.count > sectionBudget)
+        if truncating {
+            itemBudget -= 1
+            sectionBudget -= 1
+        }
+        var sections: [CPListSection] = []
+        for reading in readings where itemBudget > 0 && sectionBudget > 0 {
+            let items: [CPListTemplateItem] = reading.rows.prefix(itemBudget).map(Self.listItem)
+            sections.append(CPListSection(items: items, header: reading.header.uppercased(), sectionIndexTitle: nil))
+            itemBudget -= items.count
+            sectionBudget -= 1
+        }
+        if truncating {
+            let all = CPListItem(text: "All readings", detailText: "Every value, grouped")
+            all.accessoryType = .disclosureIndicator
+            all.handler = { [weak self] _, completion in
+                self?.showDetails()
+                completion()
+            }
+            sections.append(CPListSection(items: [all]))
+        }
+        return sections
+    }
+
+    /// "Charge: 88 %" with the source underneath and a glowing icon.
+    private static func listItem(_ row: DriveCarPlayReading) -> CPListItem {
+        let missing = row.value == DriveCarPlayTiles.missing
+        let color = missing ? UIColor.systemGray : UIColor(DriveTheme.accent)
+        let image = UIImage(systemName: row.symbol)?.withTintColor(color, renderingMode: .alwaysOriginal)
+        return CPListItem(
+            text: "\(row.title): \(row.value)",
+            detailText: row.detail.isEmpty ? nil : row.detail,
+            image: image
+        )
+    }
 
     private func showDetails() {
         guard let interfaceController else { return }
         if let detailsTemplate, interfaceController.templates.contains(detailsTemplate) { return }
-        let (copy, extras) = CarPlayCopySource.current()
-        let template = CPInformationTemplate(
+        let readings = lastReadings ?? DriveCarPlayReadings.make(
+            CarPlayCopySource.tileInputs(),
+            units: DriveUnitPreference.region,
+            link: CarPlayCopySource.current().copy.link
+        )
+        let template = CPListTemplate(
             title: "All readings",
-            layout: .twoColumn,
-            items: Self.detailItems(copy: copy, extras: extras),
-            actions: [CPTextButton]()
+            sections: readingSections(readings, usedItems: 0, usedSections: 0, linkWhenTruncated: false)
         )
         detailsTemplate = template
         interfaceController.pushTemplate(template, animated: true) { _, _ in }
-    }
-
-    /// Nine rows, two columns. Estimates carry "est." in their text.
-    private static func detailItems(copy: DriveCarPlayCopy, extras: DriveCarPlayExtras) -> [CPInformationItem] {
-        [
-            CPInformationItem(title: "Charge", detail: copy.charge),
-            CPInformationItem(title: "Power", detail: copy.power),
-            CPInformationItem(title: "Regen", detail: extras.regen),
-            CPInformationItem(title: "Speed", detail: copy.speed),
-            CPInformationItem(title: "Range", detail: copy.range),
-            CPInformationItem(title: "Weather range", detail: extras.weatherRange),
-            CPInformationItem(title: "Efficiency", detail: extras.efficiency),
-            CPInformationItem(title: "Temp", detail: copy.temperature),
-            CPInformationItem(title: "Link", detail: copy.link),
-        ]
     }
 }
 
@@ -395,7 +427,7 @@ enum CarPlayCopySource {
             speedSource: speed?.source.rawValue,
             rangeMiles: model.planningRangeMiles,
             weatherRangeMiles: model.weatherAdjustment?.adjustedMiles,
-            whPerMile: model.insights.efficiency.whPerMile(packKWh: model.planning.usableKWh),
+            whPerMile: model.tripWhPerMile,
             packTempC: model.value(.packTempC).value,
             rpm: model.value(.rpm).value,
             coolantC: model.value(.coolantC).value,
@@ -410,7 +442,8 @@ enum CarPlayCopySource {
             regenKWh: energy.isEmpty ? nil : energy.regenKWh,
             netKWh: energy.isEmpty ? nil : energy.netKWh,
             regenScore: model.insights.regen.score,
-            motorTempC: model.value(.motorTempC).value
+            motorTempC: model.value(.motorTempC).value,
+            planningUsesDefaults: model.planningRangeMiles != nil && model.effectivePlanning.usesDefaults
         )
     }
 }

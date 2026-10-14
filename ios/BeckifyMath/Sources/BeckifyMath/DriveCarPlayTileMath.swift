@@ -158,6 +158,8 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
     /// 0…1 share of braking energy recovered.
     public var regenScore: Double?
     public var motorTempC: Double?
+    /// True when range uses the profile's published pack size or Wh/mi.
+    public var planningUsesDefaults: Bool
 
     public init(
         layout: DriveLayout,
@@ -184,7 +186,8 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         regenKWh: Double? = nil,
         netKWh: Double? = nil,
         regenScore: Double? = nil,
-        motorTempC: Double? = nil
+        motorTempC: Double? = nil,
+        planningUsesDefaults: Bool = false
     ) {
         self.layout = layout
         self.socPercent = socPercent
@@ -211,6 +214,7 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         self.netKWh = netKWh
         self.regenScore = regenScore
         self.motorTempC = motorTempC
+        self.planningUsesDefaults = planningUsesDefaults
     }
 }
 
@@ -346,8 +350,9 @@ public enum DriveCarPlayTiles {
         return DriveCarPlayTile(
             kind: .range, title: "Range",
             value: String(format: "%.0f", units.distance(fromKilometers: miles * DriveUnitPreference.kmPerMile)),
-            unit: units.distanceLabel, note: "Planning", gauge: .symbol, tone: .accent,
-            symbol: "road.lanes", isEstimate: false
+            unit: units.distanceLabel, note: input.planningUsesDefaults ? "EPA default" : "Planning", gauge: .symbol,
+            tone: input.planningUsesDefaults ? .estimated : .accent,
+            symbol: "road.lanes", isEstimate: input.planningUsesDefaults
         )
     }
 
@@ -588,5 +593,101 @@ public enum DriveCarPlayTiles {
 
     static func clamp(_ value: Double) -> Double {
         min(1, max(0, value))
+    }
+}
+
+// MARK: - Readings list
+
+/// One row of CarPlay's readings list, e.g. "Charge" "88 %" "Displayed".
+public struct DriveCarPlayReading: Equatable, Sendable {
+    public var title: String
+    public var value: String
+    public var detail: String
+    public var symbol: String
+
+    public init(title: String, value: String, detail: String, symbol: String) {
+        self.title = title
+        self.value = value
+        self.detail = detail
+        self.symbol = symbol
+    }
+}
+
+public struct DriveCarPlayReadingSection: Equatable, Sendable {
+    public var header: String
+    public var rows: [DriveCarPlayReading]
+
+    public init(header: String, rows: [DriveCarPlayReading]) {
+        self.header = header
+        self.rows = rows
+    }
+}
+
+/// Every value the app has, grouped for CarPlay's list. Missing values read "—".
+public enum DriveCarPlayReadings {
+    public static func make(
+        _ input: DriveCarPlayTileInputs,
+        units: DriveUnitPreference,
+        link: String
+    ) -> [DriveCarPlayReadingSection] {
+        typealias T = DriveCarPlayTiles
+        typealias Row = DriveCarPlayReading
+        func row(_ tile: DriveCarPlayTile) -> Row {
+            let reading = tile.value == T.missing || tile.unit.isEmpty ? tile.value : "\(tile.value) \(tile.unit)"
+            return Row(title: tile.title, value: reading, detail: tile.note, symbol: tile.symbol)
+        }
+        func extra(_ title: String, _ value: String, _ detail: String, _ symbol: String) -> Row {
+            Row(title: title, value: value, detail: value == T.missing ? "Not read" : detail, symbol: symbol)
+        }
+        let amps = extra("HV current", T.format(input.hvCurrentAmps, "%.0f A"), "OBD", "bolt.horizontal.fill")
+        let motor = extra("Motor temp", T.temperature(input.motorTempC, units), "OBD", "engine.combustion.fill")
+        let outside = extra("Outside", T.temperature(input.ambientC, units), "OBD", "thermometer.sun")
+        let volts = extra("12 V", T.format(input.moduleVolts, "%.1f V"), "Module", "minus.plus.batteryblock")
+        let torque = extra(
+            "Torque",
+            T.finite(input.torqueNm).map { "\(Int(units.torque.convert(newtonMeters: abs($0)).rounded())) \(units.torque.label)" } ?? T.missing,
+            "est.", "gearshape.2.fill"
+        )
+        let peak = extra(
+            "Peak power",
+            input.peakPowerKW > 0 ? "\(Int(units.power.convert(kilowatts: input.peakPowerKW).rounded())) \(units.power.label)" : T.missing,
+            "This trip, est.", "bolt.fill"
+        )
+        let top = extra("Top speed", T.speed(input.maxSpeedKph, units), "This trip", "gauge.high")
+        let avg = extra("Avg speed", T.speed(input.avgSpeedKph, units), "Moving, this trip", "gauge.medium")
+        let trip = extra("Trip", T.distance(input.tripKm, units, decimals: 1), "Since connect", "point.topleft.down.to.point.bottomright.curvepath")
+        let net = extra("Energy used", T.format(input.netKWh, "%.1f kWh"), "Net, est.", "bolt.batteryblock")
+        let recovered = extra("Recovered", T.format(input.regenKWh, "%.1f kWh"), "Regen, est.", "arrow.triangle.2.circlepath")
+        let score = extra("Regen score", T.format(input.regenScore.map { $0 * 100 }, "%.0f %%"), "Braking energy kept", "leaf.arrow.triangle.circlepath")
+        let linkRow = Row(title: "Link", value: link, detail: "", symbol: "antenna.radiowaves.left.and.right")
+
+        switch input.layout {
+        case .ev:
+            return [
+                DriveCarPlayReadingSection(header: "Battery", rows: [
+                    row(T.charge(input)), row(T.power(input, units: units)), row(T.flow(input)),
+                    amps, row(T.packTemp(input, units: units)), motor, volts,
+                ]),
+                DriveCarPlayReadingSection(header: "Range and energy", rows: [
+                    row(T.range(input, units: units)), row(T.weatherRange(input, units: units)),
+                    row(T.efficiency(input, units: units)), net, recovered, score,
+                ]),
+                DriveCarPlayReadingSection(header: "Drive", rows: [
+                    row(T.speed(input, units: units)), torque, peak, top, avg, trip,
+                ]),
+                DriveCarPlayReadingSection(header: "Outside and link", rows: [outside, linkRow]),
+            ]
+        case .evStandard, .powertrain:
+            var car = [row(T.speed(input, units: units))]
+            if input.layout == .powertrain {
+                car += [row(T.rpm(input)), row(T.coolant(input, units: units)), row(T.fuel(input))]
+            }
+            car += [volts, outside]
+            return [
+                DriveCarPlayReadingSection(header: "Car", rows: car),
+                DriveCarPlayReadingSection(header: "Trip", rows: [top, avg, trip]),
+                DriveCarPlayReadingSection(header: "Link", rows: [linkRow]),
+            ]
+        }
     }
 }

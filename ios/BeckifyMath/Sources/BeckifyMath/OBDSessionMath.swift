@@ -374,6 +374,42 @@ public enum DrivePlanning {
         return (socPercent / 100.0) * usableKWh * 1000.0 / whPerMile
     }
 
+    /// Published figures used until the driver types their own, so range and
+    /// efficiency are not blank on a fresh install. Shown as defaults, never
+    /// as measured. Nil for profiles without published figures.
+    public struct Defaults: Equatable, Sendable {
+        public let usableKWh: Double
+        public let whPerMile: Double
+        public let source: String
+    }
+
+    public static func defaults(for profile: VehicleProfile) -> Defaults? {
+        switch profile {
+        // 2020–23 Bolt EV: 65 kWh usable, EPA 259 mi → 251 Wh/mi.
+        case .boltEV: return Defaults(usableKWh: 65, whPerMile: 251, source: "65 kWh, EPA 259 mi")
+        // 2022–23 Bolt EUV: 65 kWh usable, EPA 247 mi → 263 Wh/mi.
+        case .boltEUV: return Defaults(usableKWh: 65, whPerMile: 263, source: "65 kWh, EPA 247 mi")
+        case .generic, .genericEV: return nil
+        }
+    }
+
+    public struct Effective: Equatable, Sendable {
+        public let inputs: PlanningInputs
+        /// True when the pack size or Wh/mi came from `defaults(for:)`.
+        public let usesDefaults: Bool
+    }
+
+    /// Typed values win; then this trip's measured Wh/mi; then the profile defaults.
+    public static func effective(typed: PlanningInputs, profile: VehicleProfile, measuredWhPerMile: Double?) -> Effective {
+        let fallback = defaults(for: profile)
+        let measured = measuredWhPerMile.flatMap { $0.isFinite && $0 >= 50 && $0 <= 2000 ? $0 : nil }
+        let usable = typed.usableKWh ?? fallback?.usableKWh
+        let wh = typed.whPerMile ?? measured ?? fallback?.whPerMile
+        let defaultedPack = typed.usableKWh == nil && fallback != nil
+        let defaultedWh = typed.whPerMile == nil && measured == nil && fallback != nil
+        return Effective(inputs: PlanningInputs(usableKWh: usable, whPerMile: wh), usesDefaults: defaultedPack || defaultedWh)
+    }
+
     /// Reserved for a future measured volt × amp integral. Returns nil until
     /// both distance and energy are real numbers. Callers must not pass a guessed energy.
     public static func efficiencyWhPerMile(distanceMiles: Double, energyKWh: Double?) -> Double? {

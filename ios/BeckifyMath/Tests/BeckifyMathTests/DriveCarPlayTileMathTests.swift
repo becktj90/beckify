@@ -260,6 +260,68 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         XCTAssertNil(tiles[.flow]?.scaleLabels)
     }
 
+    func testPlanningDefaultsFillRangeForBolt() {
+        let none = PlanningInputs(usableKWh: nil, whPerMile: nil)
+        let euv = DrivePlanning.effective(typed: none, profile: .boltEUV, measuredWhPerMile: nil)
+        XCTAssertEqual(euv.inputs, PlanningInputs(usableKWh: 65, whPerMile: 263))
+        XCTAssertTrue(euv.usesDefaults)
+        // 87.8 % of 65 kWh at 263 Wh/mi ≈ 217 mi.
+        let miles = DrivePlanning.rangeMiles(socPercent: 87.8, usableKWh: 65, whPerMile: 263)
+        XCTAssertEqual(miles ?? 0, 217, accuracy: 0.5)
+
+        // A measured Wh/mi replaces the EPA figure; the pack size is still a default.
+        let measured = DrivePlanning.effective(typed: none, profile: .boltEUV, measuredWhPerMile: 300)
+        XCTAssertEqual(measured.inputs.whPerMile, 300)
+        XCTAssertTrue(measured.usesDefaults)
+
+        // Typed values win and are not defaults.
+        let typed = DrivePlanning.effective(typed: PlanningInputs(usableKWh: 60, whPerMile: 280), profile: .boltEV, measuredWhPerMile: 300)
+        XCTAssertEqual(typed.inputs, PlanningInputs(usableKWh: 60, whPerMile: 280))
+        XCTAssertFalse(typed.usesDefaults)
+
+        // No published figures for generic profiles; nonsense measurements are ignored.
+        let generic = DrivePlanning.effective(typed: none, profile: .generic, measuredWhPerMile: .nan)
+        XCTAssertNil(generic.inputs.usableKWh)
+        XCTAssertNil(generic.inputs.whPerMile)
+        XCTAssertFalse(generic.usesDefaults)
+    }
+
+    func testDefaultRangeIsMarkedEstimate() {
+        var input = boltDriving()
+        input.planningUsesDefaults = true
+        let range = DriveCarPlayTiles.range(input, units: us)
+        XCTAssertEqual(range.note, "EPA default")
+        XCTAssertTrue(range.isEstimate)
+        XCTAssertEqual(range.tone, .estimated)
+    }
+
+    func testReadingsListCoversEverything() {
+        var input = boltDriving()
+        input.hvCurrentAmps = 32
+        input.tripKm = 16.0934
+        let sections = DriveCarPlayReadings.make(input, units: us, link: "Live · Bolt EUV")
+        XCTAssertEqual(sections.map(\.header), ["Battery", "Range and energy", "Drive", "Outside and link"])
+        let rows = sections.flatMap(\.rows)
+        XCTAssertEqual(rows.count, 21)
+        let byTitle = Dictionary(rows.map { ($0.title, $0) }, uniquingKeysWith: { first, _ in first })
+        XCTAssertEqual(byTitle["Charge"]?.value, "65 %")
+        XCTAssertEqual(byTitle["Power"]?.value, "15 hp")
+        XCTAssertEqual(byTitle["Power"]?.detail, "est.")
+        XCTAssertEqual(byTitle["HV current"]?.value, "32 A")
+        XCTAssertEqual(byTitle["Trip"]?.value, "10.0 mi")
+        XCTAssertEqual(byTitle["Link"]?.value, "Live · Bolt EUV")
+        // Not read rows keep their place with a dash.
+        XCTAssertEqual(byTitle["Motor temp"]?.value, "—")
+        XCTAssertEqual(byTitle["Motor temp"]?.detail, "Not read")
+
+        let gas = DriveCarPlayReadings.make(
+            DriveCarPlayTileInputs(layout: .powertrain, speedKph: 50, rpm: 2_000),
+            units: us, link: "Live · Generic OBD"
+        )
+        XCTAssertEqual(gas.map(\.header), ["Car", "Trip", "Link"])
+        XCTAssertEqual(gas[0].rows.map(\.title), ["Speed", "RPM", "Coolant", "Fuel", "12 V", "Outside"])
+    }
+
     func testTilesAreEquatableForChangeDetection() {
         let a = DriveCarPlayTiles.make(boltDriving(), units: us)
         let b = DriveCarPlayTiles.make(boltDriving(), units: us)
