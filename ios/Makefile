@@ -1,6 +1,6 @@
 # Mac-only app build. Math tests run on Linux or Mac via `swift test`.
 
-.PHONY: test-math build-sim
+.PHONY: test-math build-sim drive-device drive-testflight
 
 test-math:
 	cd BeckifyMath && swift test
@@ -14,3 +14,10 @@ build-sim:
 	  -configuration Debug \
 	  CODE_SIGNING_ALLOWED=NO \
 	  build
+
+# Beckify Drive on your Mac, signed with the Apple ID in Xcode → Settings → Accounts.
+drive-device:
+	./scripts/drive_ship.sh --device
+
+drive-testflight:
+	./scripts/drive_ship.sh
