@@ -133,6 +133,7 @@
 		BDCF0000000000000000000C /* DriveTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000003 /* DriveTheme.swift */; };
 		BDCF0000000000000000000D /* OBDBluetoothSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000004 /* OBDBluetoothSession.swift */; };
 		BDCF0000000000000000000E /* CarPlayDriveScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000005 /* CarPlayDriveScene.swift */; };
+		BDCF000000000000000000A1 /* CarPlayGaugeTiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF000000000000000000A0 /* CarPlayGaugeTiles.swift */; };
 		BDCF0000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000006 /* Assets.xcassets */; };
 		BDCF00000000000000000010 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000007 /* PrivacyInfo.xcprivacy */; };
 		BDCF00000000000000000011 /* BeckifyMath in Frameworks */ = {isa = PBXBuildFile; productRef = BDCF00000000000000000009 /* BeckifyMath */; };
@@ -292,6 +293,7 @@
 		BDCF00000000000000000003 /* DriveTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTheme.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000004 /* OBDBluetoothSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDBluetoothSession.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000005 /* CarPlayDriveScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayDriveScene.swift; sourceTree = "<group>"; };
+		BDCF000000000000000000A0 /* CarPlayGaugeTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayGaugeTiles.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BDCF00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BDCF00000000000000000008 /* BeckifyDrive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeckifyDrive.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -404,6 +406,7 @@
 				BDCF00000000000000000003 /* DriveTheme.swift */,
 				BDCF00000000000000000004 /* OBDBluetoothSession.swift */,
 				BDCF00000000000000000005 /* CarPlayDriveScene.swift */,
+				BDCF000000000000000000A0 /* CarPlayGaugeTiles.swift */,
 				BDCF0000000000000000001A /* Info.plist */,
 				BDCF0000000000000000001B /* BeckifyDrive.entitlements */,
 				BDCF00000000000000000006 /* Assets.xcassets */,
@@ -846,6 +849,7 @@
 				BDCF0000000000000000000C /* DriveTheme.swift in Sources */,
 				BDCF0000000000000000000D /* OBDBluetoothSession.swift in Sources */,
 				BDCF0000000000000000000E /* CarPlayDriveScene.swift in Sources */,
+				BDCF000000000000000000A1 /* CarPlayGaugeTiles.swift in Sources */,
 				BDCF00000000000000000020 /* DashboardView.swift in Sources */,
 				BDCF00000000000000000021 /* DashboardModel.swift in Sources */,
 				BDCF00000000000000000022 /* DashboardLayoutStore.swift in Sources */,

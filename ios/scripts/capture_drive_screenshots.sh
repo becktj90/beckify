@@ -33,6 +33,13 @@ shoot boltPartial dark battery
 shoot genericEV dark
 shoot iceGeneric dark
 
+# CarPlay gauge tiles, drawn by the same renderer the CarPlay list uses.
+xcrun simctl ui "$udid" appearance dark
+xcrun simctl terminate "$udid" com.beckify.drive 2>/dev/null || true
+xcrun simctl launch "$udid" com.beckify.drive -BeckifyDriveCarPlayPreview YES
+sleep 5
+xcrun simctl io "$udid" screenshot "$out/carplay-tiles.png"
+
 if [ "$set_name" = "full" ]; then
   shoot boltDriving dark phone
   shoot fullBolt dark

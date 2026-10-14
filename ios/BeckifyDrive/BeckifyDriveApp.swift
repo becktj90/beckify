@@ -11,7 +11,7 @@ final class BeckifyDriveAppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         #if DEBUG
         // Fixture launches (CI screenshots) never touch Bluetooth.
-        if DriveLaunchFixture.scenario != nil { return true }
+        if DriveLaunchFixture.scenario != nil || DriveLaunchFixture.carPlayPreview { return true }
         #endif
         OBDBluetoothSession.shared.activate()
         return true
@@ -55,6 +55,8 @@ final class PhoneSceneDelegate: UIResponder, UIWindowSceneDelegate {
         #if DEBUG
         if let scenario = DriveLaunchFixture.scenario {
             window.rootViewController = UIHostingController(rootView: scenario.view)
+        } else if DriveLaunchFixture.carPlayPreview {
+            window.rootViewController = UIHostingController(rootView: CarPlayTilesPreview())
         }
         #endif
         self.window = window
@@ -65,8 +67,13 @@ final class PhoneSceneDelegate: UIResponder, UIWindowSceneDelegate {
 #if DEBUG
 /// Debug-only launch arguments for the CI screenshot job:
 /// `-BeckifyDriveFixture boltDriving` opens a fixture state (see
-/// `DashboardScenario`), and `-BeckifyDriveScroll energy` scrolls to a section.
+/// `DashboardScenario`), `-BeckifyDriveScroll energy` scrolls to a section, and
+/// `-BeckifyDriveCarPlayPreview YES` shows the CarPlay gauge tiles.
 enum DriveLaunchFixture {
+    static var carPlayPreview: Bool {
+        UserDefaults.standard.bool(forKey: "BeckifyDriveCarPlayPreview")
+    }
+
     static var scenario: DashboardScenario? {
         UserDefaults.standard.string(forKey: "BeckifyDriveFixture").flatMap(DashboardScenario.init(rawValue:))
     }

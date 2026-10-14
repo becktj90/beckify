@@ -1,0 +1,424 @@
+import Foundation
+
+// MARK: - CarPlay gauge tiles
+//
+// Driving-task apps may not draw their own CarPlay screens; they fill Apple's
+// templates. The tiles below are the data behind the image cards on the
+// CarPlay list template: the app draws each tile in the phone dashboard's
+// style and hands CarPlay the picture plus a short title and note.
+// Values never drawn without a reading: a missing value is "—" with no gauge.
+
+/// One gauge tile on the CarPlay screen.
+public struct DriveCarPlayTile: Equatable, Sendable, Identifiable {
+    public enum Kind: String, Sendable, CaseIterable {
+        case charge
+        case power
+        case flow
+        case speed
+        case range
+        case weatherRange
+        case efficiency
+        case packTemp
+        case rpm
+        case coolant
+        case fuel
+        case moduleVolts
+        case ambient
+    }
+
+    /// How the tile draws its reading.
+    public enum Gauge: Equatable, Sendable {
+        /// Full circle from 12 o'clock, 0…1 (displayed charge).
+        case ring(fraction: Double)
+        /// Semicircle with zero at the top, −1…1 (regen left, drive right).
+        case bipolar(fraction: Double)
+        /// 270° sweep open at the bottom, 0…1 (speed, RPM).
+        case arc(fraction: Double)
+        /// Horizontal bar, 0…1 (temperature, fuel, 12 V).
+        case bar(fraction: Double)
+        /// Icon and number only. Used where no cited scale exists.
+        case symbol
+    }
+
+    /// Color role; the app maps it to its theme.
+    public enum Tone: String, Sendable {
+        case accent
+        case regen
+        case caution
+        case critical
+        case cold
+        case estimated
+        case muted
+    }
+
+    public var kind: Kind
+    /// Card title, e.g. "Charge".
+    public var title: String
+    /// The big number or word drawn on the tile, e.g. "65", "REGEN", or "—".
+    public var value: String
+    /// Unit drawn under the number, e.g. "%", "hp", "mph". Empty when none.
+    public var unit: String
+    /// Card subtitle: source or caveat, e.g. "OBD", "est.", "Not read".
+    public var note: String
+    /// Nil when the reading is missing.
+    public var gauge: Gauge?
+    public var tone: Tone
+    /// SF Symbol name for the tile's corner icon.
+    public var symbol: String
+    public var isEstimate: Bool
+
+    public var id: String { kind.rawValue }
+
+    /// "65 %" style text for the fallback image titles and VoiceOver.
+    public var spoken: String {
+        guard gauge != nil || value != DriveCarPlayTiles.missing else { return "\(title), not read" }
+        let reading = unit.isEmpty ? value : "\(value) \(unit)"
+        return isEstimate ? "\(title) \(reading) est." : "\(title) \(reading)"
+    }
+
+    public init(
+        kind: Kind,
+        title: String,
+        value: String,
+        unit: String,
+        note: String,
+        gauge: Gauge?,
+        tone: Tone,
+        symbol: String,
+        isEstimate: Bool
+    ) {
+        self.kind = kind
+        self.title = title
+        self.value = value
+        self.unit = unit
+        self.note = note
+        self.gauge = gauge
+        self.tone = tone
+        self.symbol = symbol
+        self.isEstimate = isEstimate
+    }
+}
+
+/// Everything the tiles read. Measured values are nil when not reported.
+public struct DriveCarPlayTileInputs: Equatable, Sendable {
+    public var layout: DriveLayout
+    public var socPercent: Double?
+    public var powerKW: Double?
+    public var peakPowerKW: Double
+    public var flow: HVFlowState?
+    public var speedKph: Double?
+    /// "OBD" or "GPS".
+    public var speedSource: String?
+    public var rangeMiles: Double?
+    public var weatherRangeMiles: Double?
+    public var whPerMile: Double?
+    public var packTempC: Double?
+    public var rpm: Double?
+    public var coolantC: Double?
+    public var fuelPercent: Double?
+    public var moduleVolts: Double?
+    public var ambientC: Double?
+
+    public init(
+        layout: DriveLayout,
+        socPercent: Double? = nil,
+        powerKW: Double? = nil,
+        peakPowerKW: Double = 0,
+        flow: HVFlowState? = nil,
+        speedKph: Double? = nil,
+        speedSource: String? = nil,
+        rangeMiles: Double? = nil,
+        weatherRangeMiles: Double? = nil,
+        whPerMile: Double? = nil,
+        packTempC: Double? = nil,
+        rpm: Double? = nil,
+        coolantC: Double? = nil,
+        fuelPercent: Double? = nil,
+        moduleVolts: Double? = nil,
+        ambientC: Double? = nil
+    ) {
+        self.layout = layout
+        self.socPercent = socPercent
+        self.powerKW = powerKW
+        self.peakPowerKW = peakPowerKW
+        self.flow = flow
+        self.speedKph = speedKph
+        self.speedSource = speedSource
+        self.rangeMiles = rangeMiles
+        self.weatherRangeMiles = weatherRangeMiles
+        self.whPerMile = whPerMile
+        self.packTempC = packTempC
+        self.rpm = rpm
+        self.coolantC = coolantC
+        self.fuelPercent = fuelPercent
+        self.moduleVolts = moduleVolts
+        self.ambientC = ambientC
+    }
+}
+
+public enum DriveCarPlayTiles {
+    public static let missing = "—"
+
+    /// Display scales, not vehicle limits. They match the phone dashboard.
+    public static let speedScaleKph = 160.0
+    public static let rpmScale = 8_000.0
+
+    /// Power arc full scale, rounded up from the session peak so the arc does
+    /// not rescale on every reply (same rule as the phone hero).
+    public static func powerScaleKW(peak: Double) -> Double {
+        max(50, (max(0, peak) / 50).rounded(.up) * 50)
+    }
+
+    /// Pack bar spans the BU-410 discharge window, −20 °C to 60 °C.
+    public static let packBarLowC = -20.0
+    public static let packBarHighC = 60.0
+
+    /// 12 V bar spans 11–15 V around the BU-903 resting points.
+    public static let voltsBarLow = 11.0
+    public static let voltsBarHigh = 15.0
+
+    /// Tiles in CarPlay order. Two rows of four on EV profiles.
+    public static func make(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> [DriveCarPlayTile] {
+        switch input.layout {
+        case .ev:
+            return [
+                charge(input),
+                power(input, units: units),
+                flow(input),
+                speed(input, units: units),
+                range(input, units: units),
+                weatherRange(input, units: units),
+                efficiency(input, units: units),
+                packTemp(input, units: units),
+            ]
+        case .evStandard:
+            return [
+                speed(input, units: units),
+                moduleVolts(input),
+                ambient(input, units: units),
+            ]
+        case .powertrain:
+            return [
+                speed(input, units: units),
+                rpm(input),
+                coolant(input, units: units),
+                fuel(input),
+                moduleVolts(input),
+                ambient(input, units: units),
+            ]
+        }
+    }
+
+    /// Row headline above the tiles, e.g. "DRIVE · Live · Bolt EUV".
+    public static func headline(flow: HVFlowState?, link: String) -> String {
+        guard let flow else { return link }
+        return "\(flow.title.uppercased()) · \(link)"
+    }
+
+    // MARK: Tiles
+
+    static func charge(_ input: DriveCarPlayTileInputs) -> DriveCarPlayTile {
+        guard let soc = finite(input.socPercent) else {
+            return notRead(.charge, title: "Charge", symbol: "battery.75percent")
+        }
+        let level = DriveThresholds.chargeLevel(percent: soc)
+        return DriveCarPlayTile(
+            kind: .charge, title: "Charge", value: String(format: "%.0f", soc), unit: "%",
+            note: "Displayed", gauge: .ring(fraction: clamp(soc / 100)),
+            tone: level == .normal ? .accent : .caution, symbol: "battery.75percent", isEstimate: false
+        )
+    }
+
+    static func power(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let kw = finite(input.powerKW) else {
+            return notRead(.power, title: "Power", symbol: "bolt.fill", estimate: true)
+        }
+        let scale = powerScaleKW(peak: max(input.peakPowerKW, abs(kw)))
+        let tone: DriveCarPlayTile.Tone
+        switch input.flow {
+        case .regen: tone = .regen
+        case .drive: tone = .estimated
+        case .idle, .none: tone = .muted
+        }
+        return DriveCarPlayTile(
+            kind: .power, title: "Power",
+            value: String(format: "%.0f", units.power.convert(kilowatts: abs(kw))),
+            unit: units.power.label, note: "est.",
+            gauge: .bipolar(fraction: max(-1, min(1, kw / scale))),
+            tone: tone, symbol: "bolt.fill", isEstimate: true
+        )
+    }
+
+    static func flow(_ input: DriveCarPlayTileInputs) -> DriveCarPlayTile {
+        guard let flow = input.flow else {
+            return notRead(.flow, title: "Regen", symbol: "arrow.triangle.2.circlepath")
+        }
+        let symbol: String
+        let tone: DriveCarPlayTile.Tone
+        switch flow {
+        case .regen: symbol = "arrow.triangle.2.circlepath"; tone = .regen
+        case .drive: symbol = "arrow.up.forward.circle.fill"; tone = .accent
+        case .idle: symbol = "pause.circle.fill"; tone = .muted
+        }
+        return DriveCarPlayTile(
+            kind: .flow, title: "Regen", value: flow.title.uppercased(), unit: "",
+            note: "HV current", gauge: .symbol, tone: tone, symbol: symbol, isEstimate: false
+        )
+    }
+
+    static func speed(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let kph = finite(input.speedKph), kph >= 0 else {
+            return notRead(.speed, title: "Speed", symbol: "speedometer")
+        }
+        return DriveCarPlayTile(
+            kind: .speed, title: "Speed", value: String(format: "%.0f", units.speed(fromKph: kph)),
+            unit: units.speed.label, note: input.speedSource ?? "OBD",
+            gauge: .arc(fraction: clamp(kph / speedScaleKph)), tone: .accent, symbol: "speedometer", isEstimate: false
+        )
+    }
+
+    static func range(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let miles = finite(input.rangeMiles), miles >= 0 else {
+            return notRead(.range, title: "Range", symbol: "road.lanes", note: "Set pack and Wh/mi")
+        }
+        return DriveCarPlayTile(
+            kind: .range, title: "Range",
+            value: String(format: "%.0f", units.distance(fromKilometers: miles * DriveUnitPreference.kmPerMile)),
+            unit: units.distanceLabel, note: "Planning", gauge: .symbol, tone: .accent,
+            symbol: "road.lanes", isEstimate: false
+        )
+    }
+
+    static func weatherRange(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let miles = finite(input.weatherRangeMiles), miles >= 0 else {
+            return notRead(.weatherRange, title: "Weather range", symbol: "cloud.sun.fill", estimate: true)
+        }
+        return DriveCarPlayTile(
+            kind: .weatherRange, title: "Weather range",
+            value: String(format: "%.0f", units.distance(fromKilometers: miles * DriveUnitPreference.kmPerMile)),
+            unit: units.distanceLabel, note: "est.", gauge: .symbol, tone: .estimated,
+            symbol: "cloud.sun.fill", isEstimate: true
+        )
+    }
+
+    static func efficiency(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let whPerMile = finite(input.whPerMile), whPerMile > 0 else {
+            return notRead(.efficiency, title: "Efficiency", symbol: "leaf.fill", estimate: true)
+        }
+        let perMile = units.speed == .mph
+        return DriveCarPlayTile(
+            kind: .efficiency, title: "Efficiency",
+            value: String(format: "%.0f", perMile ? whPerMile : whPerMile / DriveUnitPreference.kmPerMile),
+            unit: perMile ? "Wh/mi" : "Wh/km", note: "est.", gauge: .symbol, tone: .estimated,
+            symbol: "leaf.fill", isEstimate: true
+        )
+    }
+
+    static func packTemp(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let celsius = finite(input.packTempC) else {
+            return notRead(.packTemp, title: "Pack", symbol: "thermometer.medium")
+        }
+        let band = DriveThresholds.packBand(celsius: celsius) ?? .nominal
+        let tone: DriveCarPlayTile.Tone
+        switch band {
+        case .cold: tone = .cold
+        case .nominal: tone = .accent
+        case .warm: tone = .caution
+        case .hot: tone = .critical
+        }
+        return DriveCarPlayTile(
+            kind: .packTemp, title: "Pack",
+            value: String(format: "%.0f", units.temperature(fromCelsius: celsius)),
+            unit: units.temperature.label, note: band.rawValue.capitalized,
+            gauge: .bar(fraction: clamp((celsius - packBarLowC) / (packBarHighC - packBarLowC))),
+            tone: tone, symbol: "thermometer.medium", isEstimate: false
+        )
+    }
+
+    static func rpm(_ input: DriveCarPlayTileInputs) -> DriveCarPlayTile {
+        guard let rpm = finite(input.rpm), rpm >= 0 else {
+            return notRead(.rpm, title: "RPM", symbol: "gauge.with.dots.needle.67percent")
+        }
+        return DriveCarPlayTile(
+            kind: .rpm, title: "RPM", value: String(format: "%.0f", rpm), unit: "rpm", note: "OBD",
+            gauge: .arc(fraction: clamp(rpm / rpmScale)), tone: .accent,
+            symbol: "gauge.with.dots.needle.67percent", isEstimate: false
+        )
+    }
+
+    static func coolant(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let celsius = finite(input.coolantC) else {
+            return notRead(.coolant, title: "Coolant", symbol: "thermometer.variable")
+        }
+        // No published limit to cite, so no bar and no warning color.
+        return DriveCarPlayTile(
+            kind: .coolant, title: "Coolant",
+            value: String(format: "%.0f", units.temperature(fromCelsius: celsius)),
+            unit: units.temperature.label, note: "OBD", gauge: .symbol, tone: .accent,
+            symbol: "thermometer.variable", isEstimate: false
+        )
+    }
+
+    static func fuel(_ input: DriveCarPlayTileInputs) -> DriveCarPlayTile {
+        guard let percent = finite(input.fuelPercent) else {
+            return notRead(.fuel, title: "Fuel", symbol: "fuelpump.fill")
+        }
+        return DriveCarPlayTile(
+            kind: .fuel, title: "Fuel", value: String(format: "%.0f", percent), unit: "%", note: "In the tank",
+            gauge: .bar(fraction: clamp(percent / 100)), tone: .accent, symbol: "fuelpump.fill", isEstimate: false
+        )
+    }
+
+    static func moduleVolts(_ input: DriveCarPlayTileInputs) -> DriveCarPlayTile {
+        guard let volts = finite(input.moduleVolts) else {
+            return notRead(.moduleVolts, title: "12 V", symbol: "minus.plus.batteryblock")
+        }
+        let tone: DriveCarPlayTile.Tone
+        switch DriveThresholds.moduleVoltsLevel(volts) {
+        case .normal: tone = .accent
+        case .caution: tone = .caution
+        case .critical: tone = .critical
+        }
+        return DriveCarPlayTile(
+            kind: .moduleVolts, title: "12 V", value: String(format: "%.1f", volts), unit: "V", note: "Module",
+            gauge: .bar(fraction: clamp((volts - voltsBarLow) / (voltsBarHigh - voltsBarLow))),
+            tone: tone, symbol: "minus.plus.batteryblock", isEstimate: false
+        )
+    }
+
+    static func ambient(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
+        guard let celsius = finite(input.ambientC) else {
+            return notRead(.ambient, title: "Outside", symbol: "thermometer.sun")
+        }
+        return DriveCarPlayTile(
+            kind: .ambient, title: "Outside",
+            value: String(format: "%.0f", units.temperature(fromCelsius: celsius)),
+            unit: units.temperature.label, note: "OBD", gauge: .symbol, tone: .accent,
+            symbol: "thermometer.sun", isEstimate: false
+        )
+    }
+
+    // MARK: Helpers
+
+    static func notRead(
+        _ kind: DriveCarPlayTile.Kind,
+        title: String,
+        symbol: String,
+        estimate: Bool = false,
+        note: String = "Not read"
+    ) -> DriveCarPlayTile {
+        DriveCarPlayTile(
+            kind: kind, title: title, value: missing, unit: "", note: note,
+            gauge: nil, tone: .muted, symbol: symbol, isEstimate: estimate
+        )
+    }
+
+    static func finite(_ value: Double?) -> Double? {
+        guard let value, value.isFinite else { return nil }
+        return value
+    }
+
+    static func clamp(_ value: Double) -> Double {
+        min(1, max(0, value))
+    }
+}

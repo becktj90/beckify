@@ -6,11 +6,19 @@ import UIKit
 /// Data items refresh at most once every 10 seconds (Apple driving-task rule).
 /// Attaches to the shared dashboard model so the trip, regen, efficiency, and
 /// weather estimators run while only CarPlay is on screen.
+///
+/// Root: a list with two rows of gauge tiles drawn like the phone dashboard
+/// (driving-task apps can't draw their own CarPlay views, so the tiles are
+/// images in list image rows). "All readings" pushes the nine-row text view.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, OBDSessionObserving {
     private var interfaceController: CPInterfaceController?
+    private var rootTemplate: CPListTemplate?
+    private var detailsTemplate: CPInformationTemplate?
     private var lastPublish: Date?
     private var lastCopy: DriveCarPlayCopy?
     private var lastExtras: DriveCarPlayExtras?
+    private var lastTiles: [DriveCarPlayTile]?
+    private var lastHeadline: String?
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
@@ -30,9 +38,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         OBDBluetoothSession.shared.removeObserver(self)
         DashboardModel.shared.detach(.carPlay)
         self.interfaceController = nil
+        rootTemplate = nil
+        detailsTemplate = nil
         lastPublish = nil
         lastCopy = nil
         lastExtras = nil
+        lastTiles = nil
+        lastHeadline = nil
     }
 
     func obdSessionDidUpdate() {
@@ -43,13 +55,97 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let interfaceController else { return }
         let now = Date()
         guard force || CarPlayPublishPolicy.shouldPublish(since: lastPublish, now: now) else { return }
+        let units = DriveUnitPreference.region
         let (copy, extras) = CarPlayCopySource.current()
-        guard force || copy != lastCopy || extras != lastExtras else { return }
+        let tiles = DriveCarPlayTiles.make(CarPlayCopySource.tileInputs(), units: units)
+        let headline = DriveCarPlayTiles.headline(flow: DashboardModel.shared.flow, link: copy.link)
+        guard force || copy != lastCopy || extras != lastExtras || tiles != lastTiles || headline != lastHeadline else { return }
         lastCopy = copy
         lastExtras = extras
+        lastTiles = tiles
+        lastHeadline = headline
         lastPublish = now
-        // Nine rows, two columns. Estimates carry "est." in their text.
-        let items = [
+
+        let sections = makeSections(tiles: tiles, headline: headline, interfaceController: interfaceController)
+        if let rootTemplate {
+            rootTemplate.updateSections(sections)
+        } else {
+            let template = CPListTemplate(title: "Beckify Drive", sections: sections)
+            rootTemplate = template
+            interfaceController.setRootTemplate(template, animated: false) { _, _ in }
+        }
+        detailsTemplate?.items = Self.detailItems(copy: copy, extras: extras)
+    }
+
+    // MARK: Gauges
+
+    private func makeSections(
+        tiles: [DriveCarPlayTile],
+        headline: String,
+        interfaceController: CPInterfaceController
+    ) -> [CPListSection] {
+        let scale = interfaceController.carTraitCollection.displayScale
+        let size = CPListImageRowItem.maximumImageSize
+        let perRow = max(1, min(4, CPMaximumNumberOfGridImages))
+        var rows: [CPListTemplateItem] = []
+        for (index, start) in stride(from: 0, to: tiles.count, by: perRow).enumerated() {
+            let chunk = Array(tiles[start..<min(start + perRow, tiles.count)])
+            let text = index == 0 ? headline : Self.rowTitle(chunk)
+            rows.append(imageRow(text: text, tiles: chunk, size: size, scale: scale))
+        }
+        let all = CPListItem(text: "All readings", detailText: "Every value as text, with sources")
+        all.accessoryType = .disclosureIndicator
+        all.handler = { [weak self] _, completion in
+            self?.showDetails()
+            completion()
+        }
+        return [CPListSection(items: rows), CPListSection(items: [all])]
+    }
+
+    private func imageRow(text: String, tiles: [DriveCarPlayTile], size: CGSize, scale: CGFloat) -> CPListImageRowItem {
+        let images = tiles.map { CarPlayTileRenderer.image($0, size: size, scale: scale) }
+        let row: CPListImageRowItem
+        if #available(iOS 17.4, *) {
+            // Captions carry the full reading, e.g. "Power 15 hp est.".
+            row = CPListImageRowItem(text: text, images: images, imageTitles: tiles.map(\.spoken))
+        } else {
+            row = CPListImageRowItem(text: text, images: images)
+        }
+        row.handler = { [weak self] _, completion in
+            self?.showDetails()
+            completion()
+        }
+        row.listImageRowHandler = { [weak self] _, _, completion in
+            self?.showDetails()
+            completion()
+        }
+        return row
+    }
+
+    /// Second-row label from what the row holds, e.g. "Range · Efficiency · Pack".
+    private static func rowTitle(_ tiles: [DriveCarPlayTile]) -> String {
+        tiles.map(\.title).joined(separator: " · ")
+    }
+
+    // MARK: Details
+
+    private func showDetails() {
+        guard let interfaceController else { return }
+        if let detailsTemplate, interfaceController.templates.contains(detailsTemplate) { return }
+        let (copy, extras) = CarPlayCopySource.current()
+        let template = CPInformationTemplate(
+            title: "All readings",
+            layout: .twoColumn,
+            items: Self.detailItems(copy: copy, extras: extras),
+            actions: [CPTextButton]()
+        )
+        detailsTemplate = template
+        interfaceController.pushTemplate(template, animated: true) { _, _ in }
+    }
+
+    /// Nine rows, two columns. Estimates carry "est." in their text.
+    private static func detailItems(copy: DriveCarPlayCopy, extras: DriveCarPlayExtras) -> [CPInformationItem] {
+        [
             CPInformationItem(title: "Charge", detail: copy.charge),
             CPInformationItem(title: "Power", detail: copy.power),
             CPInformationItem(title: "Regen", detail: extras.regen),
@@ -60,13 +156,6 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             CPInformationItem(title: "Temp", detail: copy.temperature),
             CPInformationItem(title: "Link", detail: copy.link),
         ]
-        let template = CPInformationTemplate(
-            title: "Beckify Drive",
-            layout: .twoColumn,
-            items: items,
-            actions: [CPTextButton]()
-        )
-        interfaceController.setRootTemplate(template, animated: false) { _, _ in }
     }
 }
 
@@ -149,5 +238,29 @@ enum CarPlayCopySource {
             units: units
         ).carPlay
         return (copy, DashboardModel.shared.carPlayExtras(units: units))
+    }
+
+    /// Numbers behind the CarPlay gauge tiles, from the shared dashboard model.
+    static func tileInputs() -> DriveCarPlayTileInputs {
+        let model = DashboardModel.shared
+        let speed = model.heroSpeed
+        return DriveCarPlayTileInputs(
+            layout: model.layout,
+            socPercent: model.value(.displayedSocPercent).value,
+            powerKW: model.powerKW,
+            peakPowerKW: model.insights.peakPowerKW,
+            flow: model.flow,
+            speedKph: speed?.kph,
+            speedSource: speed?.source.rawValue,
+            rangeMiles: model.planningRangeMiles,
+            weatherRangeMiles: model.weatherAdjustment?.adjustedMiles,
+            whPerMile: model.insights.efficiency.whPerMile(packKWh: model.planning.usableKWh),
+            packTempC: model.value(.packTempC).value,
+            rpm: model.value(.rpm).value,
+            coolantC: model.value(.coolantC).value,
+            fuelPercent: model.value(.fuelLevelPercent).value,
+            moduleVolts: model.value(.moduleVolts).value,
+            ambientC: model.value(.ambientC).value
+        )
     }
 }
