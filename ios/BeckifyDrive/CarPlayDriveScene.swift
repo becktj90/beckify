@@ -136,14 +136,14 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func elementRow(text: String, tiles: [DriveCarPlayTile], scale: CGFloat) -> CPListImageRowItem {
         let size = CPListImageRowItemImageGridElement.maximumImageSize
         let elements = tiles.map { tile in
-            let element = CPListImageRowItemImageGridElement(
+            // The title carries the full reading, so it doubles as the accessibility text.
+            // (CPListImageRowItemElement.accessibilityLabel is iOS 26.4+ in newer SDKs.)
+            CPListImageRowItemImageGridElement(
                 image: CarPlayTileRenderer.image(tile, size: size, scale: scale),
                 imageShape: .roundedRectangle,
                 title: tile.spoken,
                 accessorySymbolName: nil
             )
-            element.accessibilityLabel = tile.spoken
-            return element
         }
         return withDetailsHandlers(CPListImageRowItem(text: text, imageGridElements: elements, allowsMultipleLines: true))
     }
