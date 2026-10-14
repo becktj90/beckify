@@ -9,7 +9,7 @@
 #   ios/scripts/drive_ship.sh --device    # build + install + launch on your iPhone
 #
 # Each TestFlight upload gets a fresh build number from the clock
-# (yyMMddHHmm), so you can run it as often as you like. Marketing version
+# (yyMMddHHmmss), so you can run it as often as you like. Marketing version
 # stays at the project's MARKETING_VERSION (1.0).
 set -euo pipefail
 
@@ -45,7 +45,8 @@ explain_failure() {
   echo
   echo "Last lines of the build log ($LOG):"
   tail -n 25 "$LOG" || true
-  if grep -qiE "carplay|entitlement|capabilit" "$LOG"; then
+  # Only real provisioning diagnostics, not the routine "process entitlements" log lines.
+  if grep -qiE "provisioning profile .*(doesn.t|does not) (include|support)|(doesn.t|does not) (include|support) the .*(carplay|com\.apple\.developer\.carplay)" "$LOG"; then
     echo
     echo "Signing is missing the CarPlay capability. Fix:"
     echo "  1. In the page that just opened, open $BUNDLE_ID"
@@ -79,7 +80,12 @@ if ! xcodebuild -version >/dev/null 2>&1; then
   xcodebuild -version >/dev/null 2>&1 \
     || fail "Xcode at $XCODE_APP isn't ready. Open it once to finish setup (accept the license), then run this again."
 fi
-xcodebuild -version | head -1
+XCODE_VERSION="$(xcodebuild -version | awk '/^Xcode/ {print $2; exit}')"
+echo "Xcode $XCODE_VERSION"
+# App Store Connect only accepts uploads built with Xcode 26 or later.
+if [ "$MODE" = "testflight" ] && [ "${XCODE_VERSION%%.*}" -lt 26 ] 2>/dev/null; then
+  fail "TestFlight uploads need Xcode 26 or later (you have $XCODE_VERSION). Update Xcode from the App Store, then run this again."
+fi
 
 step "Updating the repo"
 cd "$REPO_ROOT"
@@ -87,7 +93,10 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "You have local changes; building them as they are (no pull)."
 elif [ "$BRANCH" = "main" ]; then
-  git pull --ff-only --quiet origin main && echo "main is up to date ($(git rev-parse --short HEAD))."
+  if ! git pull --ff-only --quiet origin main; then
+    fail "Couldn't update main (network, sign-in, or local commits). Fix that, or build what you have with: git checkout -b local-build"
+  fi
+  echo "main is up to date ($(git rev-parse --short HEAD))."
 else
   echo "On branch $BRANCH; building it as it is (no pull)."
 fi
@@ -103,7 +112,10 @@ devices = json.load(open(sys.argv[1])).get("result", {}).get("devices", [])
 for d in devices:
     hw = d.get("hardwareProperties", {})
     conn = d.get("connectionProperties", {})
-    if hw.get("platform") == "iOS" and conn.get("pairingState") == "paired" \
+    # iPads also report platform "iOS"; deviceType tells them apart.
+    if hw.get("platform") == "iOS" and hw.get("deviceType") == "iPhone" \
+            and hw.get("reality", "physical") == "physical" \
+            and conn.get("pairingState") == "paired" \
             and conn.get("tunnelState") != "unavailable":
         print(hw.get("udid", ""), d.get("deviceProperties", {}).get("name", "iPhone"))
         break
@@ -124,14 +136,20 @@ PY
 
   step "Installing and launching"
   xcrun devicectl device install app --device "$UDID" "$APP" >/dev/null
-  xcrun devicectl device process launch --device "$UDID" "$BUNDLE_ID" >/dev/null || true
+  if ! LAUNCH_OUT="$(xcrun devicectl device process launch --device "$UDID" "$BUNDLE_ID" 2>&1)"; then
+    echo "$LAUNCH_OUT" | tail -n 5
+    echo
+    echo "Beckify Drive is installed on $DEVICE_NAME but didn't open."
+    echo "  - Phone locked? Unlock it and tap the app."
+    echo "  - First install? Settings → General → VPN & Device Management → trust your Apple ID, then tap the app."
+    exit 1
+  fi
   echo
-  echo "Beckify Drive is on $DEVICE_NAME."
-  echo "If iOS says 'Untrusted Developer': Settings → General → VPN & Device Management → trust your Apple ID."
+  echo "Beckify Drive is installed and open on $DEVICE_NAME."
   exit 0
 fi
 
-BUILD_NUMBER="${BUILD_NUMBER:-$(date +%y%m%d%H%M)}"
+BUILD_NUMBER="${BUILD_NUMBER:-$(date +%y%m%d%H%M%S)}"
 ARCHIVE="$OUT/BeckifyDrive-$BUILD_NUMBER.xcarchive"
 EXPORT_OPTIONS="$OUT/ExportOptions.plist"
 
