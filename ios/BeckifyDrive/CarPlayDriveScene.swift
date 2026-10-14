@@ -7,7 +7,7 @@ import UIKit
 /// Attaches to the shared dashboard model so the trip, regen, efficiency, and
 /// weather estimators run while only CarPlay is on screen.
 ///
-/// Root: a list with two rows of gauge tiles drawn like the phone dashboard
+/// Root: a list of gauge-tile rows drawn like the phone dashboard
 /// (driving-task apps can't draw their own CarPlay views, so the tiles are
 /// images in list image rows). "All readings" pushes the nine-row text view.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, OBDSessionObserving {
@@ -19,6 +19,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var lastExtras: DriveCarPlayExtras?
     private var lastTiles: [DriveCarPlayTile]?
     private var lastHeadline: String?
+    /// GPS speed, weather range and timer-based efficiency change without an
+    /// OBD callback, so a slow tick republishes too (still gated to 10 s).
+    private var refreshTimer: Timer?
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
@@ -29,12 +32,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         OBDBluetoothSession.shared.activate()
         DashboardModel.shared.attach(.carPlay)
         publish(force: true)
+        startRefresh()
     }
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
         didDisconnectInterfaceController interfaceController: CPInterfaceController
     ) {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
         OBDBluetoothSession.shared.removeObserver(self)
         DashboardModel.shared.detach(.carPlay)
         self.interfaceController = nil
@@ -49,6 +55,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     func obdSessionDidUpdate() {
         publish(force: false)
+    }
+
+    private func startRefresh() {
+        guard refreshTimer == nil else { return }
+        let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+            self?.publish(force: false)
+        }
+        timer.tolerance = 0.5
+        RunLoop.main.add(timer, forMode: .common)
+        refreshTimer = timer
     }
 
     private func publish(force: Bool) {
@@ -85,13 +101,24 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         interfaceController: CPInterfaceController
     ) -> [CPListSection] {
         let scale = interfaceController.carTraitCollection.displayScale
-        let size = CPListImageRowItem.maximumImageSize
-        let perRow = max(1, min(4, CPMaximumNumberOfGridImages))
         var rows: [CPListTemplateItem] = []
-        for (index, start) in stride(from: 0, to: tiles.count, by: perRow).enumerated() {
-            let chunk = Array(tiles[start..<min(start + perRow, tiles.count)])
-            let text = index == 0 ? headline : Self.rowTitle(chunk)
-            rows.append(imageRow(text: text, tiles: chunk, size: size, scale: scale))
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            // Rows of four that wrap onto a second line on narrow screens
+            // instead of dropping tiles.
+            rows = Self.chunks(tiles, of: 4).enumerated().map { index, chunk in
+                elementRow(text: index == 0 ? headline : Self.rowTitle(chunk), tiles: chunk, scale: scale)
+            }
+        }
+        #endif
+        if rows.isEmpty {
+            // Before iOS 26 a row can't wrap, and narrow screens show fewer
+            // images than CPMaximumNumberOfGridImages, so keep rows to three.
+            let perRow = max(1, min(3, CPMaximumNumberOfGridImages))
+            let size = CPListImageRowItem.maximumImageSize
+            rows = Self.chunks(tiles, of: perRow).enumerated().map { index, chunk in
+                legacyRow(text: index == 0 ? headline : Self.rowTitle(chunk), tiles: chunk, size: size, scale: scale)
+            }
         }
         let all = CPListItem(text: "All readings", detailText: "Every value as text, with sources")
         all.accessoryType = .disclosureIndicator
@@ -102,15 +129,38 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return [CPListSection(items: rows), CPListSection(items: [all])]
     }
 
-    private func imageRow(text: String, tiles: [DriveCarPlayTile], size: CGSize, scale: CGFloat) -> CPListImageRowItem {
+    #if compiler(>=6.2)
+    /// iOS 26 element row: each tile is a rounded image with its reading as
+    /// the caption, e.g. "Power 15 hp est.".
+    @available(iOS 26.0, *)
+    private func elementRow(text: String, tiles: [DriveCarPlayTile], scale: CGFloat) -> CPListImageRowItem {
+        let size = CPListImageRowItemImageGridElement.maximumImageSize
+        let elements = tiles.map { tile in
+            let element = CPListImageRowItemImageGridElement(
+                image: CarPlayTileRenderer.image(tile, size: size, scale: scale),
+                imageShape: .roundedRectangle,
+                title: tile.spoken,
+                accessorySymbolName: nil
+            )
+            element.accessibilityLabel = tile.spoken
+            return element
+        }
+        return withDetailsHandlers(CPListImageRowItem(text: text, imageGridElements: elements, allowsMultipleLines: true))
+    }
+    #endif
+
+    private func legacyRow(text: String, tiles: [DriveCarPlayTile], size: CGSize, scale: CGFloat) -> CPListImageRowItem {
         let images = tiles.map { CarPlayTileRenderer.image($0, size: size, scale: scale) }
         let row: CPListImageRowItem
         if #available(iOS 17.4, *) {
-            // Captions carry the full reading, e.g. "Power 15 hp est.".
             row = CPListImageRowItem(text: text, images: images, imageTitles: tiles.map(\.spoken))
         } else {
             row = CPListImageRowItem(text: text, images: images)
         }
+        return withDetailsHandlers(row)
+    }
+
+    private func withDetailsHandlers(_ row: CPListImageRowItem) -> CPListImageRowItem {
         row.handler = { [weak self] _, completion in
             self?.showDetails()
             completion()
@@ -120,6 +170,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             completion()
         }
         return row
+    }
+
+    private static func chunks(_ tiles: [DriveCarPlayTile], of size: Int) -> [[DriveCarPlayTile]] {
+        stride(from: 0, to: tiles.count, by: size).map { Array(tiles[$0..<min($0 + size, tiles.count)]) }
     }
 
     /// Second-row label from what the row holds, e.g. "Range · Efficiency · Pack".
