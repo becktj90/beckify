@@ -68,7 +68,17 @@ run_logged() {
 }
 
 step "Checking tools"
-command -v xcodebuild >/dev/null || fail "xcodebuild not found. Install Xcode, then run: sudo xcode-select -s /Applications/Xcode.app"
+# xcode-select often points at the standalone Command Line Tools, which have no
+# xcodebuild. Use the installed Xcode for this run instead (no sudo needed).
+if ! xcodebuild -version >/dev/null 2>&1; then
+  XCODE_APP="$(ls -d /Applications/Xcode.app /Applications/Xcode*.app 2>/dev/null | head -1 || true)"
+  [ -n "$XCODE_APP" ] || fail "Xcode isn't installed in /Applications. Install it from the App Store, open it once, then run this again."
+  export DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
+  echo "Using $XCODE_APP (xcode-select points at $(xcode-select -p 2>/dev/null || echo 'nothing'))."
+  echo "To make it permanent: sudo xcode-select -s \"$DEVELOPER_DIR\""
+  xcodebuild -version >/dev/null 2>&1 \
+    || fail "Xcode at $XCODE_APP isn't ready. Open it once to finish setup (accept the license), then run this again."
+fi
 xcodebuild -version | head -1
 
 step "Updating the repo"
