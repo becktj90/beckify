@@ -454,7 +454,9 @@ enum CarPlayCopySource {
             netKWh: energy.isEmpty ? nil : energy.netKWh,
             regenScore: model.insights.regen.score,
             motorTempC: model.value(.motorTempC).value,
-            planningUsesDefaults: model.planningRangeMiles != nil && model.effectivePlanning.usesDefaults
+            planningUsesDefaults: model.planningRangeMiles != nil && model.effectivePlanning.usesDefaults,
+            rangeLowMiles: model.rangeBandMiles?.low,
+            rangeHighMiles: model.rangeBandMiles?.high
         )
     }
 }

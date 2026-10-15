@@ -26,6 +26,36 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         XCTAssertEqual(tiles.map(\.kind), [.charge, .power, .flow, .speed, .range, .weatherRange, .efficiency, .packTemp])
     }
 
+    func testRegenRingUsesRegenScore() {
+        var input = boltDriving()
+        input.regenScore = 0.62
+        let ring = DriveCarPlayTiles.regenRing(input)
+        XCTAssertEqual(ring.value, "62")
+        XCTAssertEqual(ring.unit, "%")
+        XCTAssertEqual(ring.gauge, .ring(fraction: 0.62))
+        XCTAssertTrue(ring.isEstimate)
+        input.regenScore = nil
+        XCTAssertNil(DriveCarPlayTiles.regenRing(input).gauge)
+    }
+
+    func testRangeBandShowsOnTileAndDetail() {
+        var input = boltDriving()
+        input.rangeMiles = 214
+        input.rangeLowMiles = 180
+        input.rangeHighMiles = 214
+        let range = DriveCarPlayTiles.range(input, units: us)
+        XCTAssertEqual(range.note, "180–214 mi")
+        XCTAssertTrue(DriveCarPlayTiles.readouts(.range, input, units: us).contains { $0.label == "BAND" })
+    }
+
+    func testRangeBandMathUsesBothEfficiencies() {
+        let band = DrivePlanning.rangeBandMiles(socPercent: 50, usableKWh: 65, planningWh: 263, measuredWh: 300)
+        XCTAssertNotNil(band)
+        XCTAssertLessThan(band?.low ?? 0, band?.high ?? 0)
+        XCTAssertNil(DrivePlanning.rangeBandMiles(socPercent: 50, usableKWh: 65, planningWh: 263, measuredWh: nil))
+        XCTAssertNil(DrivePlanning.rangeBandMiles(socPercent: 50, usableKWh: 65, planningWh: 263, measuredWh: 263))
+    }
+
     func testBoltDrivingValuesInUSUnits() {
         let tiles = Dictionary(uniqueKeysWithValues: DriveCarPlayTiles.make(boltDriving(), units: us).map { ($0.kind, $0) })
         XCTAssertEqual(tiles[.charge]?.value, "65")
@@ -37,7 +67,7 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         XCTAssertEqual(tiles[.power]?.note, "est.")
         XCTAssertTrue(tiles[.power]?.isEstimate ?? false)
         XCTAssertEqual(tiles[.power]?.tone, .estimated)
-        XCTAssertEqual(tiles[.flow]?.value, "DRIVE")
+        XCTAssertEqual(tiles[.flow]?.title, "Regen")
         XCTAssertEqual(tiles[.speed]?.value, "60")
         XCTAssertEqual(tiles[.speed]?.unit, "mph")
         XCTAssertEqual(tiles[.speed]?.note, "OBD")

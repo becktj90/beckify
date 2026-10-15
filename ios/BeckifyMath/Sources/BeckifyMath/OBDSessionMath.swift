@@ -374,6 +374,22 @@ public enum DrivePlanning {
         return (socPercent / 100.0) * usableKWh * 1000.0 / whPerMile
     }
 
+    /// Range band from two efficiencies: the planning figure and this trip's
+    /// measured Wh/mi. Low is the thirstier figure, high the thriftier one.
+    /// Nil unless both exist, differ, and range can be computed from each.
+    public static func rangeBandMiles(
+        socPercent: Double?,
+        usableKWh: Double?,
+        planningWh: Double?,
+        measuredWh: Double?
+    ) -> (low: Double, high: Double)? {
+        guard let planningWh, let measuredWh, planningWh != measuredWh else { return nil }
+        guard let a = rangeMiles(socPercent: socPercent, usableKWh: usableKWh, whPerMile: planningWh),
+              let b = rangeMiles(socPercent: socPercent, usableKWh: usableKWh, whPerMile: measuredWh)
+        else { return nil }
+        return (min(a, b), max(a, b))
+    }
+
     /// Published figures used until the driver types their own, so range and
     /// efficiency are not blank on a fresh install. Shown as defaults, never
     /// as measured. Nil for profiles without published figures.

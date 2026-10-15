@@ -298,6 +298,17 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         )
     }
 
+    /// Range if this trip's measured efficiency holds, against the planning figure.
+    var rangeBandMiles: (low: Double, high: Double)? {
+        let inputs = effectivePlanning.inputs
+        return DrivePlanning.rangeBandMiles(
+            socPercent: value(.displayedSocPercent).value,
+            usableKWh: inputs.usableKWh,
+            planningWh: inputs.whPerMile,
+            measuredWh: tripWhPerMile
+        )
+    }
+
     /// Weather used for range, only while fresh enough.
     var usableWeather: OpenMeteoCurrent? {
         guard let current = weather.current, current.isUsable(now: now) else { return nil }
