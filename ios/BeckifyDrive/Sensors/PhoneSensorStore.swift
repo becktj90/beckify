@@ -300,7 +300,10 @@ extension PhoneSensorStore: CLLocationManagerDelegate {
     /// under two hours old. Weather changes slowly, so a recent point is close enough.
     func weatherPoint(now: Date) -> GeoPoint? {
         guard locationAccess == .allowed else { return nil }
-        if let coordinate { return coordinate }
+        if let coordinate, let lastLocationAt {
+            let age = now.timeIntervalSince(lastLocationAt)
+            if age >= 0, age < 7_200 { return coordinate }
+        }
         let defaults = UserDefaults.standard
         let savedAt = defaults.double(forKey: LastFixKey.at)
         let age = now.timeIntervalSince1970 - savedAt

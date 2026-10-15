@@ -91,7 +91,7 @@ HV current is measured in amps. Power, torque, and Wh/mi are estimates under the
 
 ### Weather
 
-`Net/WeatherService.swift` asks Open-Meteo (`api.open-meteo.com`, no key) for current temperature and wind. It runs only on Bolt profiles with Location allowed, and sends the location rounded to 0.01° (about 1 km). When there is no live fix, it can use the last GPS fix saved on the device if it is under two hours old; Location permission is still required. Only the latest fix is retained, not a location history. It refreshes after 15 min or 10 km and retries no sooner than 2 min after a failure. The last reading is cached in UserDefaults. Older than 3 h, the card says so and stops adjusting range. The dashboard never waits on the network.
+`Net/WeatherService.swift` asks Open-Meteo (`api.open-meteo.com`, no key) for current temperature and wind. It runs only on Bolt profiles with Location allowed, and sends the location rounded to 0.01° (about 1 km). When there is no live fix, it can use the last GPS fix saved on the device if it is under two hours old; the same age limit applies to a fix retained in memory after backgrounding; Location permission is still required. Only the latest fix is retained, not a location history. It refreshes after 15 min or 10 km and retries no sooner than 2 min after a failure. The last reading is cached in UserDefaults. Older than 3 h, the card says so and stops adjusting range. The dashboard never waits on the network.
 
 The charger finder from the feature list is not built.
 
