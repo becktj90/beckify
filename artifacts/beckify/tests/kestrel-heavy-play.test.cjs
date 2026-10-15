@@ -123,7 +123,7 @@ assert.match(hudJs, /passive:\s*false/);
 assert.match(hudJs, /dataset\.label = snapshot\.boostLabel/);
 assert.match(input, /event\.code === 'Space'/);
 assert.match(input, /event\.code === 'KeyA'/);
-assert.match(host, /ARCADE_ASSET_VERSION = "kestrel-22"/);
+assert.match(host, /ARCADE_ASSET_VERSION = "unity-1"/);
 assert.match(host, /index\.html\?v=\$\{ARCADE_ASSET_VERSION\}/);
 assert.match(arcadeHtml, /id="ng-tape"/);
 assert.match(arcadeHtml, /id="ng-phase"/);
