@@ -44,8 +44,11 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         input.rangeLowMiles = 180
         input.rangeHighMiles = 214
         let range = DriveCarPlayTiles.range(input, units: us)
-        XCTAssertEqual(range.note, "180–214 mi")
-        XCTAssertTrue(DriveCarPlayTiles.readouts(.range, input, units: us).contains { $0.label == "BAND" })
+        XCTAssertEqual(range.note, "180–214 mi est.")
+        XCTAssertTrue(range.isEstimate)
+        let readouts = DriveCarPlayTiles.readouts(.range, input, units: us)
+        XCTAssertEqual(readouts.count, 3)
+        XCTAssertEqual(readouts.first?.label, "BAND")
     }
 
     func testRangeBandMathUsesBothEfficiencies() {

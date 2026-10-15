@@ -375,14 +375,17 @@ public enum DriveCarPlayTiles {
         guard let miles = finite(input.rangeMiles), miles >= 0 else {
             return notRead(.range, title: "Range", symbol: "road.lanes", note: "Set pack and Wh/mi")
         }
+        // A band mixes in this trip's measured Wh/mi, so it is always an estimate.
+        let band = bandText(input, units: units)
+        let estimate = input.planningUsesDefaults || band != nil
         return DriveCarPlayTile(
             kind: .range, title: "Range",
             value: String(format: "%.0f", units.distance(fromKilometers: miles * DriveUnitPreference.kmPerMile)),
             unit: units.distanceLabel,
-            note: bandText(input, units: units) ?? (input.planningUsesDefaults ? "EPA default" : "Planning"),
+            note: band.map { "\($0) est." } ?? (input.planningUsesDefaults ? "EPA default" : "Planning"),
             gauge: .symbol,
-            tone: input.planningUsesDefaults ? .estimated : .accent,
-            symbol: "road.lanes", isEstimate: input.planningUsesDefaults
+            tone: estimate ? .estimated : .accent,
+            symbol: "road.lanes", isEstimate: estimate
         )
     }
 
@@ -548,8 +551,11 @@ public enum DriveCarPlayTiles {
         case .flow: return [score, regen, amps]
         case .speed: return [avg, top, trip]
         case .range:
-            let band = bandText(input, units: units).map { R(label: "BAND", value: $0) }
-            return [charge, weather, efficiency] + (band.map { [$0] } ?? [])
+            // The card draws three readouts; the band takes the efficiency slot when it shows.
+            if let band = bandText(input, units: units) {
+                return [R(label: "BAND", value: band), charge, weather]
+            }
+            return [charge, weather, efficiency]
         case .weatherRange: return [range, outside, pack]
         case .efficiency: return [trip, net, regen]
         case .packTemp: return [motor, outside, charge]

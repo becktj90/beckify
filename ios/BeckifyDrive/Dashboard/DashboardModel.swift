@@ -299,12 +299,15 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
     }
 
     /// Range if this trip's measured efficiency holds, against the planning figure.
+    /// The baseline is the typed figure (if valid) or the profile default, never the
+    /// measured one, so the band still shows before anything is typed.
     var rangeBandMiles: (low: Double, high: Double)? {
-        let inputs = effectivePlanning.inputs
+        let typedWh = planning.whPerMile.flatMap { $0 >= 50 && $0 <= 2000 ? $0 : nil }
+        let baselineWh = typedWh ?? DrivePlanning.defaults(for: profile)?.whPerMile
         return DrivePlanning.rangeBandMiles(
             socPercent: value(.displayedSocPercent).value,
-            usableKWh: inputs.usableKWh,
-            planningWh: inputs.whPerMile,
+            usableKWh: effectivePackKWh,
+            planningWh: baselineWh,
             measuredWh: tripWhPerMile
         )
     }
