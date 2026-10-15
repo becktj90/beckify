@@ -13,7 +13,6 @@ const houseAds = fs.readFileSync(path.join(root, "src/components/ads/MinimalAdUn
 const sitemapGen = fs.readFileSync(path.join(root, "scripts/generate-sitemap.mjs"), "utf8");
 const staticRoutes = fs.readFileSync(path.join(root, "scripts/generate-static-routes.mjs"), "utf8");
 const toolboxHtml = fs.readFileSync(path.join(root, "public/toolbox/index.html"), "utf8");
-const arcadeHtml = fs.readFileSync(path.join(root, "public/arcade/kestrel-heavy-classic/index.html"), "utf8");
 const appSrc = fs.readFileSync(path.join(root, "src/App.tsx"), "utf8");
 
 let failures = 0;
@@ -132,8 +131,7 @@ ok("HexGL is not listed", !/name: "HexGL"/.test(siteContent));
 console.log("\n--- Kestrel Heavy route ---");
 ok("hub Play Now points at /games/kestrel-heavy", /name: "Kestrel Heavy"[\s\S]{0,400}url: "\/games\/kestrel-heavy"/.test(siteContent));
 ok("React route exists", appSrc.includes('path="/games/kestrel-heavy"'));
-ok("standalone arcade page exists", arcadeHtml.includes("ng-phaser-root") && arcadeHtml.includes("data-arcade-standalone"));
-ok("standalone page keeps difficulty copy", arcadeHtml.includes("KID / CADET / PAD RAT"));
+ok("standalone Unity arcade page exists", fs.existsSync(path.join(root, "public/arcade/kestrel-heavy/index.html")));
 ok("toolbox no longer embeds the full arcade canvas", !/id="arcadeCanvas"/.test(toolboxHtml));
 ok("toolbox keeps a games-page link", toolboxHtml.includes("/games/kestrel-heavy/"));
 ok("toolbox no longer loads arcade.js", !/src="js\/arcade\.js"/.test(toolboxHtml));

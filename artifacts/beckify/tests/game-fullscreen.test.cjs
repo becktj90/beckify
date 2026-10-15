@@ -7,7 +7,6 @@ const hook = fs.readFileSync(path.join(root, 'src/hooks/use-game-fullscreen.ts')
 const lib = fs.readFileSync(path.join(root, 'src/lib/game-fullscreen.ts'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'src/index.css'), 'utf8');
 const host = fs.readFileSync(path.join(root, 'src/components/games/KestrelHeavy.tsx'), 'utf8');
-const arcadeFs = fs.readFileSync(path.join(root, 'public/arcade/kestrel-heavy-classic/js/fullscreen.js'), 'utf8');
 const reactIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 function isIosPhone(userAgent) {
@@ -119,12 +118,6 @@ assert.match(host, /immersive \? "EXIT" : "FULL"/);
 assert.match(host, /is-immersive/);
 assert.match(host, /syncEmbeddedArcadeViewport/);
 assert.match(host, /ARCADE_ASSET_VERSION = "unity-1"/);
-assert.match(arcadeFs, /iPhone\|iPod/);
-assert.match(arcadeFs, /shouldSelfFillViewport/);
-assert.match(arcadeFs, /is-ios-app/);
-assert.match(arcadeFs, /textContent = active \? 'EXIT' : 'FULL'/);
-assert.match(arcadeFs, /applyHostViewportMessage/);
-assert.match(arcadeFs, /usableViewportHeight/);
 assert.match(reactIndex, /viewport-fit=cover/);
 
 assert.doesNotMatch(

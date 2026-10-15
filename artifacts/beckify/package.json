@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "prebuild": "node scripts/generate-sitemap.mjs && node scripts/sync-phaser.mjs",
+    "prebuild": "node scripts/generate-sitemap.mjs",
     "build": "BASE_PATH=\"${BASE_PATH:-/}\" vite build --config vite.config.ts",
     "postbuild": "node scripts/generate-sitemap.mjs --dist && node scripts/generate-static-routes.mjs",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
