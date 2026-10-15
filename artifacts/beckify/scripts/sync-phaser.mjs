@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
-const dest = path.resolve(here, '../public/arcade/kestrel-heavy/vendor/phaser.min.js');
+const dest = path.resolve(here, '../public/arcade/kestrel-heavy-classic/vendor/phaser.min.js');
 
 const candidates = [
   () => require.resolve('phaser/dist/phaser.min.js'),

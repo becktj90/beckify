@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const arcadeDir = path.join(root, 'public/arcade/kestrel-heavy');
+const arcadeDir = path.join(root, 'public/arcade/kestrel-heavy-classic');
 const arcadeHtml = fs.readFileSync(path.join(arcadeDir, 'index.html'), 'utf8');
 const arcadeJs = fs.readFileSync(path.join(root, 'public/toolbox/js/arcade.js'), 'utf8');
 const mission = fs.readFileSync(path.join(arcadeDir, 'js/mission.js'), 'utf8');

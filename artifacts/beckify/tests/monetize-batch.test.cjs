@@ -13,7 +13,7 @@ const houseAds = fs.readFileSync(path.join(root, "src/components/ads/MinimalAdUn
 const sitemapGen = fs.readFileSync(path.join(root, "scripts/generate-sitemap.mjs"), "utf8");
 const staticRoutes = fs.readFileSync(path.join(root, "scripts/generate-static-routes.mjs"), "utf8");
 const toolboxHtml = fs.readFileSync(path.join(root, "public/toolbox/index.html"), "utf8");
-const arcadeHtml = fs.readFileSync(path.join(root, "public/arcade/kestrel-heavy/index.html"), "utf8");
+const arcadeHtml = fs.readFileSync(path.join(root, "public/arcade/kestrel-heavy-classic/index.html"), "utf8");
 const appSrc = fs.readFileSync(path.join(root, "src/App.tsx"), "utf8");
 
 let failures = 0;

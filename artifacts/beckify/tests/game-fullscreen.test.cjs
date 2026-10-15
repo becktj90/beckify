@@ -7,7 +7,7 @@ const hook = fs.readFileSync(path.join(root, 'src/hooks/use-game-fullscreen.ts')
 const lib = fs.readFileSync(path.join(root, 'src/lib/game-fullscreen.ts'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'src/index.css'), 'utf8');
 const host = fs.readFileSync(path.join(root, 'src/components/games/KestrelHeavy.tsx'), 'utf8');
-const arcadeFs = fs.readFileSync(path.join(root, 'public/arcade/kestrel-heavy/js/fullscreen.js'), 'utf8');
+const arcadeFs = fs.readFileSync(path.join(root, 'public/arcade/kestrel-heavy-classic/js/fullscreen.js'), 'utf8');
 const reactIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 function isIosPhone(userAgent) {
