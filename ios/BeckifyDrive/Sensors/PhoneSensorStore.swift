@@ -289,6 +289,28 @@ extension PhoneSensorStore: CLLocationManagerDelegate {
         }
     }
 
+    /// Last fix saved across launches, for weather only.
+    private enum LastFixKey {
+        static let lat = "beckify.drive.lastFix.lat"
+        static let lon = "beckify.drive.lastFix.lon"
+        static let at = "beckify.drive.lastFix.at"
+    }
+
+    /// Where to fetch weather: the live fix, else the last saved fix if it is
+    /// under two hours old. Weather changes slowly, so a recent point is close enough.
+    func weatherPoint(now: Date) -> GeoPoint? {
+        guard locationAccess == .allowed else { return nil }
+        if let coordinate, let lastLocationAt {
+            let age = now.timeIntervalSince(lastLocationAt)
+            if age >= 0, age < 7_200 { return coordinate }
+        }
+        let defaults = UserDefaults.standard
+        let savedAt = defaults.double(forKey: LastFixKey.at)
+        let age = now.timeIntervalSince1970 - savedAt
+        guard savedAt > 0, age >= 0, age < 7_200 else { return nil }
+        return GeoPoint(latitude: defaults.double(forKey: LastFixKey.lat), longitude: defaults.double(forKey: LastFixKey.lon))
+    }
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last, location.horizontalAccuracy >= 0 else { return }
         lastLocationAt = location.timestamp
@@ -300,6 +322,10 @@ extension PhoneSensorStore: CLLocationManagerDelegate {
         }
         altitudeMeters = location.verticalAccuracy > 0 ? location.altitude : nil
         coordinate = GeoPoint(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+        let defaults = UserDefaults.standard
+        defaults.set(location.coordinate.latitude, forKey: LastFixKey.lat)
+        defaults.set(location.coordinate.longitude, forKey: LastFixKey.lon)
+        defaults.set(location.timestamp.timeIntervalSince1970, forKey: LastFixKey.at)
         if location.course >= 0, location.courseAccuracy >= 0, location.speed >= Self.minimumCourseSpeed {
             lastCourse = (location.course, location.timestamp)
             courseDegrees = location.course

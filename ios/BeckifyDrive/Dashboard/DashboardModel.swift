@@ -441,7 +441,7 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
             }
         }
 
-        if layout == .ev, let point = sensors.coordinate {
+        if layout == .ev, let point = sensors.weatherPoint(now: now) {
             weather.refreshIfNeeded(at: point, now: now)
         }
     }
