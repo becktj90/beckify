@@ -223,7 +223,10 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         let tiles = DriveCarPlayTiles.make(boltDriving(), units: us)
         XCTAssertEqual(tiles[0].spoken, "Charge 65 %")
         XCTAssertEqual(tiles[1].spoken, "Power 15 hp est.")
-        XCTAssertEqual(tiles[2].spoken, "Regen DRIVE")
+        XCTAssertEqual(tiles[2].spoken, "Regen, not read")
+        var scoredInput = boltDriving()
+        scoredInput.regenScore = 0.62
+        XCTAssertEqual(DriveCarPlayTiles.make(scoredInput, units: us)[2].spoken, "Regen 62 % est.")
     }
 
     func testHeadline() {
