@@ -374,6 +374,22 @@ public enum DrivePlanning {
         return (socPercent / 100.0) * usableKWh * 1000.0 / whPerMile
     }
 
+    /// Range band from two efficiencies: the planning figure and this trip's
+    /// measured Wh/mi. Low is the thirstier figure, high the thriftier one.
+    /// Nil unless both exist, differ, and range can be computed from each.
+    public static func rangeBandMiles(
+        socPercent: Double?,
+        usableKWh: Double?,
+        planningWh: Double?,
+        measuredWh: Double?
+    ) -> (low: Double, high: Double)? {
+        guard let planningWh, let measuredWh, planningWh != measuredWh else { return nil }
+        guard let a = rangeMiles(socPercent: socPercent, usableKWh: usableKWh, whPerMile: planningWh),
+              let b = rangeMiles(socPercent: socPercent, usableKWh: usableKWh, whPerMile: measuredWh)
+        else { return nil }
+        return (min(a, b), max(a, b))
+    }
+
     /// Published figures used until the driver types their own, so range and
     /// efficiency are not blank on a fresh install. Shown as defaults, never
     /// as measured. Nil for profiles without published figures.
@@ -403,10 +419,14 @@ public enum DrivePlanning {
     public static func effective(typed: PlanningInputs, profile: VehicleProfile, measuredWhPerMile: Double?) -> Effective {
         let fallback = defaults(for: profile)
         let measured = measuredWhPerMile.flatMap { $0.isFinite && $0 >= 50 && $0 <= 2000 ? $0 : nil }
-        let usable = typed.usableKWh ?? fallback?.usableKWh
-        let wh = typed.whPerMile ?? measured ?? fallback?.whPerMile
-        let defaultedPack = typed.usableKWh == nil && fallback != nil
-        let defaultedWh = typed.whPerMile == nil && measured == nil && fallback != nil
+        // A typed value outside the range the math accepts (e.g. 0) is ignored,
+        // so it cannot silently blank range and efficiency.
+        let typedKWh = typed.usableKWh.flatMap { $0 > 0 && $0 <= 200 ? $0 : nil }
+        let typedWh = typed.whPerMile.flatMap { $0 >= 50 && $0 <= 2000 ? $0 : nil }
+        let usable = typedKWh ?? fallback?.usableKWh
+        let wh = typedWh ?? measured ?? fallback?.whPerMile
+        let defaultedPack = typedKWh == nil && fallback != nil
+        let defaultedWh = typedWh == nil && measured == nil && fallback != nil
         return Effective(inputs: PlanningInputs(usableKWh: usable, whPerMile: wh), usesDefaults: defaultedPack || defaultedWh)
     }
 

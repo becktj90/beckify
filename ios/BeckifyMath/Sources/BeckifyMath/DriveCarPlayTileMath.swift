@@ -160,6 +160,9 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
     public var motorTempC: Double?
     /// True when range uses the profile's published pack size or Wh/mi.
     public var planningUsesDefaults: Bool
+    /// Range band ends, miles: planning efficiency vs. this trip's measured one.
+    public var rangeLowMiles: Double?
+    public var rangeHighMiles: Double?
 
     public init(
         layout: DriveLayout,
@@ -187,7 +190,9 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         netKWh: Double? = nil,
         regenScore: Double? = nil,
         motorTempC: Double? = nil,
-        planningUsesDefaults: Bool = false
+        planningUsesDefaults: Bool = false,
+        rangeLowMiles: Double? = nil,
+        rangeHighMiles: Double? = nil
     ) {
         self.layout = layout
         self.socPercent = socPercent
@@ -215,6 +220,8 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         self.regenScore = regenScore
         self.motorTempC = motorTempC
         self.planningUsesDefaults = planningUsesDefaults
+        self.rangeLowMiles = rangeLowMiles
+        self.rangeHighMiles = rangeHighMiles
     }
 }
 
@@ -250,7 +257,7 @@ public enum DriveCarPlayTiles {
             return [
                 charge(input),
                 power(input, units: units),
-                flow(input),
+                regenRing(input),
                 speed(input, units: units),
                 range(input, units: units),
                 weatherRange(input, units: units),
@@ -332,6 +339,27 @@ public enum DriveCarPlayTiles {
         )
     }
 
+    /// Regen score as a ring: the share of braking energy kept this trip.
+    static func regenRing(_ input: DriveCarPlayTileInputs) -> DriveCarPlayTile {
+        guard let score = finite(input.regenScore), score >= 0 else {
+            return notRead(.flow, title: "Regen", symbol: "leaf.arrow.triangle.circlepath")
+        }
+        let fraction = clamp(score)
+        return DriveCarPlayTile(
+            kind: .flow, title: "Regen", value: String(format: "%.0f", fraction * 100), unit: "%",
+            note: "Kept", gauge: .ring(fraction: fraction), tone: .regen,
+            symbol: "leaf.arrow.triangle.circlepath", isEstimate: true
+        )
+    }
+
+    /// "180–214 mi" when the range band exists, else nil.
+    static func bandText(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> String? {
+        guard let low = finite(input.rangeLowMiles), let high = finite(input.rangeHighMiles) else { return nil }
+        let lo = units.distance(fromKilometers: low * DriveUnitPreference.kmPerMile)
+        let hi = units.distance(fromKilometers: high * DriveUnitPreference.kmPerMile)
+        return "\(String(format: "%.0f–%.0f", lo, hi)) \(units.distanceLabel)"
+    }
+
     static func speed(_ input: DriveCarPlayTileInputs, units: DriveUnitPreference) -> DriveCarPlayTile {
         guard let kph = finite(input.speedKph), kph >= 0 else {
             return notRead(.speed, title: "Speed", symbol: "speedometer")
@@ -347,12 +375,17 @@ public enum DriveCarPlayTiles {
         guard let miles = finite(input.rangeMiles), miles >= 0 else {
             return notRead(.range, title: "Range", symbol: "road.lanes", note: "Set pack and Wh/mi")
         }
+        // A band mixes in this trip's measured Wh/mi, so it is always an estimate.
+        let band = bandText(input, units: units)
+        let estimate = input.planningUsesDefaults || band != nil
         return DriveCarPlayTile(
             kind: .range, title: "Range",
             value: String(format: "%.0f", units.distance(fromKilometers: miles * DriveUnitPreference.kmPerMile)),
-            unit: units.distanceLabel, note: input.planningUsesDefaults ? "EPA default" : "Planning", gauge: .symbol,
-            tone: input.planningUsesDefaults ? .estimated : .accent,
-            symbol: "road.lanes", isEstimate: input.planningUsesDefaults
+            unit: units.distanceLabel,
+            note: band.map { "\($0) est." } ?? (input.planningUsesDefaults ? "EPA default" : "Planning"),
+            gauge: .symbol,
+            tone: estimate ? .estimated : .accent,
+            symbol: "road.lanes", isEstimate: estimate
         )
     }
 
@@ -517,7 +550,12 @@ public enum DriveCarPlayTiles {
         case .power: return [peak, torque, amps]
         case .flow: return [score, regen, amps]
         case .speed: return [avg, top, trip]
-        case .range: return [charge, weather, efficiency]
+        case .range:
+            // The card draws three readouts; the band takes the efficiency slot when it shows.
+            if let band = bandText(input, units: units) {
+                return [R(label: "BAND", value: band), charge, weather]
+            }
+            return [charge, weather, efficiency]
         case .weatherRange: return [range, outside, pack]
         case .efficiency: return [trip, net, regen]
         case .packTemp: return [motor, outside, charge]
