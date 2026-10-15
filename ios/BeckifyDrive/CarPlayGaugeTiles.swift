@@ -1,15 +1,27 @@
 import BeckifyMath
+import CarPlay
 import SwiftUI
 import UIKit
 
 /// CarPlay templates can't host SwiftUI, so each gauge is drawn to an image
-/// and handed to a list image row. The look is a 90s vacuum-fluorescent
+/// and handed to a grid button or detail card. The look is a 90s vacuum-fluorescent
 /// cluster: segmented gauges, glowing seven-segment digits over unlit "8"s,
 /// scanlines, and a bezel. Always the dark palette: the images carry their own
 /// background and read the same on light and dark CarPlay screens.
 @MainActor
 enum CarPlayTileRenderer {
-    /// Small square tile for the home list's image grid.
+    /// iOS 26 reports the connected display's grid image limit at runtime.
+    /// Earlier CarPlay grids use the legacy 40-point button artwork size.
+    static var gridImageSize: CGSize {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            return CPGridTemplate.maximumGridButtonImageSize
+        }
+        #endif
+        return CGSize(width: 40, height: 40)
+    }
+
+    /// Square tile for a home grid button.
     static func image(_ tile: DriveCarPlayTile, size: CGSize, scale: CGFloat) -> UIImage {
         let side = max(1, min(size.width, size.height))
         return render(CarPlayGaugeTileView(tile: tile, side: side).frame(width: side, height: side), scale: scale)
@@ -247,7 +259,7 @@ private struct VFDReadout: View {
     }
 }
 
-// MARK: - Small tile (home list)
+// MARK: - Grid tile (home screen)
 
 /// One square tile: segmented gauge, glowing digits, unit, corner icon.
 struct CarPlayGaugeTileView: View {
@@ -536,6 +548,34 @@ struct CarPlayTilesPreview: View {
                 Text("CarPlay preview")
                     .font(.title2.weight(.bold))
                     .foregroundStyle(DriveTheme.text)
+                ForEach(Array(Self.samples.enumerated()), id: \.offset) { _, sample in
+                    let tiles = DriveCarPlayTiles.make(sample.input, units: Self.us)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(sample.headline)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(DriveTheme.text)
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
+                            ForEach(tiles) { tile in
+                                VStack(spacing: 4) {
+                                    Image(uiImage: CarPlayTileRenderer.image(tile, size: CarPlayTileRenderer.gridImageSize, scale: 3))
+                                        .accessibilityHidden(true)
+                                    Text(tile.spoken)
+                                        .font(.caption2)
+                                        .foregroundStyle(DriveTheme.text)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(tile.spoken)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(DriveTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                Text("Gauges and Readings are separate tabs. Layout here is illustrative; CarPlay controls the actual grid.")
+                    .font(.caption)
+                    .foregroundStyle(DriveTheme.muted)
                 Text("Gauges screen (tap a tile)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(DriveTheme.text)
@@ -548,34 +588,6 @@ struct CarPlayTilesPreview: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
-                }
-                ForEach(Array(Self.samples.enumerated()), id: \.offset) { _, sample in
-                    let tiles = DriveCarPlayTiles.make(sample.input, units: Self.us)
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(Array(stride(from: 0, to: tiles.count, by: 4).enumerated()), id: \.offset) { row, start in
-                            let chunk = Array(tiles[start..<min(start + 4, tiles.count)])
-                            Text(row == 0 ? sample.headline : chunk.map(\.title).joined(separator: " · "))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(DriveTheme.text)
-                            HStack(alignment: .top, spacing: 8) {
-                                ForEach(chunk) { tile in
-                                    VStack(spacing: 4) {
-                                        Image(uiImage: CarPlayTileRenderer.image(tile, size: CGSize(width: 84, height: 84), scale: 3))
-                                            .resizable()
-                                            .frame(width: 84, height: 84)
-                                        Text(tile.spoken)
-                                            .font(.caption2)
-                                            .foregroundStyle(DriveTheme.muted)
-                                            .lineLimit(2)
-                                            .multilineTextAlignment(.center)
-                                            .frame(width: 84)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(12)
-                    .background(DriveTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
             .padding(16)

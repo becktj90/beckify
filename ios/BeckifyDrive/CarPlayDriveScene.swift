@@ -8,12 +8,12 @@ import UIKit
 /// Attaches to the shared dashboard model so the trip, regen, efficiency, and
 /// weather estimators run while only CarPlay is on screen.
 ///
-/// Root: gauge-tile rows drawn like the phone dashboard (driving-task apps
-/// can't draw their own CarPlay views, so the tiles are images in list image
-/// rows), then every other reading as list rows, as many as the car allows.
+/// Root: a grid of retro gauge buttons and a separate Readings tab, so
+/// CarPlay lays out the gauges across the available template area.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, OBDSessionObserving {
     private var interfaceController: CPInterfaceController?
-    private var rootTemplate: CPListTemplate?
+    private var rootTemplate: CPGridTemplate?
+    private var readingsTemplate: CPListTemplate?
     private var detailsTemplate: CPListTemplate?
     /// Per-tile detail screen (iOS 26 card row) and which tile it opened on.
     private var gaugeTemplate: CPListTemplate?
@@ -49,6 +49,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         DashboardModel.shared.detach(.carPlay)
         self.interfaceController = nil
         rootTemplate = nil
+        readingsTemplate = nil
         detailsTemplate = nil
         gaugeTemplate = nil
         gaugeFocus = nil
@@ -90,13 +91,23 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         lastHeadline = headline
         lastPublish = now
 
-        let sections = makeSections(tiles: tiles, readings: readings, headline: headline, interfaceController: interfaceController)
+        let buttons = gridButtons(tiles: tiles, interfaceController: interfaceController)
+        let sections = readingSections(readings, usedItems: 0, usedSections: 0, linkWhenTruncated: false)
         if let rootTemplate {
-            rootTemplate.updateSections(sections)
+            rootTemplate.updateTitle(headline)
+            rootTemplate.updateGridButtons(buttons)
+            readingsTemplate?.updateSections(sections)
         } else {
-            let template = CPListTemplate(title: "Beckify Drive", sections: sections)
-            rootTemplate = template
-            interfaceController.setRootTemplate(template, animated: false) { _, _ in }
+            let grid = CPGridTemplate(title: headline, gridButtons: buttons)
+            grid.tabTitle = "Gauges"
+            grid.tabImage = UIImage(systemName: "gauge.with.dots.needle.67percent")
+            let list = CPListTemplate(title: "All readings", sections: sections)
+            list.tabTitle = "Readings"
+            list.tabImage = UIImage(systemName: "list.bullet")
+            rootTemplate = grid
+            readingsTemplate = list
+            let tabs = CPTabBarTemplate(templates: [grid, list])
+            interfaceController.setRootTemplate(tabs, animated: false) { _, _ in }
         }
         detailsTemplate?.updateSections(readingSections(readings, usedItems: 0, usedSections: 0, linkWhenTruncated: false))
         refreshGauge(tiles: tiles, readings: readings)
@@ -104,59 +115,25 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     // MARK: Gauges
 
-    private func makeSections(
+    private func gridButtons(
         tiles: [DriveCarPlayTile],
-        readings: [DriveCarPlayReadingSection],
-        headline: String,
         interfaceController: CPInterfaceController
-    ) -> [CPListSection] {
+    ) -> [CPGridButton] {
         let scale = interfaceController.carTraitCollection.displayScale
-        var rows: [CPListTemplateItem] = []
-        #if compiler(>=6.2)
-        if #available(iOS 26.0, *) {
-            // Rows of four that wrap onto a second line on narrow screens
-            // instead of dropping tiles.
-            rows = Self.chunks(tiles, of: 4).enumerated().map { index, chunk in
-                elementRow(text: index == 0 ? headline : Self.rowTitle(chunk), tiles: chunk, scale: scale)
+        let size = CarPlayTileRenderer.gridImageSize
+        return tiles.prefix(Int(CPGridTemplateMaximumItems)).map { tile in
+            // Keep the full reading in the template's title as well as the
+            // accessibility label, so VoiceOver never depends on image text.
+            let button = CPGridButton(
+                titleVariants: [tile.spoken],
+                image: CarPlayTileRenderer.image(tile, size: size, scale: scale).withRenderingMode(.alwaysOriginal)
+            ) { [weak self] _ in
+                self?.showGauge(tile.kind)
             }
+            button.accessibilityLabel = tile.spoken
+            return button
         }
-        #endif
-        if rows.isEmpty {
-            // Before iOS 26 a row can't wrap, and narrow screens show fewer
-            // images than CPMaximumNumberOfGridImages, so keep rows to three.
-            let perRow = max(1, min(3, CPMaximumNumberOfGridImages))
-            let size = CPListImageRowItem.maximumImageSize
-            rows = Self.chunks(tiles, of: perRow).enumerated().map { index, chunk in
-                legacyRow(text: index == 0 ? headline : Self.rowTitle(chunk), tiles: chunk, size: size, scale: scale)
-            }
-        }
-        return [CPListSection(items: rows)]
-            + readingSections(readings, usedItems: rows.count, usedSections: 1, linkWhenTruncated: true)
     }
-
-    #if compiler(>=6.2)
-    /// iOS 26 element row: each tile is a rounded image with its reading as
-    /// the caption, e.g. "Power 15 hp est.".
-    @available(iOS 26.0, *)
-    private func elementRow(text: String, tiles: [DriveCarPlayTile], scale: CGFloat) -> CPListImageRowItem {
-        let size = CPListImageRowItemImageGridElement.maximumImageSize
-        let elements = tiles.map { tile in
-            // Short name under the tile where VoiceOver can read the full value
-            // from the accessibility label (26.4+); the full reading before that.
-            let element = CPListImageRowItemImageGridElement(
-                image: CarPlayTileRenderer.image(tile, size: size, scale: scale),
-                imageShape: .roundedRectangle,
-                title: Self.hasElementAccessibilityLabel ? tile.title : tile.spoken,
-                accessorySymbolName: nil
-            )
-            if #available(iOS 26.4, *) {
-                element.accessibilityLabel = tile.spoken
-            }
-            return element
-        }
-        return withHandlers(CPListImageRowItem(text: text, imageGridElements: elements, allowsMultipleLines: true), tiles: tiles)
-    }
-    #endif
 
     /// `CPListImageRowItemElement.accessibilityLabel` is iOS 26.4+ in newer SDKs.
     private static var hasElementAccessibilityLabel: Bool {
@@ -171,35 +148,6 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             .map { "\($0.label.capitalized) \($0.value)" }
             .joined(separator: ", ")
         return extras.isEmpty ? tile.spoken : "\(tile.spoken). \(extras)."
-    }
-
-    private func legacyRow(text: String, tiles: [DriveCarPlayTile], size: CGSize, scale: CGFloat) -> CPListImageRowItem {
-        let images = tiles.map { CarPlayTileRenderer.image($0, size: size, scale: scale) }
-        let row: CPListImageRowItem
-        if #available(iOS 17.4, *) {
-            row = CPListImageRowItem(text: text, images: images, imageTitles: tiles.map(\.spoken))
-        } else {
-            row = CPListImageRowItem(text: text, images: images)
-        }
-        return withHandlers(row, tiles: tiles)
-    }
-
-    /// Tapping a tile opens that gauge large; tapping the row itself opens the text list.
-    private func withHandlers(_ row: CPListImageRowItem, tiles: [DriveCarPlayTile]) -> CPListImageRowItem {
-        let kinds = tiles.map(\.kind)
-        row.handler = { [weak self] _, completion in
-            self?.showDetails()
-            completion()
-        }
-        row.listImageRowHandler = { [weak self] _, index, completion in
-            if kinds.indices.contains(index) {
-                self?.showGauge(kinds[index])
-            } else {
-                self?.showDetails()
-            }
-            completion()
-        }
-        return row
     }
 
     // MARK: Gauge detail
@@ -264,15 +212,6 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             + readingSections(readings, usedItems: 1, usedSections: 1, linkWhenTruncated: true)
     }
     #endif
-
-    private static func chunks(_ tiles: [DriveCarPlayTile], of size: Int) -> [[DriveCarPlayTile]] {
-        stride(from: 0, to: tiles.count, by: size).map { Array(tiles[$0..<min($0 + size, tiles.count)]) }
-    }
-
-    /// Second-row label from what the row holds, e.g. "Range · Efficiency · Pack".
-    private static func rowTitle(_ tiles: [DriveCarPlayTile]) -> String {
-        tiles.map(\.title).joined(separator: " · ")
-    }
 
     // MARK: Readings
 
