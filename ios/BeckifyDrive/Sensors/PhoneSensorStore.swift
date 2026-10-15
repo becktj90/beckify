@@ -299,10 +299,12 @@ extension PhoneSensorStore: CLLocationManagerDelegate {
     /// Where to fetch weather: the live fix, else the last saved fix if it is
     /// under two hours old. Weather changes slowly, so a recent point is close enough.
     func weatherPoint(now: Date) -> GeoPoint? {
+        guard locationAccess == .allowed else { return nil }
         if let coordinate { return coordinate }
         let defaults = UserDefaults.standard
         let savedAt = defaults.double(forKey: LastFixKey.at)
-        guard savedAt > 0, now.timeIntervalSince1970 - savedAt < 7_200 else { return nil }
+        let age = now.timeIntervalSince1970 - savedAt
+        guard savedAt > 0, age >= 0, age < 7_200 else { return nil }
         return GeoPoint(latitude: defaults.double(forKey: LastFixKey.lat), longitude: defaults.double(forKey: LastFixKey.lon))
     }
 
