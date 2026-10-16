@@ -3,7 +3,7 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 import { KESTREL_VIEWPORT_SOURCE, isArcadeViewportMessage, syncEmbeddedArcadeViewport } from "@/lib/game-fullscreen";
 
-const ARCADE_ASSET_VERSION = "unity-1";
+const ARCADE_ASSET_VERSION = "unity-2";
 const RUNNER_SRC = `${import.meta.env.BASE_URL}arcade/kestrel-heavy/index.html?v=${ARCADE_ASSET_VERSION}`.replace(/([^:]\/)\/+/g, "$1");
 
 export function KestrelHeavy() {
@@ -65,6 +65,7 @@ export function KestrelHeavy() {
           title="Kestrel Heavy"
           className="absolute inset-0 block h-full w-full border-0 bg-black"
           allow="fullscreen; gamepad; autoplay"
+          allowFullScreen
           data-viewport-source={KESTREL_VIEWPORT_SOURCE}
         />
         <button

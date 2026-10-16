@@ -11,6 +11,9 @@
     /* Portrait 9:19.5 stage, centred and letterboxed on wide screens; fills the screen on phones. */
     #stage { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       height: 100vh; height: 100dvh; width: calc(100vh * 9 / 19.5); width: calc(100dvh * 9 / 19.5); max-width: 100vw; }
+    /* Landscape windows (desktop monitors, iPad landscape): fill the whole frame instead of a 9:19.5 pillarbox strip.
+       Unity re-matches its render size to the canvas (matchWebGLToCanvasSize) and the UI re-anchors. */
+    @media (min-aspect-ratio: 1/1) { #stage { top: 0; left: 0; transform: none; width: 100vw; height: 100vh; height: 100dvh; max-width: none; } }
     @media (max-aspect-ratio: 9/19.5) { #stage { width: 100vw; height: calc(100vw * 19.5 / 9); max-height: 100dvh; } }
     #unity-canvas { width: 100%; height: 100%; display: block; background: #05050d; }
     #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
