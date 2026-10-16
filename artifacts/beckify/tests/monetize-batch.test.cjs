@@ -12,7 +12,7 @@ const footerSrc = fs.readFileSync(path.join(root, "src/components/sections/Foote
 const houseAds = fs.readFileSync(path.join(root, "src/components/ads/MinimalAdUnit.tsx"), "utf8");
 const sitemapGen = fs.readFileSync(path.join(root, "scripts/generate-sitemap.mjs"), "utf8");
 const staticRoutes = fs.readFileSync(path.join(root, "scripts/generate-static-routes.mjs"), "utf8");
-const toolboxHtml = fs.readFileSync(path.join(root, "public/toolbox/index.html"), "utf8");
+const toolboxHtml = fs.readFileSync(path.join(root, "public/toolbox/classic/index.html"), "utf8");
 const appSrc = fs.readFileSync(path.join(root, "src/App.tsx"), "utf8");
 
 let failures = 0;
@@ -83,21 +83,21 @@ ok("calculator count matches live toolbox nav", PUBLIC_CALCULATOR_COUNT === live
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home names EMP/EMC, homework EE, LP, and number-base", /EMP\/EMC/.test(homeSrc) && /homework EE/.test(homeSrc) && /linear-programming optimizer/.test(homeSrc) && /number-base converter/.test(homeSrc));
 ok("home deep-links EMP, homework EE, LP, and number-base", [
-  "/toolbox/#sec-emp-emc",
-  "/toolbox/#sec-magnetic-circuit",
-  "/toolbox/#sec-transient-circuits",
-  "/toolbox/#sec-phasor-diagram",
-  "/toolbox/#sec-semiconductor-iv",
-  "/toolbox/#sec-fiber-link",
-  "/toolbox/#sec-gaussian-beam",
-  "/toolbox/#sec-lp-optimizer",
-  "/toolbox/#sec-base-converter",
-  "/toolbox/#sec-pitch-hum",
-  "/toolbox/#sec-audio-spectrum",
-  "/toolbox/#sec-sound-level",
-  "/toolbox/#sec-lux-meter",
+  "/toolbox/classic/#sec-emp-emc",
+  "/toolbox/classic/#sec-magnetic-circuit",
+  "/toolbox/classic/#sec-transient-circuits",
+  "/toolbox/classic/#sec-phasor-diagram",
+  "/toolbox/classic/#sec-semiconductor-iv",
+  "/toolbox/classic/#sec-fiber-link",
+  "/toolbox/classic/#sec-gaussian-beam",
+  "/toolbox/classic/#sec-lp-optimizer",
+  "/toolbox/classic/#sec-base-converter",
+  "/toolbox/classic/#sec-pitch-hum",
+  "/toolbox/classic/#sec-audio-spectrum",
+  "/toolbox/classic/#sec-sound-level",
+  "/toolbox/classic/#sec-lux-meter",
 ].every((href) => homeSrc.includes(`href: "${href}"`)));
-ok("sitemap chips deep-link via /toolbox/#", sitemapSrc.includes("href={`/toolbox/#${tool.anchor}`}"));
+ok("sitemap chips deep-link via /toolbox/classic/#", sitemapSrc.includes("href={`/toolbox/classic/#${tool.anchor}`}"));
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser game"));
 ok("toolbox header uses the shared calculator count", toolboxHtml.includes(`${PUBLIC_CALCULATOR_COUNT} calculators plus reference tables`));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
@@ -142,6 +142,6 @@ ok("e-bike section has a Battery Pack Designer canvas", /id="eb-battery-designer
 ok("pack designer includes a 3D inspect canvas", /id="ebd_canvas_3d"/.test(toolboxHtml) && /id="ebd_view_3d"/.test(toolboxHtml));
 ok("toolbox loads the pack designer script", /src="js\/ebike-battery-designer\.js"/.test(toolboxHtml));
 ok("no external batterydesigner.com launch CTA", !/href="https:\/\/batterydesigner\.com"/.test(toolboxHtml));
-ok("home chip deep-links e-bike tools", homeSrc.includes('href: "/toolbox/#sec-ebike-tools"'));
+ok("home chip deep-links e-bike tools", homeSrc.includes('href: "/toolbox/classic/#sec-ebike-tools"'));
 
 process.exitCode = failures ? 1 : 0;

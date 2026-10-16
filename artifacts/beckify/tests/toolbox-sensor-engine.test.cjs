@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 const engineSrc = fs.readFileSync(path.join(root, 'public', 'toolbox', 'js', 'sensor-engine.js'), 'utf8');
 const toolsSrc = fs.readFileSync(path.join(root, 'public', 'toolbox', 'js', 'sensor-tools.js'), 'utf8');
 const fftSrc = fs.readFileSync(path.join(root, 'public', 'toolbox', 'js', 'sensor-fft.js'), 'utf8');

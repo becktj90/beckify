@@ -116,7 +116,7 @@ okTrue('solar/GMD is a long-line geoelectric product', E.ENVIRONMENTS.solar.coup
 console.log('\n--- Safety: source-design language stays out of the tool ---');
 const sources = [
   fs.readFileSync(dir + 'emp-emc.js', 'utf8'),
-  fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8')
+  fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8')
 ];
 const forbidden = [
   /marx/i,

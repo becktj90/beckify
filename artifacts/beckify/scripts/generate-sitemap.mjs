@@ -67,8 +67,8 @@ const page = ({ title, description, path, toolPath, slug, eyebrow = "Electrical 
 ${showAds ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5333275222472637" crossorigin="anonymous"></script>` : ""}
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFZ9X595E"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-ZVFZ9X595E');</script>
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
-<style>body{margin:0;background:#05060f;color:#eef0fa;font:16px/1.6 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:32px 22px 48px}a{color:#b7abff}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin:.35rem 0 1.1rem}h2{font-size:1.15rem;margin:0 0 .45rem}h3{font-size:1rem;margin:1.1rem 0 .3rem}.panel ul{margin:.4rem 0;padding-left:1.2rem;color:#b7bad2;max-width:720px}pre{background:#0a0b1a;border:1px solid #30304a;border-radius:8px;padding:10px 14px;overflow-x:auto;color:#d5d7e8}.eyebrow{color:#9b8cff;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem;font-weight:700}.crumbs{font-size:.86rem;margin-bottom:2.5rem}.intro{font-size:1.12rem;color:#d5d7e8;max-width:720px}.panel{background:#111326;border:1px solid #30304a;border-radius:14px;padding:20px 22px;margin:24px 0}.panel p{margin:.4rem 0;color:#b7bad2;max-width:720px}.cta{display:inline-block;margin:4px 0 0;padding:12px 18px;border-radius:9px;background:#8b7bff;color:#fff;text-decoration:none;font-weight:700}.links{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:.93rem}iframe{width:100%;height:720px;border:1px solid #30304a;border-radius:14px;margin-top:22px;background:#111326}</style></head>
-<body><main><nav class="crumbs" aria-label="Breadcrumb"><a href="/">Beckify</a> / <a href="/toolbox/">Toolbox</a> / ${escapeXml(title)}</nav><div class="eyebrow">${escapeXml(eyebrow)}</div><h1>${escapeXml(title)}</h1><p class="intro">${escapeXml(description)}</p><section class="panel" aria-labelledby="about-tool">${renderAbout(slug, description, subject)}<a class="cta" href="${toolPath}">Open the interactive ${kind === "tool" ? "tool" : "collection"}</a><div class="links"><a href="/toolbox/">Browse all electrical tools</a>${featuredLinks(slug)}<a href="/sitemap">Browse the Beckify site map</a></div></section><iframe src="${toolPath.includes("#") ? `/toolbox/index.html#${toolPath.split("#")[1]}` : toolPath}" title="${escapeXml(title)}" loading="lazy"></iframe></main></body></html>`;
+<style>body{margin:0;background:#080b10;color:#e8eef5;font:16px/1.6 system-ui,sans-serif}main{max-width:860px;margin:auto;padding:32px 22px 48px}a{color:#40bad6}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin:.35rem 0 1.1rem}h2{font-size:1.15rem;margin:0 0 .45rem}h3{font-size:1rem;margin:1.1rem 0 .3rem}.panel ul{margin:.4rem 0;padding-left:1.2rem;color:#b7bad2;max-width:720px}pre{background:#080b10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;overflow-x:auto;color:#d5d7e8}.eyebrow{color:#40bad6;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem;font-weight:700}.crumbs{font-size:.86rem;margin-bottom:2.5rem}.intro{font-size:1.12rem;color:#d5d7e8;max-width:720px}.panel{background:#12161e;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:20px 22px;margin:24px 0}.panel p{margin:.4rem 0;color:#b7bad2;max-width:720px}.cta{display:inline-block;margin:4px 0 0;padding:12px 18px;border-radius:9px;background:#40bad6;color:#080b10;text-decoration:none;font-weight:700}.links{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:.93rem}iframe{width:100%;height:720px;border:1px solid rgba(255,255,255,.12);border-radius:14px;margin-top:22px;background:#12161e}</style></head>
+<body><main><nav class="crumbs" aria-label="Breadcrumb"><a href="/">Beckify</a> / <a href="/toolbox/">Toolbox</a> / ${escapeXml(title)}</nav><div class="eyebrow">${escapeXml(eyebrow)}</div><h1>${escapeXml(title)}</h1><p class="intro">${escapeXml(description)}</p><section class="panel" aria-labelledby="about-tool">${renderAbout(slug, description, subject)}<a class="cta" href="${toolPath}">Open the interactive ${kind === "tool" ? "tool" : "collection"}</a><div class="links"><a href="/toolbox/">Browse all electrical tools</a>${featuredLinks(slug)}<a href="/sitemap">Browse the Beckify site map</a></div></section><iframe src="${toolPath.includes("#") ? `/toolbox/classic/index.html#${toolPath.split("#")[1]}` : toolPath}" title="${escapeXml(title)}" loading="lazy"></iframe></main></body></html>`;
 };
 
 // lastmod: git commit date of the source that renders the URL, falling back
@@ -84,7 +84,7 @@ const lastChange = (...files) => {
   }).filter(Boolean);
   return dates.sort().at(-1) ?? buildDate;
 };
-const toolboxLastmod = lastChange("src/data/toolbox-tools.mjs", "public/toolbox/index.html");
+const toolboxLastmod = lastChange("src/data/toolbox-tools.mjs", "public/toolbox/classic/index.html");
 
 // Tiers: 1.0 home; 0.9 toolbox hub + money pages; 0.7 other calculators and
 // hubs; 0.5 journals, arcade, legal, and section aliases.
@@ -136,11 +136,11 @@ if (process.argv.includes("--dist")) {
   for (const [slug, title, description, anchor] of [...tools, ...aliases]) {
     const directory = resolve(output, "toolbox", slug);
     await mkdir(directory, { recursive: true });
-    await writeFile(resolve(directory, "index.html"), page({ title, description, path: `/toolbox/${slug}/`, toolPath: slug === "switchgear-logic-lab" ? "/toolbox/switchgear-logic-lab.html" : `/toolbox/#${anchor}`, slug, showAds: !["smith-chart", "lsi-breaker"].includes(slug) }));
+    await writeFile(resolve(directory, "index.html"), page({ title, description, path: `/toolbox/${slug}/`, toolPath: slug === "switchgear-logic-lab" ? "/toolbox/switchgear-logic-lab.html" : `/toolbox/classic/#${anchor}`, slug, showAds: !["smith-chart", "lsi-breaker"].includes(slug) }));
   }
   for (const [slug, title, description, anchor] of categories) {
     const directory = resolve(output, "toolbox/category", slug);
     await mkdir(directory, { recursive: true });
-    await writeFile(resolve(directory, "index.html"), page({ title, description, path: `/toolbox/category/${slug}/`, toolPath: `/toolbox/#${anchor}`, slug, eyebrow: "Toolbox category", kind: "category" }));
+    await writeFile(resolve(directory, "index.html"), page({ title, description, path: `/toolbox/category/${slug}/`, toolPath: `/toolbox/classic/#${anchor}`, slug, eyebrow: "Toolbox category", kind: "category" }));
   }
 }

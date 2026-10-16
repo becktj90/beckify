@@ -6,7 +6,6 @@ import { PenroseCanvas } from "@/components/PenroseCanvas";
 import { Starfield } from "@/components/Starfield";
 import { BeckifyIcon } from "@/components/ui/icons/BeckifyIcon";
 import { Nav } from "@/components/sections/Nav";
-import { Shop } from "@/components/sections/Shop";
 import { Footer } from "@/components/sections/Footer";
 import { SITE } from "@/data/site-content";
 import { PUBLIC_CALCULATOR_COUNT, PUBLIC_GAME_COUNT } from "@/data/site-stats";
@@ -153,20 +152,20 @@ export default function Home() {
                     </a>
                   ))}
                   {[
-                    { href: "/toolbox/#sec-emp-emc", label: "EMP / EMC" },
-                    { href: "/toolbox/#sec-magnetic-circuit", label: "Magnetic circuit" },
-                    { href: "/toolbox/#sec-transient-circuits", label: "Transients" },
-                    { href: "/toolbox/#sec-phasor-diagram", label: "Phasors" },
-                    { href: "/toolbox/#sec-semiconductor-iv", label: "Semiconductor I-V" },
-                    { href: "/toolbox/#sec-fiber-link", label: "Fiber / NA" },
-                    { href: "/toolbox/#sec-gaussian-beam", label: "Gaussian beam" },
-                    { href: "/toolbox/#sec-lp-optimizer", label: "LP optimizer" },
-                    { href: "/toolbox/#sec-base-converter", label: "Number-base" },
-                    { href: "/toolbox/#sec-ebike-tools", label: "Battery pack designer" },
-                    { href: "/toolbox/#sec-pitch-hum", label: "Pitch / hum" },
-                    { href: "/toolbox/#sec-audio-spectrum", label: "Audio spectrum" },
-                    { href: "/toolbox/#sec-sound-level", label: "Sound level" },
-                    { href: "/toolbox/#sec-lux-meter", label: "Lux meter" },
+                    { href: "/toolbox/classic/#sec-emp-emc", label: "EMP / EMC" },
+                    { href: "/toolbox/classic/#sec-magnetic-circuit", label: "Magnetic circuit" },
+                    { href: "/toolbox/classic/#sec-transient-circuits", label: "Transients" },
+                    { href: "/toolbox/classic/#sec-phasor-diagram", label: "Phasors" },
+                    { href: "/toolbox/classic/#sec-semiconductor-iv", label: "Semiconductor I-V" },
+                    { href: "/toolbox/classic/#sec-fiber-link", label: "Fiber / NA" },
+                    { href: "/toolbox/classic/#sec-gaussian-beam", label: "Gaussian beam" },
+                    { href: "/toolbox/classic/#sec-lp-optimizer", label: "LP optimizer" },
+                    { href: "/toolbox/classic/#sec-base-converter", label: "Number-base" },
+                    { href: "/toolbox/classic/#sec-ebike-tools", label: "Battery pack designer" },
+                    { href: "/toolbox/classic/#sec-pitch-hum", label: "Pitch / hum" },
+                    { href: "/toolbox/classic/#sec-audio-spectrum", label: "Audio spectrum" },
+                    { href: "/toolbox/classic/#sec-sound-level", label: "Sound level" },
+                    { href: "/toolbox/classic/#sec-lux-meter", label: "Lux meter" },
                   ].map(({ href, label }) => (
                     <a
                       key={href}
@@ -309,8 +308,6 @@ export default function Home() {
             </FadeIn>
 
           </div>
-
-          <Shop />
 
           <MinimalAdUnit type="adsense" placement="toolbox-sidebar" />
           <Footer />

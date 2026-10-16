@@ -102,7 +102,7 @@ assert.ok(Number.isFinite(projected.x));
 assert.ok(Number.isFinite(projected.y));
 assert.ok(projected.z > 0);
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 assert.match(html, /id="ebd_canvas"/);
 assert.match(html, /id="ebd_canvas_3d"/);
 assert.match(html, /ebike-battery-designer\.js/);

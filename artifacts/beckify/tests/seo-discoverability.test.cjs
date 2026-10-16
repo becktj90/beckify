@@ -44,7 +44,7 @@ async function main() {
   ok("SchemaHead exports VideoGame + TechArticle + BreadcrumbList", schemaHead.includes("videoGameSchema") && schemaHead.includes("techArticleSchema") && schemaHead.includes("breadcrumbListSchema"));
   const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
   ok("home HTML has Organization and WebSite JSON-LD", indexHtml.includes('"@type": "Organization"') && indexHtml.includes('"@type": "WebSite"'));
-  const toolboxHtml = fs.readFileSync(path.join(root, "public/toolbox/index.html"), "utf8");
+  const toolboxHtml = fs.readFileSync(path.join(root, "public/toolbox/classic/index.html"), "utf8");
   ok("toolbox hub keeps SoftwareApplication / WebApplication", toolboxHtml.includes("SoftwareApplication") && toolboxHtml.includes("WebApplication"));
   ok("toolbox hub publisher URL is trailing-slash canonical", toolboxHtml.includes('"url": "https://beckify.com/"'));
   const vespa = fs.readFileSync(path.join(root, "src/pages/vespa-p200e.tsx"), "utf8");

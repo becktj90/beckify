@@ -65,7 +65,7 @@ api.restore(section, api.PREFIX + 'motor-nameplate');
 assert.equal(hp.value, '7.5');
 assert.equal(reviewed.checked, false);
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 assert.match(html, /id="mnp_reviewed"[^>]*data-no-persist/);
 assert.match(html, /id="mnp_enhance"[^>]*data-no-persist/);
 assert.match(html, /id="mnp_vlm_endpoint"[^>]*data-no-persist/);

@@ -36,7 +36,7 @@ function load(filename, exportName) {
   return api;
 }
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 
 let fails = 0;
 function ok(name, condition, detail) {

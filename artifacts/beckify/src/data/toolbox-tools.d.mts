@@ -21,6 +21,27 @@ export const CATEGORIES: ToolTuple[];
 export const REFERENCE_TABLES: ToolTuple[];
 export const PUBLIC_CALCULATOR_COUNT: number;
 export const ALL_TOOL_SLUGS: string[];
+
+export type ToolAvailability = "web" | "ios" | "ios-only";
+export type ToolHomeArea = { id: "field" | "toolkit"; title: string; blurb: string };
+export type ToolShelf = { id: string; area: "field" | "toolkit"; title: string };
+export type RegistryTool = {
+  toolId: string;
+  shelf: string;
+  tile: string | null;
+  availability: ToolAvailability;
+  slug: string | null;
+  anchor: string | null;
+  href: string | null;
+  title: string;
+  subtitle: string;
+  synonyms: string[];
+};
+
+export const TOOL_HOME_AREAS: ToolHomeArea[];
+export const TOOL_SHELVES: ToolShelf[];
+export const TOOL_REGISTRY: RegistryTool[];
+export const DEFAULT_PIN_IDS: string[];
 export function resolveToolSlug(slug: string): {
   slug: string;
   title: string;

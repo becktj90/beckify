@@ -44,7 +44,7 @@ function okTrue(name, condition, detail) {
   console.log((condition ? '  PASS  ' : '  FAIL  ') + name.padEnd(64) + (detail || ''));
 }
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 
 console.log('\n--- Thermal voltage VT = kT/q ---');
 const VT300 = S.K_B * 300 / S.Q_E;

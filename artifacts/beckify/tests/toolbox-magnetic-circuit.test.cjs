@@ -175,7 +175,7 @@ console.log('\n--- Fringing reduces gap reluctance ---');
 
 console.log('\n--- Original markup, no publisher-figure traces ---');
 {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
   okTrue('section sec-magnetic-circuit exists', /id="sec-magnetic-circuit"/.test(html));
   okTrue('core+gap SVG host exists', /id="mc_diagram"/.test(html));
   okTrue('B vs NI plot host exists', /id="mc_plot"/.test(html));

@@ -25,7 +25,7 @@ ok(
 ok("React CSP frame-src allows the same-origin Kestrel Heavy iframe", /frame-src 'self'/.test(reactIndex));
 ok("React shell has a referrer policy meta", /name="referrer"/.test(reactIndex));
 
-const toolboxHtml = read(root, "public", "toolbox", "index.html");
+const toolboxHtml = read(root, "public", "toolbox", "classic", "index.html");
 ok(
   "Toolbox has a CSP meta with object-src none",
   /http-equiv="Content-Security-Policy"/.test(toolboxHtml) && /object-src 'none'/.test(toolboxHtml),
@@ -78,7 +78,7 @@ ok("Panel and schema CSV cells neutralize formula prefixes", /function csvCell/.
 ok("Panel power study OCR caps upload size", /12 \* 1024 \* 1024/.test(panelPowerJs));
 
 const sw = read(root, "public", "toolbox", "sw.js");
-ok("Toolbox SW cache version bumped for the latest precache change", /CACHE_VERSION = 'v51'/.test(sw));
+ok("Toolbox SW cache version bumped for the latest precache change", /CACHE_VERSION = 'v52'/.test(sw));
 ok(
   "Toolbox SW does not precache Tesseract at install",
   !/const SHELL = \[[^\]]*tesseract/s.test(sw),

@@ -131,7 +131,7 @@ const alKft = conductorMetalMassFromLength(1000, 105600, 'al');
 ok('1/0 copper 319.5 lb/kft (Standard Wire book)', cuKft.massLb, 319.5, 0.4);
 ok('aluminum mass scales by 2.70/8.89', alKft.massLb, cuKft.massLb * 2.70 / 8.89, 1e-9);
 
-const html = fs.readFileSync(require('path').join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(require('path').join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 const catalog = fs.readFileSync(require('path').join(__dirname, '..', '..', '..', 'ios', 'Beckify', 'Models', 'ToolboxCatalog.swift'), 'utf8');
 const assert = (name, condition) => {
   if (!condition) failures++;

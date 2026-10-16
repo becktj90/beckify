@@ -200,7 +200,7 @@ sandbox.BECKIFY_API_BASE_URL = '';
   assert.equal(enhanced.draft.fields.ratedHP.value, 7.5);
   api.saveSettings({ endpoint: '', token: '' });
 
-  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
   assert.match(html, /id="mnp_enhance"[^>]*data-no-persist/);
   assert.match(html, /Enhance with AI/);
   assert.match(html, /OpenAI and\/or Anthropic/);

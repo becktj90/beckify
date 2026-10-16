@@ -301,7 +301,7 @@ export default function SiteMapPage() {
                 style={{ background: `radial-gradient(ellipse at 90% 0%, ${hue}1a 0%, transparent 60%)` }}
               />
               <div className="relative z-10 flex items-center justify-between mb-3">
-                <a href={`/toolbox/#${anchor}`} className="flex items-center gap-2.5 min-w-0">
+                <a href={`/toolbox/classic/#${anchor}`} className="flex items-center gap-2.5 min-w-0">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: hue }} />
                   <h3 className="font-display text-sm font-semibold text-[var(--foreground)]">{label}</h3>
                 </a>
@@ -316,7 +316,7 @@ export default function SiteMapPage() {
                 {tools.map((tool) => (
                   <a
                     key={`${tool.anchor}-${tool.name}`}
-                    href={`/toolbox/#${tool.anchor}`}
+                    href={`/toolbox/classic/#${tool.anchor}`}
                     className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--foreground)]"
                   >
                     {tool.name}

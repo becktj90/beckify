@@ -15,11 +15,14 @@ export const Layout = ({
   showAds = true,
   className = "",
   variant = "default",
+  mainClassName,
 }: {
   children: ReactNode;
   showAds?: boolean;
   className?: string;
   variant?: "default" | "cabinet";
+  /** Replaces the default page width and padding. Cabinet variant ignores it. */
+  mainClassName?: string;
 }) => (
   <div className={`relative min-h-[100dvh] ${className}`}>
     <Starfield />
@@ -29,7 +32,7 @@ export const Layout = ({
         className={
           variant === "cabinet"
             ? "kh-cabinet-shell mx-auto flex min-h-[calc(100dvh-5.5rem)] w-full max-w-none flex-1 flex-col px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-3"
-            : "mx-auto max-w-5xl space-y-14 px-6 py-10 md:py-14"
+            : mainClassName ?? "mx-auto max-w-5xl space-y-14 px-6 py-10 md:py-14"
         }
       >
         {children}

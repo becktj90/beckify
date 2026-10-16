@@ -11,10 +11,12 @@
 
    Strategies, and why:
 
-     navigations      network-first, falling back to the cached shell. The
-                      toolbox is one HTML file that changes on every deploy, so
-                      serving a cached copy first would strand users on an old
-                      build until they hard-refreshed.
+     navigations      network-first, falling back to the cached classic shell.
+                      /toolbox/ itself is the React tile home and is not
+                      intercepted. The calculator document is classic/index.html,
+                      which changes on every deploy, so serving a cached copy
+                      first would strand users on an old build until they
+                      hard-refreshed.
 
      same-origin GET  stale-while-revalidate. CSS/JS are served from cache for
                       an instant load and refreshed in the background, so an
@@ -34,7 +36,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v51';
+const CACHE_VERSION = 'v52';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -46,9 +48,10 @@ const RUNTIME_HOST_ALLOWLIST = [
   'region1.google-analytics.com',
 ];
 
+const CALCULATOR_SHELL = './classic/index.html';
 const SHELL = [
-  './',
-  './index.html',
+  './classic/',
+  CALCULATOR_SHELL,
   './manifest.json',
   './panel-schedule.html',
   './panel-power-study.html',
@@ -161,7 +164,7 @@ function networkFirst(request) {
     return response;
   }).catch(function () {
     return caches.match(request).then(function (hit) {
-      return hit || caches.match('./index.html');
+      return hit || caches.match(CALCULATOR_SHELL);
     });
   });
 }
@@ -210,6 +213,10 @@ self.addEventListener('fetch', function (event) {
   // Only claim requests that belong to the toolbox; the rest of the site is
   // served normally even though this worker is registered in the same origin.
   if (isSameOrigin(url) && url.pathname.indexOf('/toolbox/') !== 0) return;
+
+  // /toolbox/ is the React tile home. Its scripts live outside this scope, so
+  // caching that document as the calculator shell would strand offline jobs.
+  if (request.mode === 'navigate' && (url.pathname === '/toolbox/' || url.pathname === '/toolbox/index.html')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));

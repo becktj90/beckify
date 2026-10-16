@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..', 'public', 'toolbox');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'classic', 'index.html'), 'utf8');
 const smith = fs.readFileSync(path.join(root, 'js', 'smith-chart.js'), 'utf8');
 
 let failures = 0;

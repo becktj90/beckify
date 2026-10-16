@@ -44,7 +44,7 @@ function okTrue(name, condition, detail) {
   console.log((condition ? '  PASS  ' : '  FAIL  ') + name.padEnd(64) + (detail || ''));
 }
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 
 const lambda = 633e-9;
 const w0 = 50e-6;
