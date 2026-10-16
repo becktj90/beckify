@@ -27,7 +27,7 @@ Apple’s CarPlay guide (June 2026) says a CarPlay app must be designed primaril
 **Subtitle:** EV and OBD gauges  
 
 **Promotional text:**
-A glanceable dashboard for a Bluetooth OBD-II adapter and your phone's own sensors. Bolt EV battery, motor, and 12 V telemetry; generic Mode 01 for other cars. On-device. Not a certified diagnostic.
+A glanceable dashboard for a Bluetooth OBD-II adapter and your phone's own sensors. Bolt EV battery, motor, and 12 V telemetry; generic Mode 01 for other cars, including a 2026 Ram 1500 profile. On-device. Not a certified diagnostic.
 
 **Description:**
 
@@ -96,7 +96,7 @@ Not in this repository. Capture on a Mac:
 
 Show the disconnected state and a connected state only with real or clearly non-shipping data. Do not ship a screenshot that implies a measured battery-health percentage.
 
-The Xcode previews in `BeckifyDrive/Dashboard/DashboardPreviews.swift` (no adapter, partial data, full Bolt EV, driving, regen, partial replies, light mode) are fixtures. They are useful for review, but they are not real readings, so do not use them as App Store screenshots.
+The Xcode previews in `BeckifyDrive/Dashboard/DashboardPreviews.swift` (no adapter, partial data, full Bolt EV, driving, regen, partial replies, Ram 1500, light mode) are fixtures. They are useful for review, but they are not real readings, so do not use them as App Store screenshots.
 
 ## Build
 

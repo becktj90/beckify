@@ -32,6 +32,7 @@ shoot boltRegen dark
 shoot boltPartial dark battery
 shoot genericEV dark
 shoot iceGeneric dark
+shoot ram1500 dark
 
 # CarPlay gauge tiles, drawn by the same renderer the CarPlay list uses.
 xcrun simctl ui "$udid" appearance dark

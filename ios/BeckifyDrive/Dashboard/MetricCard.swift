@@ -23,6 +23,12 @@ struct MetricCard<Accessory: View>: View {
     @ViewBuilder var accessory: () -> Accessory
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dashboardCardWidth) private var cardWidth
+    @ScaledMetric(relativeTo: .title) private var typeScale: CGFloat = 1
+
+    private var valueSize: CGFloat {
+        CGFloat(GaugeLayoutMath.cardValueSize(cardWidth: Double(cardWidth), scale: Double(typeScale)))
+    }
 
     private var shows: Bool { freshness.showsValue && value != nil }
     private var color: Color { tint ?? DriveTheme.color(for: level) }
@@ -44,16 +50,16 @@ struct MetricCard<Accessory: View>: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(shows ? (value ?? "—") : "—")
-                    .font(.system(.title, design: .rounded, weight: .semibold))
+                    .font(.system(size: valueSize, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(shows ? valueColor : DriveTheme.muted)
                     .contentTransition(.numericText())
                     .animation(reduceMotion ? nil : .snappy, value: value)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(0.5)
                 if shows, !unit.isEmpty {
                     Text(unit)
-                        .font(.subheadline.weight(.medium))
+                        .font(.system(size: max(15, valueSize * 0.34), weight: .semibold, design: .rounded))
                         .foregroundStyle(DriveTheme.muted)
                         .lineLimit(1)
                 }

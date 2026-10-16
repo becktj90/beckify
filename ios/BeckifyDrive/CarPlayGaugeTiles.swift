@@ -269,7 +269,7 @@ struct CarPlayGaugeTileView: View {
     /// Very small tiles drop the unit and icon; the image title carries them.
     private var compact: Bool { side < 72 }
     private var tint: Color { VFDStyle.tint(tile.tone) }
-    private var thickness: CGFloat { max(3, side * 0.075) }
+    private var thickness: CGFloat { max(3, side * 0.095) }
 
     var body: some View {
         ZStack {
@@ -291,34 +291,34 @@ struct CarPlayGaugeTileView: View {
         case .ring(let fraction)?:
             ZStack {
                 SegmentedArc(style: .ring, fraction: fraction, tint: tint, thickness: thickness, segments: 30)
-                readout(0.27)
+                readout(0.34)
             }
-            .padding(side * 0.07)
+            .padding(side * 0.035)
         case .arc(let fraction)?:
             ZStack {
                 SegmentedArc(style: .arc, fraction: fraction, tint: tint, thickness: thickness, segments: 27)
-                readout(0.27)
+                readout(0.34)
             }
-            .padding(side * 0.07)
+            .padding(side * 0.035)
         case .bipolar(let fraction)?:
             VStack(spacing: side * 0.02) {
                 SegmentedArc(style: .bipolar, fraction: fraction, tint: tint, thickness: thickness, segments: 20)
-                    .frame(width: side * 0.84, height: side * 0.4)
-                readout(0.26)
+                    .frame(width: side * 0.92, height: side * 0.46)
+                readout(0.32)
             }
             .padding(.top, side * 0.08)
         case .bar(let fraction)?:
             VStack(spacing: side * 0.07) {
-                readout(0.3)
+                readout(0.36)
                 SegmentedBar(fraction: fraction, tint: tint, blocks: 10)
-                    .frame(width: side * 0.76, height: thickness * 1.3)
+                    .frame(width: side * 0.88, height: thickness * 1.6)
             }
         case .symbol?:
             ZStack {
                 Image(systemName: tile.symbol)
                     .font(.system(size: side * 0.46, weight: .bold))
                     .foregroundStyle(tint.opacity(0.14))
-                readout(0.3)
+                readout(0.36)
             }
         case nil:
             ZStack {
@@ -333,7 +333,7 @@ struct CarPlayGaugeTileView: View {
     }
 
     private func readout(_ digitScale: CGFloat) -> some View {
-        VFDReadout(tile: tile, digitHeight: side * digitScale, maxWidth: side * 0.66, showUnit: !compact)
+        VFDReadout(tile: tile, digitHeight: side * digitScale, maxWidth: side * 0.74, showUnit: !compact)
     }
 }
 
@@ -351,16 +351,16 @@ struct CarPlayGaugeClusterView: View {
     private var unit: CGFloat { min(w, h) }
     private var pad: CGFloat { unit * 0.065 }
     private var tint: Color { VFDStyle.tint(tile.tone) }
-    private var thickness: CGFloat { max(4, unit * 0.07) }
+    private var thickness: CGFloat { max(4, unit * 0.085) }
 
     var body: some View {
         ZStack {
             VFDPanel(tint: tint, cornerRadius: unit * 0.1, side: unit)
             VStack(spacing: h * 0.02) {
                 header
-                    .frame(height: h * 0.1)
+                    .frame(height: h * 0.09)
                 gaugeZone
-                    .frame(height: h * 0.5)
+                    .frame(height: h * 0.56)
                 scaleRow
                     .frame(height: h * 0.05)
                 readoutPanel
@@ -407,30 +407,30 @@ struct CarPlayGaugeClusterView: View {
     // MARK: Gauge
 
     @ViewBuilder private var gaugeZone: some View {
-        let zone = CGSize(width: w - pad * 2, height: h * 0.5)
+        let zone = CGSize(width: w - pad * 2, height: h * 0.56)
         let dial = min(zone.width, zone.height)
         switch tile.gauge {
         case .ring(let fraction)?:
             ZStack {
                 SegmentedArc(style: .ring, fraction: fraction, tint: tint, thickness: thickness, segments: 40)
                     .frame(width: dial, height: dial)
-                readout(height: dial * 0.28, maxWidth: dial * 0.62)
+                readout(height: dial * 0.34, maxWidth: dial * 0.7)
             }
         case .arc(let fraction)?:
             ZStack {
                 SegmentedArc(style: .arc, fraction: fraction, tint: tint, thickness: thickness, segments: 36)
                     .frame(width: dial, height: dial)
-                readout(height: dial * 0.28, maxWidth: dial * 0.62)
+                readout(height: dial * 0.34, maxWidth: dial * 0.7)
             }
         case .bipolar(let fraction)?:
             VStack(spacing: zone.height * 0.03) {
                 SegmentedArc(style: .bipolar, fraction: fraction, tint: tint, thickness: thickness, segments: 30)
                     .frame(width: min(zone.width, zone.height * 1.15), height: zone.height * 0.5)
-                readout(height: zone.height * 0.3, maxWidth: zone.width * 0.8)
+                readout(height: zone.height * 0.34, maxWidth: zone.width * 0.9)
             }
         case .bar(let fraction)?:
             VStack(spacing: zone.height * 0.08) {
-                readout(height: zone.height * 0.42, maxWidth: zone.width * 0.85)
+                readout(height: zone.height * 0.5, maxWidth: zone.width * 0.92)
                 SegmentedBar(fraction: fraction, tint: tint, blocks: 16)
                     .frame(width: zone.width, height: zone.height * 0.12)
             }
@@ -439,7 +439,7 @@ struct CarPlayGaugeClusterView: View {
                 Image(systemName: tile.symbol)
                     .font(.system(size: dial * 0.6, weight: .bold))
                     .foregroundStyle(tint.opacity(0.12))
-                readout(height: zone.height * 0.42, maxWidth: zone.width * 0.85)
+                readout(height: zone.height * 0.5, maxWidth: zone.width * 0.92)
             }
         case nil:
             ZStack {
