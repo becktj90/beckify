@@ -12,7 +12,9 @@ import UIKit
 /// CarPlay lays out the gauges across the available template area.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, OBDSessionObserving {
     private var interfaceController: CPInterfaceController?
+    /// Grid home before iOS 26, one-card list home on iOS 26+. Only one is set.
     private var rootTemplate: CPGridTemplate?
+    private var summaryTemplate: CPListTemplate?
     private var readingsTemplate: CPListTemplate?
     private var detailsTemplate: CPListTemplate?
     /// Per-tile detail screen (iOS 26 card row) and which tile it opened on.
@@ -49,6 +51,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         DashboardModel.shared.detach(.carPlay)
         self.interfaceController = nil
         rootTemplate = nil
+        summaryTemplate = nil
         readingsTemplate = nil
         detailsTemplate = nil
         gaugeTemplate = nil
@@ -91,22 +94,25 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         lastHeadline = headline
         lastPublish = now
 
-        let buttons = gridButtons(tiles: tiles, interfaceController: interfaceController)
         let sections = readingSections(readings, usedItems: 0, usedSections: 0, linkWhenTruncated: false)
-        if let rootTemplate {
-            rootTemplate.updateTitle(headline)
-            rootTemplate.updateGridButtons(buttons)
+        if rootTemplate != nil || summaryTemplate != nil {
+            if let rootTemplate {
+                rootTemplate.updateTitle(headline)
+                rootTemplate.updateGridButtons(gridButtons(tiles: tiles, interfaceController: interfaceController))
+            }
+            #if compiler(>=6.2)
+            if #available(iOS 26.0, *), let summaryTemplate {
+                summaryTemplate.updateSections(summarySections(tiles: tiles, headline: headline, interfaceController: interfaceController))
+            }
+            #endif
             readingsTemplate?.updateSections(sections)
         } else {
-            let grid = CPGridTemplate(title: headline, gridButtons: buttons)
-            grid.tabTitle = "Gauges"
-            grid.tabImage = UIImage(systemName: "gauge.with.dots.needle.67percent")
+            let home = makeHome(tiles: tiles, headline: headline, interfaceController: interfaceController)
             let list = CPListTemplate(title: "All readings", sections: sections)
             list.tabTitle = "Readings"
             list.tabImage = UIImage(systemName: "list.bullet")
-            rootTemplate = grid
             readingsTemplate = list
-            let tabs = CPTabBarTemplate(templates: [grid, list])
+            let tabs = CPTabBarTemplate(templates: [home, list])
             interfaceController.setRootTemplate(tabs, animated: false) { _, _ in }
         }
         detailsTemplate?.updateSections(readingSections(readings, usedItems: 0, usedSections: 0, linkWhenTruncated: false))
@@ -114,6 +120,70 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     // MARK: Gauges
+
+    /// iOS 26+: one large card with every key reading, the biggest image CarPlay
+    /// allows. Earlier iOS: the grid of small gauge buttons.
+    private func makeHome(
+        tiles: [DriveCarPlayTile],
+        headline: String,
+        interfaceController: CPInterfaceController
+    ) -> CPTemplate {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            let list = CPListTemplate(
+                title: "Beckify Drive",
+                sections: summarySections(tiles: tiles, headline: headline, interfaceController: interfaceController)
+            )
+            list.tabTitle = "Gauges"
+            list.tabImage = UIImage(systemName: "gauge.with.dots.needle.67percent")
+            summaryTemplate = list
+            return list
+        }
+        #endif
+        let grid = CPGridTemplate(title: headline, gridButtons: gridButtons(tiles: tiles, interfaceController: interfaceController))
+        grid.tabTitle = "Gauges"
+        grid.tabImage = UIImage(systemName: "gauge.with.dots.needle.67percent")
+        rootTemplate = grid
+        return grid
+    }
+
+    #if compiler(>=6.2)
+    @available(iOS 26.0, *)
+    private func summarySections(
+        tiles: [DriveCarPlayTile],
+        headline: String,
+        interfaceController: CPInterfaceController
+    ) -> [CPListSection] {
+        let scale = interfaceController.carTraitCollection.displayScale
+        let size = CPListImageRowItemCardElement.maximumFullHeightImageSize
+        let spoken = Self.spokenSummary(tiles)
+        // iOS 26.0–26.3 can't take an accessibility label, so the card gets a
+        // short visible caption and the artwork leaves room for it.
+        let needsCaption = !Self.hasElementAccessibilityLabel
+        let card = CPListImageRowItemCardElement(
+            image: CarPlayTileRenderer.summaryImage(tiles, headline: headline, size: size, scale: scale, reserveCaption: needsCaption),
+            showsImageFullHeight: true,
+            title: needsCaption ? (tiles.first?.spoken ?? "Gauges") : nil,
+            subtitle: nil,
+            tintColor: nil
+        )
+        if #available(iOS 26.4, *) {
+            card.accessibilityLabel = spoken
+        }
+        let row = CPListImageRowItem(text: nil, cardElements: [card], allowsMultipleLines: false)
+        let focus = tiles.first?.kind ?? .charge
+        row.listImageRowHandler = { [weak self] _, _, completion in
+            self?.showGauge(focus)
+            completion()
+        }
+        return [CPListSection(items: [row])]
+    }
+    #endif
+
+    /// "Charge 37 %. Power 25 hp est. Speed 40 mph. …"
+    private static func spokenSummary(_ tiles: [DriveCarPlayTile]) -> String {
+        tiles.map(\.spoken).joined(separator: ". ")
+    }
 
     private func gridButtons(
         tiles: [DriveCarPlayTile],
