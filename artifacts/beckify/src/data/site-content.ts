@@ -56,10 +56,10 @@ export interface NavLink {
 
 export const NAV_LINKS: NavLink[] = [
   { href: "/toolbox/", label: "Toolbox", icon: Wrench },
-  { href: "/control-systems", label: "Control Systems", icon: Zap },
-  { href: "/apps", label: "Apps", icon: Smartphone },
-  { href: "/projects", label: "Projects", icon: Rocket },
-  { href: "/games", label: "Games", icon: Gamepad2 },
+  { href: "/control-systems/", label: "Control Systems", icon: Zap },
+  { href: "/apps/", label: "Apps", icon: Smartphone },
+  { href: "/projects/", label: "Projects", icon: Rocket },
+  { href: "/games/", label: "Games", icon: Gamepad2 },
   { href: SHOP_ORIGIN, label: "Shop", icon: ShoppingBag, external: true },
 ];
 
@@ -87,25 +87,25 @@ export const HOME_NAV_CARDS: HubCard[] = [
   {
     title: "Beckify for iPhone & iPad",
     description: "The native field electrical toolbox on the App Store. Free, no ads.",
-    href: "/apps",
+    href: "/apps/",
     icon: Smartphone,
   },
   {
     title: "Projects",
     description: "Vespa EV conversion, Sniffmaster, and other builds.",
-    href: "/projects",
+    href: "/projects/",
     icon: Rocket,
   },
   {
     title: "Games",
     description: "Kestrel Heavy — a launch arcade in the browser. No ads.",
-    href: "/games",
+    href: "/games/",
     icon: Gamepad2,
   },
   {
     title: "Control System Toolbox",
     description: "Model plants, compare open- vs closed-loop P, design lead and PID, and read Bode GM/PM/ωb.",
-    href: "/control-systems",
+    href: "/control-systems/",
     icon: Zap,
   },
 ];

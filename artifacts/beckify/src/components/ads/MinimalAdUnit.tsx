@@ -25,7 +25,7 @@ const HOUSE_ADS = [
     title: "Control System Toolbox",
     description: "Model plants, inspect Bode and root-locus behavior, and compare PID, LQR, and MPC workflows in your browser.",
     linkText: "Try it live",
-    href: "/control-systems",
+    href: "/control-systems/",
   },
   {
     title: "Beckify is open source",

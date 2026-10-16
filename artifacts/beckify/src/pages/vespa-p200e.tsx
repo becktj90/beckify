@@ -749,7 +749,7 @@ export default function VespaP200EPage() {
                 restoration.
               </p>
               <div className="cta-links">
-                <Link href="/projects">Browse projects</Link>
+                <Link href="/projects/">Browse projects</Link>
                 <Link href="/about#contact">Contact Beckify</Link>
               </div>
             </div>

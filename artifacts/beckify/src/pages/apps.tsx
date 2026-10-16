@@ -82,7 +82,7 @@ export default function AppsPage() {
         <FadeIn delay={0.14}>
           <p className="text-sm leading-relaxed text-[var(--muted)]">
             The browser <a className="text-[var(--accent)] underline" href="/toolbox/">EE Toolbox</a> stays free on the web.
-            Calculators are design aids, not a PE stamp. See the <a className="text-[var(--accent)] underline" href="/privacy">privacy policy</a>.
+            Calculators are design aids, not a PE stamp. See the <a className="text-[var(--accent)] underline" href="/privacy/">privacy policy</a>.
           </p>
         </FadeIn>
       </section>

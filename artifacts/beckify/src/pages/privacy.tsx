@@ -232,7 +232,7 @@ export default function PrivacyPage() {
               product from Beckify Toolbox. It plays the Phaser 4 Pier 7 arcade from a local bundle inside a
               native SwiftUI shell. v1 does not collect, upload, or track play data. Scores and settings stay
               on the device. It does not load beckify.com in the web view. The website game at{" "}
-              <a className="text-[var(--accent)] underline-offset-4 hover:underline" href="/games/kestrel-heavy">
+              <a className="text-[var(--accent)] underline-offset-4 hover:underline" href="/games/kestrel-heavy/">
                 /games/kestrel-heavy
               </a>{" "}
               remains a browser title and is not part of the Toolbox catalog.

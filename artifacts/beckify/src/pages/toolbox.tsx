@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Info, Pin, Search, Star, X } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { SchemaHead } from "@/components/seo/SchemaHead";
-import { PAGE_SEO } from "@/data/seo-copy.mjs";
+import { PAGE_SEO, homeToolboxLinks, toolboxPermalink } from "@/data/seo-copy.mjs";
 import { PUBLIC_CALCULATOR_COUNT } from "@/data/toolbox-tools.mjs";
 import {
   APP_STORE_URL,
@@ -290,6 +290,17 @@ function ToolboxHome() {
         <p className="max-w-2xl text-sm leading-relaxed text-[var(--muted)] md:text-base">
           {PUBLIC_CALCULATOR_COUNT} web calculators, plus the iOS instruments that need the phone. Same shelves as the app. Stars and pins stay on this device.
         </p>
+        <nav className="mt-2 flex flex-wrap gap-2" aria-label="Calculators people search for">
+          {homeToolboxLinks().map(({ slug, label }) => (
+            <a
+              key={slug}
+              href={toolboxPermalink(slug)}
+              className="rounded-full border border-[var(--border)] bg-[#12161e] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] no-underline hover:border-[var(--accent)]"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
         <p className="text-sm text-[var(--muted)]">
           <a className="text-[var(--accent)] underline-offset-4 hover:underline" href={CLASSIC_TOOLBOX_PATH}>
             Open the classic list

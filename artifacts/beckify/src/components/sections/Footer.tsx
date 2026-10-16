@@ -15,10 +15,10 @@ export const Footer = () => (
         {/* p-2 -m-2 grows the tap target to WCAG's 24px minimum without
             shifting the visible text/icon or the footer's own spacing —
             the negative margin cancels the padding's effect on layout. */}
-        <Link href="/sitemap" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
+        <Link href="/sitemap/" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
           Site Map
         </Link>
-        <Link href="/privacy" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
+        <Link href="/privacy/" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
           Privacy
         </Link>
         <a href={SHOP_ORIGIN} className="p-2 -m-2 transition-colors hover:text-[var(--accent)]">Shop</a>
@@ -53,7 +53,7 @@ export const Footer = () => (
           the 4.5:1 WCAG AA needs for this size of text. 85% clears it with
           margin (5.33:1) while still reading as the intentionally quiet,
           secondary link it's meant to be. */}
-      <Link href="/about" className="p-2 -m-2 text-xs opacity-85 transition-opacity duration-200 hover:opacity-100">
+      <Link href="/about/" className="p-2 -m-2 text-xs opacity-85 transition-opacity duration-200 hover:opacity-100">
         About Me
       </Link>
     </div>
