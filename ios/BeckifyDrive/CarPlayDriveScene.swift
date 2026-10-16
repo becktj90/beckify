@@ -157,10 +157,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let scale = interfaceController.carTraitCollection.displayScale
         let size = CPListImageRowItemCardElement.maximumFullHeightImageSize
         let spoken = Self.spokenSummary(tiles)
+        // iOS 26.0–26.3 can't take an accessibility label, so the card gets a
+        // short visible caption and the artwork leaves room for it.
+        let needsCaption = !Self.hasElementAccessibilityLabel
         let card = CPListImageRowItemCardElement(
-            image: CarPlayTileRenderer.summaryImage(tiles, headline: headline, size: size, scale: scale),
+            image: CarPlayTileRenderer.summaryImage(tiles, headline: headline, size: size, scale: scale, reserveCaption: needsCaption),
             showsImageFullHeight: true,
-            title: Self.hasElementAccessibilityLabel ? nil : spoken,
+            title: needsCaption ? (tiles.first?.spoken ?? "Gauges") : nil,
             subtitle: nil,
             tintColor: nil
         )

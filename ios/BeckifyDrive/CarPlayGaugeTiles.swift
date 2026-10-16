@@ -34,9 +34,9 @@ enum CarPlayTileRenderer {
     }
 
     /// One card holding every key reading, for the single-tile home screen.
-    static func summaryImage(_ tiles: [DriveCarPlayTile], headline: String, size: CGSize, scale: CGFloat) -> UIImage {
+    static func summaryImage(_ tiles: [DriveCarPlayTile], headline: String, size: CGSize, scale: CGFloat, reserveCaption: Bool = false) -> UIImage {
         let size = CGSize(width: max(1, size.width), height: max(1, size.height))
-        return render(CarPlaySummaryCardView(tiles: tiles, headline: headline, size: size).frame(width: size.width, height: size.height), scale: scale)
+        return render(CarPlaySummaryCardView(tiles: tiles, headline: headline, size: size, reserveCaption: reserveCaption).frame(width: size.width, height: size.height), scale: scale)
     }
 
     private static func render(_ content: some View, scale: CGFloat) -> UIImage {
@@ -530,6 +530,9 @@ struct CarPlaySummaryCardView: View {
     let tiles: [DriveCarPlayTile]
     let headline: String
     let size: CGSize
+    /// Leave the bottom strip empty where CarPlay draws its own caption over a
+    /// full-height card (iOS 26.0–26.3 have no accessibility-label property).
+    var reserveCaption = false
 
     private var w: CGFloat { size.width }
     private var h: CGFloat { size.height }
@@ -563,7 +566,9 @@ struct CarPlaySummaryCardView: View {
                 cellGrid
                     .frame(maxHeight: .infinity)
             }
-            .padding(pad)
+            .padding(.horizontal, pad)
+            .padding(.top, pad)
+            .padding(.bottom, reserveCaption ? h * 0.16 : pad)
         }
         .frame(width: w, height: h)
     }
