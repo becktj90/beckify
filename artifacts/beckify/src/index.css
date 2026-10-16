@@ -768,11 +768,16 @@ nav.sticky {
 }
 
 /* Desktop: the 5.5rem reserve is for the phone nav; the desktop pill nav plus
-   page padding is ~7.75rem, so the stage overflowed and its bottom was cut. */
+   page padding is ~8.25rem, so the stage overflowed and its bottom was cut. */
 @media (min-width: 1024px) {
   .game-stage.ng-playfield.kh-stage-fill:not(.is-immersive):not(:fullscreen) {
-    min-height: calc(100dvh - 7.75rem);
-    height: calc(100dvh - 7.75rem);
+    min-height: calc(100dvh - 8.25rem);
+    height: calc(100dvh - 8.25rem);
+  }
+  /* The cabinet main (min-h 100dvh-5.5rem, 8px padding) starts ~100px below
+     the top under the pill nav, so the page scrolled ~12px. Fit it. */
+  main.kh-cabinet-shell {
+    min-height: calc(100dvh - 7rem);
   }
 }
 
