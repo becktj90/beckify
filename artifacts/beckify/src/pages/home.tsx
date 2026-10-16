@@ -12,7 +12,7 @@ import { PUBLIC_CALCULATOR_COUNT, PUBLIC_GAME_COUNT } from "@/data/site-stats";
 import beckifyMark from "@/assets/beckify-mark-white.png";
 import { SchemaHead, organizationSchema, websiteSchema } from "@/components/seo/SchemaHead";
 import { MinimalAdUnit } from "@/components/ads/MinimalAdUnit";
-import { PAGE_SEO, homeToolboxLinks, toolboxPermalink } from "@/data/seo-copy.mjs";
+import { HOME_MORE_TOOLS, PAGE_SEO, homeToolboxLinks, toolboxPermalink } from "@/data/seo-copy.mjs";
 
 /**
  * Home — Bento-style hub. Asymmetric multi-column grid on desktop,
@@ -151,25 +151,10 @@ export default function Home() {
                       {label}
                     </a>
                   ))}
-                  {[
-                    { href: "/toolbox/classic/#sec-emp-emc", label: "EMP / EMC" },
-                    { href: "/toolbox/classic/#sec-magnetic-circuit", label: "Magnetic circuit" },
-                    { href: "/toolbox/classic/#sec-transient-circuits", label: "Transients" },
-                    { href: "/toolbox/classic/#sec-phasor-diagram", label: "Phasors" },
-                    { href: "/toolbox/classic/#sec-semiconductor-iv", label: "Semiconductor I-V" },
-                    { href: "/toolbox/classic/#sec-fiber-link", label: "Fiber / NA" },
-                    { href: "/toolbox/classic/#sec-gaussian-beam", label: "Gaussian beam" },
-                    { href: "/toolbox/classic/#sec-lp-optimizer", label: "LP optimizer" },
-                    { href: "/toolbox/classic/#sec-base-converter", label: "Number-base" },
-                    { href: "/toolbox/classic/#sec-ebike-tools", label: "Battery pack designer" },
-                    { href: "/toolbox/classic/#sec-pitch-hum", label: "Pitch / hum" },
-                    { href: "/toolbox/classic/#sec-audio-spectrum", label: "Audio spectrum" },
-                    { href: "/toolbox/classic/#sec-sound-level", label: "Sound level" },
-                    { href: "/toolbox/classic/#sec-lux-meter", label: "Lux meter" },
-                  ].map(({ href, label }) => (
+                  {HOME_MORE_TOOLS.map(({ slug, label }) => (
                     <a
-                      key={href}
-                      href={href}
+                      key={slug}
+                      href={toolboxPermalink(slug)}
                       className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--foreground)]"
                     >
                       {label}
@@ -181,7 +166,7 @@ export default function Home() {
 
             {/* ── IOS APPS ──────────────────────────────────────────────── */}
             <FadeIn delay={0.15} className="bento-cell">
-              <Link href="/apps" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+              <Link href="/apps/" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -211,7 +196,7 @@ export default function Home() {
 
             {/* ── PROJECTS ──────────────────────────────────────────────── */}
             <FadeIn delay={0.13} className="bento-cell">
-              <Link href="/projects" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+              <Link href="/projects/" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -244,7 +229,7 @@ export default function Home() {
 
             {/* ── GAMES ─────────────────────────────────────────────────── */}
             <FadeIn delay={0.18} className="bento-cell">
-              <Link href="/games" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+              <Link href="/games/" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -279,7 +264,7 @@ export default function Home() {
 
             {/* ── CONTROL SYSTEM TOOLBOX ───────────────────────────────── */}
             <FadeIn delay={0.23} className="bento-cell">
-              <Link href="/control-systems" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
+              <Link href="/control-systems/" className="card-surface bento-card group flex flex-col h-full min-h-[200px] relative overflow-hidden">
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{

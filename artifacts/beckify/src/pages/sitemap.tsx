@@ -5,6 +5,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SchemaHead } from "@/components/seo/SchemaHead";
 import { PUBLIC_CALCULATOR_COUNT } from "@/data/site-stats";
+import { TOOLS, TOOL_ALIASES } from "@/data/toolbox-tools.mjs";
 import { FEATURED_TOOLS, PAGE_SEO, toolboxPermalink } from "@/data/seo-copy.mjs";
 
 /**
@@ -29,15 +30,15 @@ const HUES = {
 
 const PAGES: { href: string; label: string; description: string; icon: typeof Terminal; hue: string }[] = [
   { href: "/", label: "Home", description: "Hub page — hero and links to everything below.", icon: Orbit, hue: HUES.blue },
-  { href: "/about", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
-  { href: "/privacy", label: "Privacy", description: "Privacy policy for the Beckify iOS and iPadOS app.", icon: Shield, hue: HUES.violet },
+  { href: "/about/", label: "About", description: "Bio, background, and contact links.", icon: Terminal, hue: HUES.orange },
+  { href: "/privacy/", label: "Privacy", description: "Privacy policy for the Beckify iOS and iPadOS app.", icon: Shield, hue: HUES.violet },
   { href: "/toolbox/", label: "Toolbox", description: `${PUBLIC_CALCULATOR_COUNT} native EE calculators, organized by category.`, icon: Wrench, hue: HUES.aqua },
-  { href: "/control-systems", label: "Control System Toolbox", description: "Plant modeling, open- vs closed-loop P, root locus, lead, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, pole placement.", icon: Zap, hue: HUES.violet },
-  { href: "/apps", label: "iPhone & iPad App", description: "Beckify field electrical toolbox on the App Store.", icon: Smartphone, hue: HUES.aqua },
-  { href: "/projects", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
-  { href: "/projects/vespa-p200e", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
-  { href: "/projects/honda-xr650r", label: "Honda XR650R Electric Conversion", description: "Build in progress — 76 V XR650R mid-drive conversion workshop journal.", icon: Rocket, hue: HUES.red },
-  { href: "/games", label: "Games", description: "Kestrel Heavy — a Phaser 4 Pier 7 launch arcade.", icon: Gamepad2, hue: HUES.magenta },
+  { href: "/control-systems/", label: "Control System Toolbox", description: "Plant modeling, open- vs closed-loop P, root locus, lead, PID with Ziegler–Nichols and anti-windup, Bode GM/PM/ωb, pole placement.", icon: Zap, hue: HUES.violet },
+  { href: "/apps/", label: "iPhone & iPad App", description: "Beckify field electrical toolbox on the App Store.", icon: Smartphone, hue: HUES.aqua },
+  { href: "/projects/", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
+  { href: "/projects/vespa-p200e/", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
+  { href: "/projects/honda-xr650r/", label: "Honda XR650R Electric Conversion", description: "Build in progress — 76 V XR650R mid-drive conversion workshop journal.", icon: Rocket, hue: HUES.red },
+  { href: "/games/", label: "Games", description: "Kestrel Heavy — a Pier 7 launch arcade.", icon: Gamepad2, hue: HUES.magenta },
 ];
 
 /**
@@ -58,14 +59,22 @@ interface ToolboxCategory {
   hue: string;
   /** Section id in the toolbox app, linked as /toolbox/#<anchor>. */
   anchor: string;
+  /** Canonical category page when one exists. */
+  categorySlug?: string;
   tools: ToolboxTool[];
+}
+
+/** Prefer the indexable /toolbox/<slug>/ page. Reference-only anchors stay on the classic list. */
+function toolPageHref(anchor: string) {
+  const match = [...TOOLS, ...TOOL_ALIASES].find((tool) => tool[3] === anchor);
+  return match ? `/toolbox/${match[0]}/#${anchor}` : `/toolbox/classic/#${anchor}`;
 }
 
 const t = (name: string, anchor: string): ToolboxTool => ({ name, anchor });
 
 const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
   {
-    label: "Fundamentals", hue: HUES.blue, anchor: "sec-ohm",
+    label: "Fundamentals", hue: HUES.blue, anchor: "sec-ohm", categorySlug: "fundamentals",
     tools: [
       t("Ohm's Law", "sec-ohm"),
       t("Magnetic Circuit Workbench", "sec-magnetic-circuit"),
@@ -73,7 +82,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     ],
   },
   {
-    label: "AC Circuits", hue: HUES.orange, anchor: "sec-reactance",
+    label: "AC Circuits", hue: HUES.orange, anchor: "sec-reactance", categorySlug: "ac-circuits",
     tools: [
       t("Reactance & Resonance", "sec-reactance"),
       t("Phasor Diagram Workbench", "sec-phasor-diagram"),
@@ -86,7 +95,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     tools: [t("Resistance, C, L", "sec-sp")],
   },
   {
-    label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop",
+    label: "Distribution", hue: HUES.aqua, anchor: "sec-vdrop", categorySlug: "distribution",
     tools: [
       t("Conductors", "sec-wire-select"),
       t("Cable Schedule Generator", "sec-cable-schedule"),
@@ -101,7 +110,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     ],
   },
   {
-    label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups",
+    label: "Power Systems", hue: HUES.yellow, anchor: "sec-ups", categorySlug: "power-systems",
     tools: [
       t("On-site Power", "sec-ups"),
       t("Solar Design Wizard", "sec-solar-wizard"),
@@ -118,7 +127,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     ],
   },
   {
-    label: "NEC Calculations", hue: HUES.magenta, anchor: "sec-nec",
+    label: "NEC Calculations", hue: HUES.magenta, anchor: "sec-nec", categorySlug: "nec-calculations",
     tools: [t("NEC Circuit Calculator", "sec-nec")],
   },
   {
@@ -182,7 +191,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
     ],
   },
   {
-    label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref",
+    label: "Reference Tables", hue: HUES.violet, anchor: "sec-wire-ref", categorySlug: "reference-tables",
     tools: [
       t("Conductor Reference", "sec-wire-ref"),
       t("Motor FLA Tables (Motor tool)", "sec-motor-ref"),
@@ -287,7 +296,7 @@ export default function SiteMapPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {TOOLBOX_CATEGORIES.map(({ label, hue, anchor, tools }) => (
+          {TOOLBOX_CATEGORIES.map(({ label, hue, anchor, categorySlug, tools }) => (
             /* The toolbox is a separate app, so these are real navigations
                rather than client-side routes. The card is not a single link
                so each calculator can deep-link without nested anchors. */
@@ -301,7 +310,7 @@ export default function SiteMapPage() {
                 style={{ background: `radial-gradient(ellipse at 90% 0%, ${hue}1a 0%, transparent 60%)` }}
               />
               <div className="relative z-10 flex items-center justify-between mb-3">
-                <a href={`/toolbox/classic/#${anchor}`} className="flex items-center gap-2.5 min-w-0">
+                <a href={categorySlug ? `/toolbox/category/${categorySlug}/` : toolPageHref(anchor)} className="flex items-center gap-2.5 min-w-0">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: hue }} />
                   <h3 className="font-display text-sm font-semibold text-[var(--foreground)]">{label}</h3>
                 </a>
@@ -316,7 +325,7 @@ export default function SiteMapPage() {
                 {tools.map((tool) => (
                   <a
                     key={`${tool.anchor}-${tool.name}`}
-                    href={`/toolbox/classic/#${tool.anchor}`}
+                    href={toolPageHref(tool.anchor)}
                     className="text-[11px] px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--foreground)]"
                   >
                     {tool.name}

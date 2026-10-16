@@ -16,20 +16,58 @@ import { PUBLIC_CALCULATOR_COUNT, resolveToolSlug } from "./toolbox-tools.mjs";
 
 /** Highest-traffic-worthy calculators. Home, toolbox hub, and tool SEO pages link these. */
 export const FEATURED_TOOLS = [
-  { slug: "ohms-law", label: "Ohm's Law" },
-  { slug: "voltage-drop", label: "Voltage drop" },
-  { slug: "wire-size-ampacity", label: "Wire size & ampacity" },
-  { slug: "conduit-fill", label: "Conduit fill" },
-  { slug: "motor", label: "Motor FLA" },
+  { slug: "wire-size-ampacity", label: "Ampacity calculator" },
+  { slug: "conduit-fill", label: "Conduit fill calculator" },
+  { slug: "transformer-sizing", label: "Transformer fuse & breaker" },
+  { slug: "photometrics", label: "Photometric calculator" },
+  { slug: "voltage-drop", label: "Voltage drop calculator" },
+  { slug: "ohms-law", label: "Ohm's Law calculator" },
+  { slug: "motor", label: "Motor FLA calculator" },
   { slug: "conductor-length-resistance", label: "Conductor length" },
 ];
 
 /** Extra crawl targets from the homepage toolbox tile (canonical SEO URLs). */
 export const HOME_TOOLBOX_EXTRAS = [
-  { slug: "transformer", label: "Transformer" },
-  { slug: "short-circuit", label: "Short circuit" },
-  { slug: "nec-circuit", label: "NEC circuit" },
+  { slug: "transformer", label: "Transformer calculator" },
+  { slug: "transformer-engine", label: "Transformer conductors" },
+  { slug: "short-circuit", label: "Fault current calculator" },
+  { slug: "nec-circuit", label: "NEC circuit calculator" },
   { slug: "battery-bank", label: "Battery bank" },
+];
+
+/** More homepage chips. Each slug has a real /toolbox/<slug>/ page. */
+export const HOME_MORE_TOOLS = [
+  { slug: "emp-emc-shielding", label: "EMP / EMC" },
+  { slug: "magnetic-circuit", label: "Magnetic circuit" },
+  { slug: "transient-circuits", label: "Transients" },
+  { slug: "phasor-diagram", label: "Phasors" },
+  { slug: "semiconductor-iv", label: "Semiconductor I-V" },
+  { slug: "fiber-link", label: "Fiber / NA" },
+  { slug: "gaussian-beam", label: "Gaussian beam" },
+  { slug: "lp-optimizer", label: "LP optimizer" },
+  { slug: "number-base-converter", label: "Number-base" },
+  { slug: "battery-build-designer", label: "Battery pack designer" },
+  { slug: "pitch-hum-identifier", label: "Pitch / hum" },
+  { slug: "audio-spectrum-analyzer", label: "Audio spectrum" },
+  { slug: "sound-level-meter", label: "Sound level" },
+  { slug: "lux-light-meter", label: "Lux meter" },
+];
+
+/**
+ * Old URLs that 404 in Search Console. GitHub Pages cannot 301 to another
+ * path, so generate-static-routes.mjs writes a noindex refresh stub. These
+ * paths stay out of the sitemap.
+ */
+export const RETIRED_REDIRECTS = [
+  ["games/apollo-rocco-run", "/games/kestrel-heavy/"],
+  ["games/booty-butt-scooter", "/games/kestrel-heavy/"],
+  ["games/cosmic-cadet", "/games/kestrel-heavy/"],
+  ["games/finger-runner", "/games/kestrel-heavy/"],
+  ["games/hexgl", "/games/kestrel-heavy/"],
+  ["games/pup-planet", "/games/kestrel-heavy/"],
+  ["games/toot-troopers", "/games/kestrel-heavy/"],
+  ["made-in-america", "/toolbox/"],
+  ["toolbox/look-check", "/toolbox/"],
 ];
 
 /** Calculators that actually apply to the Vespa conversion journal. */
@@ -56,9 +94,9 @@ export const PAGE_SEO = {
       `Free electrical calculators, NEC reference tables, and workshop build journals. ${PUBLIC_CALCULATOR_COUNT} field tools for electricians and engineers — no account needed.`,
   },
   "/toolbox/": {
-    title: "Electrical engineering toolbox — Ohm's Law, voltage drop, ampacity, conduit fill",
+    title: "Free electrical calculators — Ohm's Law, voltage drop, ampacity, conduit fill",
     description:
-      `${PUBLIC_CALCULATOR_COUNT} free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.`,
+      `Free ampacity, conduit fill, and voltage drop calculators, plus Ohm's Law and transformer fuse sizing. ${PUBLIC_CALCULATOR_COUNT} tools, no signup.`,
   },
   "/about": {
     title: "Trevor Beck — electrical engineer behind Beckify",
@@ -131,28 +169,54 @@ export const STATIC_ROUTE_PATHS = [
   "store",
   "sitemap",
   "toolbox",
+  ...RETIRED_REDIRECTS.map(([route]) => route),
 ];
 
 export const TOOL_SEO_TITLES = {
-  "ohms-law": "Ohm's Law calculator — solve voltage, current, resistance, and power",
-  "voltage-drop": "Voltage drop calculator — single-phase and three-phase feeders",
-  "wire-size-ampacity": "Wire size and ampacity calculator — NEC Table 310.16",
-  conductors: "Conductor sizing — ampacity, voltage drop, and I²R cost",
-  "conduit-fill": "Conduit fill calculator — Chapter 9 areas and Table 1 limits",
-  motor: "Motor FLA calculator — NEC Tables 430.248 and 430.250",
-  "conductor-length-resistance": "Conductor length from resistance — milliohm reading to feet",
-  transformer: "Transformer calculator — turns ratio, line/phase current, and delta-wye connections",
-  "transformer-sizing": "Transformer kVA sizing — standard sizes and NEC 450.3(B) protection",
-  "transformer-engine": "Transformer conductor and OCPD sizing — EGC/GEC, voltage drop, conduit",
-  "transformer-design": "Transformer connections training — delta-wye, high-leg, and %Z fault",
-  "short-circuit": "Short-circuit current calculator — available fault from kVA and %Z",
-  "nec-circuit": "NEC circuit calculator — branch-circuit conductor and OCPD sizing",
-  "battery-bank": "Battery bank calculator — backup duration, strings, and C-rate",
-  "battery-build-designer": "18650 battery pack designer — series-parallel layout and nickel strip",
-  "ebike-drivetrain": "E-bike drivetrain calculator — torque, sprockets, speed, and range",
-  "conduit-fill-mixed": "Mixed conduit fill calculator — EMT, PVC, IMC, and RMC",
-  "motor-calculations": "Motor current calculator — HP, kW, and amps (formula mode)",
-  "conductor-cost-optimizer": "Conductor cost optimizer — ampacity, parallels, and I²R energy",
+  "ohms-law": "Ohm's Law calculator — free voltage, current, resistance, and power",
+  "voltage-drop": "Voltage drop calculator — free NEC feeder check, no signup",
+  "wire-size-ampacity": "Ampacity calculator — free NEC Table 310.16 wire size",
+  conductors: "Ampacity calculator — free conductor size, voltage drop, and cost",
+  "conduit-fill": "Conduit fill calculator — free NEC Chapter 9 check",
+  motor: "Motor FLA calculator — free NEC Tables 430.248 and 430.250",
+  "conductor-length-resistance": "Conductor length calculator — feet from a milliohm reading",
+  transformer: "Transformer calculator — free kVA, current, and NEC 450.3(B)",
+  "transformer-sizing": "Transformer primary fuse and breaker sizing — NEC 450.3(B)",
+  "transformer-engine": "Transformer conductor and breaker sizing — free NEC check",
+  "transformer-design": "Transformer connection guide — delta-wye, high-leg, and fault current",
+  "short-circuit": "Transformer fault current calculator — free from kVA and %Z",
+  "nec-circuit": "NEC circuit calculator — free conductor and breaker size",
+  "battery-bank": "Battery bank calculator — free backup hours, strings, and C-rate",
+  "battery-build-designer": "18650 battery pack designer — free series-parallel layout",
+  "ebike-drivetrain": "E-bike calculator — free torque, sprockets, speed, and range",
+  "conduit-fill-mixed": "Mixed conduit fill calculator — free EMT, PVC, IMC, and RMC",
+  "motor-calculations": "Motor current calculator — free HP, kW, and amps",
+  "conductor-cost-optimizer": "Conductor cost calculator — free ampacity and I²R check",
+  photometrics: "Photometric calculator — free lighting level estimate",
+};
+
+/** Meta descriptions. Query phrase first, then the benefit, NEC cite, and no signup. */
+export const TOOL_SEO_DESCRIPTIONS = {
+  "ohms-law": "Free Ohm's Law calculator. Enter any two of voltage, current, and resistance to get the third, plus watts. No signup.",
+  "voltage-drop": "Free voltage drop calculator for single-phase and three-phase feeders. NEC Chapter 9 K-method, with the 3% and 5% design notes and a worked example. No signup.",
+  "wire-size-ampacity": "Free ampacity calculator for copper and aluminum. NEC Table 310.16, temperature and bundling adjustments, then a voltage-drop check. No signup.",
+  conductors: "Free ampacity calculator that also checks voltage drop and I²R cost for copper or aluminum runs. NEC Table 310.16. No signup.",
+  "conduit-fill": "Free conduit fill calculator for EMT, PVC, IMC, and RMC. NEC Chapter 9 Table 1 limits, with a worked example. No signup.",
+  motor: "Free motor FLA calculator using NEC Tables 430.248 and 430.250. Table amps are what you use for conductor and breaker sizing. No signup.",
+  "conductor-length-resistance": "Free conductor length calculator. Enter gauge and a milliohm reading to get feet of copper or aluminum. No signup.",
+  transformer: "Free transformer calculator for turns ratio, line current, and primary fuse or breaker sizing under NEC Table 450.3(B). No signup.",
+  "transformer-sizing": "Size a transformer primary fuse or breaker with NEC Table 450.3(B), Note 1, and the next standard rating. Free, with a worked example. No signup.",
+  "transformer-engine": "Free transformer conductor and breaker sizing for primary and secondary current, equipment ground, voltage drop, and conduit. No signup.",
+  "transformer-design": "Free transformer connection guide for delta-wye, high-leg versus corner-grounded delta, and a %Z fault estimate. No signup.",
+  "short-circuit": "Free transformer fault-current calculator from kVA, voltage, and percent impedance. A planning estimate, not an arc-flash study. No signup.",
+  "nec-circuit": "Free NEC circuit calculator for load current, conductor ampacity, voltage drop, and the overcurrent device. No signup.",
+  "battery-bank": "Free battery bank calculator for backup hours, series strings, and C-rate. No signup.",
+  "battery-build-designer": "Free 18650 pack designer for series-parallel layout, C-rate, and nickel-strip current. No signup.",
+  "ebike-drivetrain": "Free e-bike calculator for torque, sprocket ratio, speed, and range. No signup.",
+  "conduit-fill-mixed": "Free mixed conduit fill calculator for different wire sizes in EMT, PVC, IMC, or RMC. NEC Chapter 9. No signup.",
+  "motor-calculations": "Free motor current calculator for horsepower, kilowatts, and amps. For conductor and breaker sizing, use the NEC FLA tables. No signup.",
+  "conductor-cost-optimizer": "Free conductor cost calculator comparing ampacity, parallel runs, and I²R energy. No signup.",
+  photometrics: "Free photometric calculator for average illuminance from lumens, room area, and light loss. A design check, not a full lighting layout. No signup.",
 };
 
 export const CATEGORY_SEO_TITLES = {
@@ -171,6 +235,8 @@ export function pageSeo(path) {
 
 export function seoForStaticRoute(route) {
   if (route === "games/new-glenn-runner") return PAGE_SEO["/games/kestrel-heavy"];
+  const retired = RETIRED_REDIRECTS.find(([from]) => from === route);
+  if (retired) return retired[1].startsWith("/games/") ? PAGE_SEO["/games/kestrel-heavy"] : PAGE_SEO["/toolbox/"];
   if (route === "shop" || route === "store") return { title: "Beckify Shop", description: "Electrical engineering and math inspired goods from Beckify." };
   if (route === "toolbox" || route === "gear" || route === "products") {
     return PAGE_SEO["/toolbox/"];
@@ -180,6 +246,10 @@ export function seoForStaticRoute(route) {
 
 export function toolDocumentTitle(slug, fallbackTitle) {
   return TOOL_SEO_TITLES[slug] ?? fallbackTitle;
+}
+
+export function toolDocumentDescription(slug, fallbackDescription) {
+  return TOOL_SEO_DESCRIPTIONS[slug] ?? fallbackDescription;
 }
 
 export function categoryDocumentTitle(slug, fallbackTitle) {

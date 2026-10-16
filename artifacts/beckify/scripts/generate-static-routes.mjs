@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { toCanonicalPath, toCanonicalUrl } from "../src/lib/canonical-url.mjs";
-import { STATIC_ROUTE_PATHS, seoForStaticRoute } from "../src/data/seo-copy.mjs";
+import { RETIRED_REDIRECTS, STATIC_ROUTE_PATHS, seoForStaticRoute } from "../src/data/seo-copy.mjs";
 
 import { SHOP_ORIGIN } from "../src/data/shop.mjs";
 
@@ -27,6 +27,7 @@ const redirectRoutes = new Map([
   ["products", "/toolbox/"],
   ["shop", SHOP_ORIGIN],
   ["store", SHOP_ORIGIN],
+  ...RETIRED_REDIRECTS,
 ]);
 
 // The app sets page metadata after hydration, but route-specific static HTML

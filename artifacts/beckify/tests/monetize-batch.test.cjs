@@ -82,22 +82,22 @@ ok("game count constant is 1", /PUBLIC_GAME_COUNT = 1/.test(siteStats));
 ok("calculator count matches live toolbox nav", PUBLIC_CALCULATOR_COUNT === liveCalculatorCount, `${PUBLIC_CALCULATOR_COUNT} vs nav ${liveCalculatorCount}`);
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home names EMP/EMC, homework EE, LP, and number-base", /EMP\/EMC/.test(homeSrc) && /homework EE/.test(homeSrc) && /linear-programming optimizer/.test(homeSrc) && /number-base converter/.test(homeSrc));
-ok("home deep-links EMP, homework EE, LP, and number-base", [
-  "/toolbox/classic/#sec-emp-emc",
-  "/toolbox/classic/#sec-magnetic-circuit",
-  "/toolbox/classic/#sec-transient-circuits",
-  "/toolbox/classic/#sec-phasor-diagram",
-  "/toolbox/classic/#sec-semiconductor-iv",
-  "/toolbox/classic/#sec-fiber-link",
-  "/toolbox/classic/#sec-gaussian-beam",
-  "/toolbox/classic/#sec-lp-optimizer",
-  "/toolbox/classic/#sec-base-converter",
-  "/toolbox/classic/#sec-pitch-hum",
-  "/toolbox/classic/#sec-audio-spectrum",
-  "/toolbox/classic/#sec-sound-level",
-  "/toolbox/classic/#sec-lux-meter",
-].every((href) => homeSrc.includes(`href: "${href}"`)));
-ok("sitemap chips deep-link via /toolbox/classic/#", sitemapSrc.includes("href={`/toolbox/classic/#${tool.anchor}`}"));
+ok("home deep-links EMP, homework EE, LP, and number-base through canonical pages", homeSrc.includes("HOME_MORE_TOOLS") && homeSrc.includes("toolboxPermalink") && [
+  "emp-emc-shielding",
+  "magnetic-circuit",
+  "transient-circuits",
+  "phasor-diagram",
+  "semiconductor-iv",
+  "fiber-link",
+  "gaussian-beam",
+  "lp-optimizer",
+  "number-base-converter",
+  "pitch-hum-identifier",
+  "audio-spectrum-analyzer",
+  "sound-level-meter",
+  "lux-light-meter",
+].every((slug) => homeSrc.includes(slug) || fs.readFileSync(path.join(root, "src/data/seo-copy.mjs"), "utf8").includes(`slug: "${slug}"`)));
+ok("sitemap chips link canonical tool pages", sitemapSrc.includes("return match ? `/toolbox/${match[0]}/#${anchor}` : `/toolbox/classic/#${anchor}`"));
 ok("home games copy uses the game constant", homeSrc.includes("PUBLIC_GAME_COUNT") && homeSrc.includes("browser game"));
 ok("toolbox header uses the shared calculator count", toolboxHtml.includes(`${PUBLIC_CALCULATOR_COUNT} calculators plus reference tables`));
 ok("sitemap uses PUBLIC_CALCULATOR_COUNT", sitemapSrc.includes("PUBLIC_CALCULATOR_COUNT"));
@@ -142,6 +142,6 @@ ok("e-bike section has a Battery Pack Designer canvas", /id="eb-battery-designer
 ok("pack designer includes a 3D inspect canvas", /id="ebd_canvas_3d"/.test(toolboxHtml) && /id="ebd_view_3d"/.test(toolboxHtml));
 ok("toolbox loads the pack designer script", /src="js\/ebike-battery-designer\.js"/.test(toolboxHtml));
 ok("no external batterydesigner.com launch CTA", !/href="https:\/\/batterydesigner\.com"/.test(toolboxHtml));
-ok("home chip deep-links e-bike tools", homeSrc.includes('href: "/toolbox/classic/#sec-ebike-tools"'));
+ok("home chip deep-links the battery pack designer", fs.readFileSync(path.join(root, "src/data/seo-copy.mjs"), "utf8").includes('slug: "battery-build-designer"') && homeSrc.includes("HOME_MORE_TOOLS"));
 
 process.exitCode = failures ? 1 : 0;
