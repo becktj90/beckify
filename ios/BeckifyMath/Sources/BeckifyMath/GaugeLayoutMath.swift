@@ -58,4 +58,14 @@ public enum GaugeLayoutMath {
     public static func heroSpeedSize(diameter: Double, scale: Double) -> Double {
         diameter * 0.34 * min(max(scale, 1), 1.15)
     }
+
+    /// Retro digit height for the power gauge card (EV hero).
+    public static func powerDigitHeight(cardWidth: Double, scale: Double) -> Double {
+        min(max(cardWidth * 0.26, 58), 150) * min(max(scale, 1), 1.3)
+    }
+
+    /// Retro digit height for the wheel-torque card.
+    public static func torqueDigitHeight(cardWidth: Double, scale: Double) -> Double {
+        min(max(cardWidth * 0.16, 40), 100) * min(max(scale, 1), 1.3)
+    }
 }

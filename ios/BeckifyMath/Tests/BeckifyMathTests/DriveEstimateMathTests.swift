@@ -522,4 +522,12 @@ final class GaugeLayoutMathTests: XCTestCase {
         XCTAssertEqual(GaugeLayoutMath.cardValueSize(cardWidth: 170, scale: 3), 51 * 1.3, accuracy: 0.01)
         XCTAssertEqual(GaugeLayoutMath.heroSpeedSize(diameter: 300, scale: 1), 102, accuracy: 0.01)
     }
+
+    func testEVDigitHeights() {
+        XCTAssertEqual(GaugeLayoutMath.powerDigitHeight(cardWidth: 200, scale: 1), 58)
+        XCTAssertEqual(GaugeLayoutMath.powerDigitHeight(cardWidth: 361, scale: 1), 93.86, accuracy: 0.01)
+        XCTAssertEqual(GaugeLayoutMath.powerDigitHeight(cardWidth: 2000, scale: 1), 150)
+        XCTAssertEqual(GaugeLayoutMath.torqueDigitHeight(cardWidth: 361, scale: 1), 57.76, accuracy: 0.01)
+        XCTAssertEqual(GaugeLayoutMath.torqueDigitHeight(cardWidth: 100, scale: 2), 52, accuracy: 0.01)
+    }
 }

@@ -58,8 +58,14 @@ struct PowerGaugeCard: View {
     let spec: VehicleSpec
     let units: DriveUnitPreference
 
-    @ScaledMetric(relativeTo: .largeTitle) private var digitHeight: CGFloat = 58
+    @ScaledMetric(relativeTo: .largeTitle) private var typeScale: CGFloat = 1
+    @Environment(\.dashboardPaneWidth) private var paneWidth
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Digits grow with the card; Dynamic Type adds at most 30 %.
+    private var digitHeight: CGFloat {
+        CGFloat(GaugeLayoutMath.powerDigitHeight(cardWidth: Double(paneWidth), scale: Double(typeScale)))
+    }
 
     var body: some View {
         let scale = HeroScale.powerKW(peak: peakKW)
@@ -78,7 +84,7 @@ struct PowerGaugeCard: View {
             .font(.footnote.weight(.semibold))
 
             ZStack(alignment: .bottom) {
-                PowerArc(fraction: fraction, active: powerKW != nil, flow: flow)
+                PowerArc(fraction: fraction, active: powerKW != nil, flow: flow, lineWidth: max(18, paneWidth * 0.06))
                     .animation(reduceMotion ? nil : .snappy, value: fraction)
                 VStack(spacing: 2) {
                     RetroDigits(
@@ -91,7 +97,6 @@ struct PowerGaugeCard: View {
                         .foregroundStyle(DriveTheme.muted)
                 }
             }
-            .frame(maxWidth: 340)
             .frame(maxWidth: .infinity)
 
             HStack {
@@ -144,7 +149,7 @@ private struct PowerArc: View {
     let active: Bool
     let flow: HVFlowState?
 
-    private let lineWidth: CGFloat = 18
+    var lineWidth: CGFloat = 18
 
     var body: some View {
         GeometryReader { geo in
@@ -182,7 +187,12 @@ struct TorqueCard: View {
     let spec: VehicleSpec
     let units: DriveUnitPreference
 
-    @ScaledMetric(relativeTo: .largeTitle) private var digitHeight: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var typeScale: CGFloat = 1
+    @Environment(\.dashboardPaneWidth) private var paneWidth
+
+    private var digitHeight: CGFloat {
+        CGFloat(GaugeLayoutMath.torqueDigitHeight(cardWidth: Double(paneWidth), scale: Double(typeScale)))
+    }
 
     var body: some View {
         let scale = HeroScale.torqueNm(peak: peakNm)
@@ -243,7 +253,7 @@ struct RegenStateBanner: View {
     let powerKW: Double?
     let units: DriveUnitPreference
 
-    @ScaledMetric(relativeTo: .title) private var titleSize: CGFloat = 30
+    @ScaledMetric(relativeTo: .title) private var titleSize: CGFloat = 40
 
     var body: some View {
         let color = DriveTheme.color(for: flow)
