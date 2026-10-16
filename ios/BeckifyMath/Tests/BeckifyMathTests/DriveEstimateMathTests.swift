@@ -433,3 +433,101 @@ final class SparklineScaleTests: XCTestCase {
         XCTAssertNil(SparklineScale.domain(values: [.nan]))
     }
 }
+
+final class RamProfileTests: XCTestCase {
+    func testRamIsICEPowertrainOnStandardPIDs() {
+        let ram = VehicleProfile.ram1500_2026
+        XCTAssertEqual(ram.title, "Ram 1500 2026")
+        XCTAssertEqual(ram.dashboardLayout, .powertrain)
+        XCTAssertFalse(ram.usesBoltPIDs)
+        XCTAssertTrue(ram.nominalPackChoicesKWh.isEmpty)
+        XCTAssertNil(ram.spec)
+        XCTAssertNil(DrivePlanning.defaults(for: ram))
+        XCTAssertTrue(VehicleProfile.allCases.contains(ram))
+    }
+
+    func testRamNeverGetsEVRange() {
+        let typed = PlanningInputs(usableKWh: nil, whPerMile: nil)
+        let effective = DrivePlanning.effective(typed: typed, profile: .ram1500_2026, measuredWhPerMile: nil)
+        XCTAssertNil(effective.inputs.usableKWh)
+        XCTAssertNil(effective.inputs.whPerMile)
+        XCTAssertFalse(effective.usesDefaults)
+    }
+
+    func testRamLiveCycleHasNoMode22() {
+        let cycle = OBDCommandPlan.liveCycle(profile: .ram1500_2026, support: OBDSupportMap())
+        XCTAssertTrue(cycle.allSatisfy { !$0.hasPrefix("22") && !$0.hasPrefix("AT") })
+        XCTAssertEqual(cycle.first, "010D")
+    }
+
+    func testRamFactsLeaveTrimSpecificValuesUnset() throws {
+        let facts = try XCTUnwrap(VehicleProfile.ram1500_2026.facts)
+        XCTAssertNil(facts.massKg)
+        XCTAssertNil(facts.dragCoefficient)
+        XCTAssertEqual(facts.curbWeightRangeLb, 4_820...6_440)
+        XCTAssertTrue(facts.tireSizes.contains("275/65R18"))
+        XCTAssertTrue(facts.sources.allSatisfy { $0.hasPrefix("https://") })
+        XCTAssertNil(VehicleProfile.boltEV.facts)
+    }
+
+    func testProfileRawValueRoundTrips() {
+        XCTAssertEqual(VehicleProfile(rawValue: "ram1500_2026"), .ram1500_2026)
+    }
+}
+
+final class GaugeLayoutMathTests: XCTestCase {
+    func testPortraitHeroFillsWidth() {
+        // iPhone 15 Pro portrait viewport.
+        XCTAssertEqual(GaugeLayoutMath.heroDiameter(width: 393, height: 760), 361, accuracy: 0.5)
+    }
+
+    func testPortraitHeroCappedByHeight() {
+        // iPad portrait: height cap wins.
+        XCTAssertEqual(GaugeLayoutMath.heroDiameter(width: 820, height: 1000), 550, accuracy: 0.5)
+    }
+
+    func testLandscapeHeroUsesHeight() {
+        XCTAssertEqual(GaugeLayoutMath.heroDiameter(width: 852, height: 350), 318, accuracy: 0.5)
+    }
+
+    func testHeroBoundsOnSmallAndHugeScreens() {
+        XCTAssertEqual(GaugeLayoutMath.heroDiameter(width: 320, height: 200), GaugeLayoutMath.minDiameter)
+        XCTAssertEqual(GaugeLayoutMath.heroDiameter(width: 3000, height: 4000), GaugeLayoutMath.maxDiameter)
+        XCTAssertEqual(GaugeLayoutMath.heroDiameter(width: .nan, height: 100), GaugeLayoutMath.minDiameter)
+    }
+
+    func testColumns() {
+        XCTAssertEqual(GaugeLayoutMath.columnCount(width: 320, minCell: 170, spacing: 12), 1)
+        XCTAssertEqual(GaugeLayoutMath.columnCount(width: 361, minCell: 170, spacing: 12), 2)
+        XCTAssertEqual(GaugeLayoutMath.columnCount(width: 1000, minCell: 240, spacing: 12), 4)
+        XCTAssertEqual(GaugeLayoutMath.columnCount(width: 0, minCell: 170, spacing: 12), 1)
+    }
+
+    func testMinCellWidth() {
+        XCTAssertEqual(GaugeLayoutMath.minCellWidth(containerWidth: 361, accessibilitySize: false), 170)
+        XCTAssertEqual(GaugeLayoutMath.minCellWidth(containerWidth: 900, accessibilitySize: false), 240)
+        XCTAssertEqual(GaugeLayoutMath.minCellWidth(containerWidth: 361, accessibilitySize: true), 361)
+    }
+
+    func testRowSizesLeaveNoBlankCells() {
+        XCTAssertEqual(GaugeLayoutMath.rowSizes(count: 5, columns: 2), [2, 2, 1])
+        XCTAssertEqual(GaugeLayoutMath.rowSizes(count: 6, columns: 3), [3, 3])
+        XCTAssertEqual(GaugeLayoutMath.rowSizes(count: 0, columns: 2), [])
+        XCTAssertEqual(GaugeLayoutMath.rowSizes(count: 3, columns: 0), [1, 1, 1])
+    }
+
+    func testValueSizesClamp() {
+        XCTAssertEqual(GaugeLayoutMath.cardValueSize(cardWidth: 100, scale: 1), 34)
+        XCTAssertEqual(GaugeLayoutMath.cardValueSize(cardWidth: 500, scale: 1), 84)
+        XCTAssertEqual(GaugeLayoutMath.cardValueSize(cardWidth: 170, scale: 3), 51 * 1.3, accuracy: 0.01)
+        XCTAssertEqual(GaugeLayoutMath.heroSpeedSize(diameter: 300, scale: 1), 102, accuracy: 0.01)
+    }
+
+    func testEVDigitHeights() {
+        XCTAssertEqual(GaugeLayoutMath.powerDigitHeight(cardWidth: 200, scale: 1), 58)
+        XCTAssertEqual(GaugeLayoutMath.powerDigitHeight(cardWidth: 361, scale: 1), 93.86, accuracy: 0.01)
+        XCTAssertEqual(GaugeLayoutMath.powerDigitHeight(cardWidth: 2000, scale: 1), 150)
+        XCTAssertEqual(GaugeLayoutMath.torqueDigitHeight(cardWidth: 361, scale: 1), 57.76, accuracy: 0.01)
+        XCTAssertEqual(GaugeLayoutMath.torqueDigitHeight(cardWidth: 100, scale: 2), 52, accuracy: 0.01)
+    }
+}

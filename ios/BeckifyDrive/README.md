@@ -29,6 +29,7 @@ Decode and the 10-second CarPlay publish rule live in `BeckifyMath` (`OBDSession
 |---|---|---|---|
 | Generic OBD | Vehicle (coolant, load, throttle, fuel, ambient, 12 V, remaining life) + phone | Mode 01 | none |
 | Generic EV | Speed hero + Vehicle (ambient, 12 V, battery remaining life 015B) + phone | Mode 01 | none (no HV current) |
+| Ram 1500 2026 | Same as Generic OBD (speed and RPM dial, coolant, load, throttle, fuel, ambient, 12 V) + phone; no EV cards, no range | Mode 01 only, no Mode 22 | none (`VehicleFacts` only) |
 | Bolt EV / Bolt EUV | Power / torque / regen hero, Battery, Motor, Power electronics, Energy & range, phone | Mode 01 + published Bolt Mode 22 | yes, from `VehicleSpec.bolt` |
 
 Generic EV works on any EV that answers standard Mode 01. It never sends maker-specific requests, so charge, pack temperature, current, and every estimate stay off. To add a specific EV, add:
@@ -37,7 +38,20 @@ Generic EV works on any EV that answers standard Mode 01. It never sends maker-s
 2. A `VehicleSpec` with sourced pack volts, wheel radius, mass, and drag (`DriveEstimateMath.swift`).
 3. A `VehicleProfile` case that maps to both.
 
+**Ram 1500 2026** is an ICE pickup, so it follows the same recipe without the EV steps: a `VehicleProfile` case (`ram1500_2026`) and a `VehicleFacts` entry instead of a `VehicleSpec`. It is generic to the model year, not a trim: the 3.6L Pentastar V6, 5.7L Hemi V8 and 3.0L Hurricane inline-6 (standard and High Output) are all 2026 options, so nothing engine-specific is entered. Verified and kept: the engine list, the factory tire sizes seen across trims (275/65R18, 275/55R20, 275/70R18, 285/45R22, 325/65R18), and Ram's published curb-weight range (about 4,820 to 6,440 lb across the lineup). Left unset: mass, drag, wheel radius, power, torque, fuel-tank size. Sources: ramtrucks.com FAQ and 2026 engine pages, Goodyear's 2026 Ram 1500 tire table, Edmunds' 2026 trim table (URLs in `VehicleFacts.ram1500_2026`). There are no Mode 22 rows and no EV pack or range estimates; the Adapter sheet hides the planning-range fields for it. Fuel level is the standard Mode 01 fuel-level PID that Drive already reads.
+
 Nothing is added from guesswork. The Bolt EUV uses the Bolt EV spec because its own mass and drag are not entered.
+
+## Dashboard layout
+
+Gauges are sized from the screen, not fixed. `GaugeLayoutMath` (in `BeckifyMath`, tested) turns the viewport into the dial size and column count.
+
+- Portrait: the hero dial is the full content width (capped at 55 % of the height). Cards sit below in as many columns as fit (170 pt minimum, 240 pt on wide screens, one column at accessibility text sizes).
+- Landscape (phone or iPad): the dial takes a left pane as tall as the screen; the cards scroll in the right pane.
+- The last row of cards stretches to the full width (`FillGridLayout`), so there is no empty cell.
+- Speed, RPM, charge and card numbers scale with the dial or card width and with Dynamic Type (capped so they stay inside the ring). Arc thickness scales with the dial.
+- CarPlay grid tiles and the Gauges card use larger digits, thicker segments and less padding.
+- Accessibility labels and Reduce Motion behavior are unchanged.
 
 ## Data policy: measured vs estimated
 

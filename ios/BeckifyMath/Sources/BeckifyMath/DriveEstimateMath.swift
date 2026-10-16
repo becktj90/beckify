@@ -105,9 +105,52 @@ extension VehicleProfile {
     public var spec: VehicleSpec? {
         switch self {
         case .boltEV, .boltEUV: return .bolt
-        case .generic, .genericEV: return nil
+        case .generic, .genericEV, .ram1500_2026: return nil
         }
     }
+
+    /// Sourced catalog facts for the profile, or nil when none are entered.
+    public var facts: VehicleFacts? {
+        switch self {
+        case .ram1500_2026: return .ram1500_2026
+        case .generic, .genericEV, .boltEV, .boltEUV: return nil
+        }
+    }
+}
+
+/// Sourced, non-estimating facts for an ICE vehicle. Unknown stays nil or empty.
+public struct VehicleFacts: Equatable, Sendable {
+    public var name: String
+    public var engines: [String]
+    /// Factory tire sizes by trim family. Common sizes only, not a fitment guide.
+    public var tireSizes: [String]
+    /// Published curb weight range in pounds across trims, not one truck.
+    public var curbWeightRangeLb: ClosedRange<Int>?
+    /// Per-trim numbers are intentionally unset.
+    public var massKg: Double?
+    public var dragCoefficient: Double?
+    public var sources: [String]
+    public var note: String
+}
+
+extension VehicleFacts {
+    /// 2026 Ram 1500. Sources: ramtrucks.com engine pages and FAQ, Goodyear and
+    /// Edmunds tire and curb-weight tables (URLs in `sources`).
+    public static let ram1500_2026 = VehicleFacts(
+        name: "Ram 1500 2026",
+        engines: ["3.6L Pentastar V6 eTorque", "5.7L Hemi V8 eTorque", "3.0L Hurricane I6", "3.0L Hurricane I6 High Output"],
+        tireSizes: ["275/65R18", "275/55R20", "275/70R18", "285/45R22", "325/65R18"],
+        curbWeightRangeLb: 4_820...6_440,
+        massKg: nil,
+        dragCoefficient: nil,
+        sources: [
+            "https://www.ramtrucks.com/ram-1500/faq.html",
+            "https://www.ramtrucks.com/towing/engine-performance/2026/ram-1500-4x4.html",
+            "https://www.goodyear.com/en-us/vehicles/RAM/1500/2026",
+            "https://www.edmunds.com/ram/1500/2026/trims/",
+        ],
+        note: "Trim and engine are not assumed. Mass, drag, wheel radius and power are unset, so no estimates run."
+    )
 }
 
 // MARK: - Power and torque units

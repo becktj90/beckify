@@ -31,6 +31,8 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
     case genericEV
     case boltEV
     case boltEUV
+    /// 2026 Ram 1500, any trim or engine. ICE pickup: standard Mode 01 only.
+    case ram1500_2026
 
     public var title: String {
         switch self {
@@ -38,12 +40,13 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
         case .genericEV: return "Generic EV"
         case .boltEV: return "Bolt EV"
         case .boltEUV: return "Bolt EUV"
+        case .ram1500_2026: return "Ram 1500 2026"
         }
     }
 
     public var usesBoltPIDs: Bool {
         switch self {
-        case .generic, .genericEV: return false
+        case .generic, .genericEV, .ram1500_2026: return false
         case .boltEV, .boltEUV: return true
         }
     }
@@ -52,7 +55,7 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
     /// 2017–2019 Bolt EV is 60 kWh; 2020–2023 Bolt EV and Bolt EUV are 65 kWh.
     public var nominalPackChoicesKWh: [Double] {
         switch self {
-        case .generic, .genericEV: return []
+        case .generic, .genericEV, .ram1500_2026: return []
         case .boltEV: return [60, 65]
         case .boltEUV: return [65]
         }
@@ -64,6 +67,8 @@ public enum VehicleProfile: String, CaseIterable, Sendable, Codable {
             return "SAE J1979 Mode 01 for any ELM327-class car. Fuel level stays fuel level. PID 015B, when the ECU answers, is hybrid battery remaining life — not a state-of-charge gauge."
         case .genericEV:
             return "Any EV, standard Mode 01 only: speed, 12 V, ambient, accelerator, and PID 015B battery remaining life when the car answers. No maker-specific PIDs, so no charge, pack, current, or power estimates. Phone sensors and trip work as usual."
+        case .ram1500_2026:
+            return "2026 Ram 1500, any trim or engine (3.6L V6, 5.7L Hemi V8, or 3.0L Hurricane). Standard Mode 01 only: speed, RPM, coolant, load, throttle, fuel level, intake temp, 12 V, ambient. No maker-specific PIDs. No EV range or battery estimates. Engine power, mass and drag are not entered because they differ by trim."
         case .boltEV:
             return "2017–2023 Bolt EV. Mode 01 speed and 12 V, plus published displayed SoC, pack temp, capacity, HV current, and motor temp. 60 kWh (2017–2019) or 65 kWh (2020–2023) is a planning assumption you type, not a reading."
         case .boltEUV:
@@ -405,7 +410,7 @@ public enum DrivePlanning {
         case .boltEV: return Defaults(usableKWh: 65, whPerMile: 251, source: "65 kWh, EPA 259 mi")
         // 2022–23 Bolt EUV: 65 kWh usable, EPA 247 mi → 263 Wh/mi.
         case .boltEUV: return Defaults(usableKWh: 65, whPerMile: 263, source: "65 kWh, EPA 247 mi")
-        case .generic, .genericEV: return nil
+        case .generic, .genericEV, .ram1500_2026: return nil
         }
     }
 
@@ -506,7 +511,7 @@ extension VehicleProfile {
     /// Which dashboard this profile gets.
     public var dashboardLayout: DriveLayout {
         switch self {
-        case .generic: return .powertrain
+        case .generic, .ram1500_2026: return .powertrain
         case .genericEV: return .evStandard
         case .boltEV, .boltEUV: return .ev
         }

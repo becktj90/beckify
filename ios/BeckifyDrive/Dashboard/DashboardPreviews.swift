@@ -157,6 +157,7 @@ enum DashboardScenario: String, CaseIterable {
     case boltRegen
     case boltPartial
     case iceGeneric
+    case ram1500
     case genericEV
     case boltLight
 
@@ -169,6 +170,7 @@ enum DashboardScenario: String, CaseIterable {
         case .boltRegen: return "Bolt EV · regen"
         case .boltPartial: return "Bolt EV · partial replies"
         case .iceGeneric: return "ICE generic"
+        case .ram1500: return "Ram 1500 2026"
         case .genericEV: return "Generic EV · standard PIDs"
         case .boltLight: return "Bolt EV · light"
         }
@@ -183,6 +185,7 @@ enum DashboardScenario: String, CaseIterable {
         case .boltRegen: return AnyView(DashboardScenarioViews.boltRegen())
         case .boltPartial: return AnyView(DashboardScenarioViews.boltPartial())
         case .iceGeneric: return AnyView(DashboardScenarioViews.iceGeneric())
+        case .ram1500: return AnyView(DashboardScenarioViews.ram1500())
         case .genericEV: return AnyView(DashboardScenarioViews.genericEV())
         case .boltLight: return AnyView(DashboardScenarioViews.boltLight())
         }
@@ -349,6 +352,31 @@ enum DashboardScenarioViews {
     )
     }
 
+    /// 2026 Ram 1500: standard Mode 01 only, no EV cards or estimates.
+    static func ram1500() -> some View {
+        DashboardView(
+            model: DashboardFixtures.model(
+                profile: .ram1500_2026,
+                book: DashboardFixtures.book([
+                    .speedKph: 97, .rpm: 1_850, .coolantC: 93, .engineLoadPercent: 36, .throttlePercent: 19,
+                    .fuelLevelPercent: 71, .moduleVolts: 14.1, .ambientC: 14,
+                ]),
+                histories: DashboardFixtures.histories([
+                    .coolantC: { 92 + sin($0 / 10) },
+                    .engineLoadPercent: { 35 + 8 * sin($0 / 5) },
+                    .throttlePercent: { 18 + 5 * sin($0 / 4) },
+                    .fuelLevelPercent: { 71.3 - $0 / 200 },
+                    .moduleVolts: { 14.1 + 0.03 * sin($0 / 3) },
+                ]),
+                live: true,
+                trip: DashboardFixtures.trip(minutes: 22, kph: 85),
+                tripSource: .obd,
+                sensors: DashboardFixtures.drivingSensors
+            ),
+            preferences: DashboardPreferences(preview: DashboardFixtures.usUnits)
+        )
+    }
+
     static func iceGeneric() -> some View {
     var sensors = DashboardFixtures.drivingSensors
     sensors.gTrail = DashboardFixtures.cornerTrail
@@ -417,6 +445,10 @@ enum DashboardScenarioViews {
 
 #Preview("ICE generic") {
     DashboardScenario.iceGeneric.view
+}
+
+#Preview("Ram 1500 2026") {
+    DashboardScenario.ram1500.view
 }
 
 #Preview("Generic EV · standard PIDs") {

@@ -16,7 +16,9 @@ struct DriveAdapterSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         profilePicker
-                        planning
+                        if session.profile.dashboardLayout != .powertrain {
+                            planning
+                        }
                         scanHeader
                         adapterList
                         if session.bluetoothDenied {
@@ -62,6 +64,15 @@ struct DriveAdapterSheet: View {
             Text(session.profile.summary)
                 .font(.footnote)
                 .foregroundStyle(DriveTheme.muted)
+            if let facts = session.profile.facts {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Engines: \(facts.engines.joined(separator: ", "))")
+                    Text("Factory tire sizes vary by trim: \(facts.tireSizes.joined(separator: ", "))")
+                    Text(facts.note)
+                }
+                .font(.caption)
+                .foregroundStyle(DriveTheme.muted)
+            }
         }
     }
 

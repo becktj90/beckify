@@ -24,19 +24,29 @@ struct SpeedHero: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
 
+    @Environment(\.dashboardViewport) private var viewport
+    @ScaledMetric(relativeTo: .largeTitle) private var typeScale: CGFloat = 1
+
+    /// The dial fills the width (portrait) or the left pane (landscape).
     private var ringSize: CGFloat {
-        verticalSizeClass == .compact ? 170 : 236
+        CGFloat(GaugeLayoutMath.heroDiameter(width: Double(viewport.width), height: Double(viewport.height)))
     }
+
+    private var speedSize: CGFloat {
+        CGFloat(GaugeLayoutMath.heroSpeedSize(diameter: Double(ringSize), scale: Double(typeScale)))
+    }
+
+    private var arcWidth: CGFloat { max(14, ringSize * 0.055) }
 
     // MARK: Combustion
 
     private var powertrainHero: some View {
         let rpm = model.value(.rpm)
         let rpmText = Text(rpm.value.map { "\(Int($0.rounded()).formatted()) rpm" } ?? "RPM —")
-            .font(.subheadline.weight(.medium))
+            .font(.system(size: max(17, ringSize * 0.075), weight: .semibold, design: .rounded))
             .monospacedDigit()
             .foregroundStyle(DriveTheme.muted)
             .contentTransition(.numericText())
@@ -45,11 +55,11 @@ struct SpeedHero: View {
                 Text("RPM")
             } currentValueLabel: {
                 VStack(spacing: 2) {
-                    SpeedReadout(speed: model.heroSpeed, units: units, large: true)
+                    SpeedReadout(speed: model.heroSpeed, units: units, large: true, fontSize: speedSize)
                     if !secondaryBelowArc { rpmText }
                 }
             }
-            .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: rpm.value != nil))
+            .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: rpm.value != nil, lineWidth: arcWidth))
             .animation(reduceMotion ? nil : .snappy, value: rpm.value)
             .frame(width: ringSize, height: ringSize)
             if secondaryBelowArc { rpmText }
@@ -74,13 +84,13 @@ struct SpeedHero: View {
                 Text("Speed")
             } currentValueLabel: {
                 VStack(spacing: 2) {
-                    SpeedReadout(speed: model.heroSpeed, units: units, large: true)
+                    SpeedReadout(speed: model.heroSpeed, units: units, large: true, fontSize: speedSize)
                     if !secondaryBelowArc {
                         note.padding(.horizontal, 28)
                     }
                 }
             }
-            .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: kph != nil))
+            .gaugeStyle(ArcGaugeStyle(tint: DriveTheme.accent, active: kph != nil, lineWidth: arcWidth))
             .animation(reduceMotion ? nil : .snappy, value: kph)
             .frame(width: ringSize, height: ringSize)
             if secondaryBelowArc { note }
@@ -116,7 +126,7 @@ struct SpeedHero: View {
             VStack(spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 1) {
                     Text(soc.value.map { String(format: "%.0f", $0) } ?? "—")
-                        .font(.system(size: 56, weight: .semibold, design: .rounded))
+                        .font(.system(size: ringSize * 0.3, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .contentTransition(.numericText())
                     if soc.value != nil {
@@ -136,9 +146,9 @@ struct SpeedHero: View {
             }
             .padding(.horizontal, 24)
         }
-        .gaugeStyle(RingGaugeStyle(tint: DriveTheme.color(for: level), active: soc.value != nil))
+        .gaugeStyle(RingGaugeStyle(tint: DriveTheme.color(for: level), active: soc.value != nil, lineWidth: arcWidth))
         .animation(reduceMotion ? nil : .snappy, value: soc.value)
-        .frame(width: ringSize * 0.8, height: ringSize * 0.8)
+        .frame(width: ringSize * 0.9, height: ringSize * 0.9)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Displayed charge")
         .accessibilityValue(soc.value.map { String(format: "%.0f percent", $0) } ?? "Not reported")
@@ -193,6 +203,8 @@ struct SpeedReadout: View {
     let speed: (kph: Double, source: DashboardModel.SpeedSource, freshness: DriveFreshness)?
     let units: DriveUnitPreference
     let large: Bool
+    /// Explicit point size from the dial; nil keeps the scaled default.
+    var fontSize: CGFloat? = nil
 
     @ScaledMetric(relativeTo: .largeTitle) private var largeSize: CGFloat = 72
     @ScaledMetric(relativeTo: .largeTitle) private var smallSize: CGFloat = 52
@@ -202,13 +214,13 @@ struct SpeedReadout: View {
         let display = speed.map { Int(units.speed(fromKph: $0.kph).rounded()) }
         VStack(alignment: large ? .center : .leading, spacing: 0) {
             Text(display.map { String($0) } ?? "—")
-                .font(.system(size: large ? largeSize : smallSize, weight: .semibold, design: .rounded))
+                .font(.system(size: fontSize ?? (large ? largeSize : smallSize), weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(display == nil ? DriveTheme.muted : DriveTheme.text)
                 .contentTransition(.numericText(value: Double(display ?? 0)))
                 .animation(reduceMotion ? nil : .snappy, value: display)
                 .lineLimit(1)
-                .minimumScaleFactor(0.5)
+                .minimumScaleFactor(0.4)
                 .opacity(isStale ? 0.55 : 1)
             HStack(spacing: 6) {
                 Text(units.speed.label)
@@ -220,9 +232,14 @@ struct SpeedReadout: View {
                         .background(DriveTheme.elevated, in: Capsule())
                 }
             }
-            .font(.subheadline.weight(.medium))
+            .font(unitFont)
             .foregroundStyle(DriveTheme.muted)
         }
+    }
+
+    private var unitFont: Font {
+        if let fontSize { return Font.system(size: max(15, fontSize * 0.2), weight: .semibold, design: .rounded) }
+        return Font.subheadline.weight(.medium)
     }
 
     private var isStale: Bool {

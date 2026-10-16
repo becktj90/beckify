@@ -32,7 +32,7 @@ Permission is requested when you open Beckify Drive, because the app’s job is 
 
 Stored on this device only (`UserDefaults`):
 
-- Vehicle profile (generic, Bolt EV, or Bolt EUV)
+- Vehicle profile (generic, Bolt EV, Bolt EUV, or Ram 1500 2026)
 - Planning pack kWh and Wh/mi, if you type them
 - The identifier of the last adapter, so the phone can reconnect
 - Dashboard preferences: units, appearance, and which cards show in what order

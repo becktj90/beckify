@@ -128,6 +128,7 @@
 		BDCF0000000000000000002D /* PhoneSensorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF0000000000000000003D /* PhoneSensorStore.swift */; };
 		BDCF00000000000000000050 /* PowerHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000054 /* PowerHero.swift */; };
 		BDCF00000000000000000051 /* RetroDigits.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000055 /* RetroDigits.swift */; };
+		BDCF000000000000000009A1 /* GaugeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF000000000000000009A2 /* GaugeLayout.swift */; };
 		BDCF00000000000000000052 /* InsightCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000056 /* InsightCards.swift */; };
 		BDCF00000000000000000053 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000057 /* WeatherService.swift */; };
 		BDCF0000000000000000000C /* DriveTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCF00000000000000000003 /* DriveTheme.swift */; };
@@ -288,6 +289,7 @@
 		BDCF0000000000000000003D /* PhoneSensorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSensorStore.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000054 /* PowerHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerHero.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000055 /* RetroDigits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetroDigits.swift; sourceTree = "<group>"; };
+		BDCF000000000000000009A2 /* GaugeLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GaugeLayout.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000056 /* InsightCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCards.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000057 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		BDCF00000000000000000003 /* DriveTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTheme.swift; sourceTree = "<group>"; };
@@ -375,6 +377,7 @@
 				BDCF0000000000000000003C /* DashboardPreviews.swift */,
 				BDCF00000000000000000054 /* PowerHero.swift */,
 				BDCF00000000000000000055 /* RetroDigits.swift */,
+				BDCF000000000000000009A2 /* GaugeLayout.swift */,
 				BDCF00000000000000000056 /* InsightCards.swift */,
 			);
 			path = Dashboard;
@@ -866,6 +869,7 @@
 				BDCF0000000000000000002D /* PhoneSensorStore.swift in Sources */,
 				BDCF00000000000000000050 /* PowerHero.swift in Sources */,
 				BDCF00000000000000000051 /* RetroDigits.swift in Sources */,
+				BDCF000000000000000009A1 /* GaugeLayout.swift in Sources */,
 				BDCF00000000000000000052 /* InsightCards.swift in Sources */,
 				BDCF00000000000000000053 /* WeatherService.swift in Sources */,
 			);
@@ -957,7 +961,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 314;
+				CURRENT_PROJECT_VERSION = 315;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1001,7 +1005,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 314;
+				CURRENT_PROJECT_VERSION = 315;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1045,7 +1049,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = BeckifyDrive/BeckifyDrive.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 261015192556;
+				CURRENT_PROJECT_VERSION = 261016064017;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1083,7 +1087,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = BeckifyDrive/BeckifyDrive.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 261015192556;
+				CURRENT_PROJECT_VERSION = 261016064017;
 				DEVELOPMENT_TEAM = 9TR6R5LV8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
