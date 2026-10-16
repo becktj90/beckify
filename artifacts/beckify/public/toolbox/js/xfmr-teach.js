@@ -1122,7 +1122,7 @@
       phasors.caption = 'Same phasors as the system you tapped. This winding does not make a new one.';
       phasors.points = [
         phasorPoint('X', { x: 0, y: 0 }, '#f4f4f5', 'Common'),
-        phasorPoint('H', { x: source || 1, y: 0 }, '#8b7bff', 'Across winding ' + roundVolts(source)),
+        phasorPoint('H', { x: source || 1, y: 0 }, '#40bad6', 'Across winding ' + roundVolts(source)),
         phasorPoint('T', { x: common || 0.5, y: 0 }, '#f5c451', 'Tap ' + roundVolts(common)),
       ];
       phasors.vectors = [['X', 'H']];

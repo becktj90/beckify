@@ -101,15 +101,15 @@
         phaseLine += `${i ? 'L' : 'M'}${x(f).toFixed(1)},${yPhase(p).toFixed(1)} `;
       }
     }
-    const grid = [-60, -40, -20, 0].map((db) => `<line x1="${l}" x2="${w - r}" y1="${y(db)}" y2="${y(db)}" stroke="#334155"/><text x="8" y="${y(db) + 4}" fill="#8b7bff" font-size="11">${db} dB</text>`).join('');
+    const grid = [-60, -40, -20, 0].map((db) => `<line x1="${l}" x2="${w - r}" y1="${y(db)}" y2="${y(db)}" stroke="#334155"/><text x="8" y="${y(db) + 4}" fill="#40bad6" font-size="11">${db} dB</text>`).join('');
     const phaseGrid = [180, 90, 0, -90, -180].map((d) => `<text x="${w - r + 8}" y="${yPhase(d) + 4}" fill="#5ed7ff" font-size="11">${d}°</text>`).join('');
     const marks = [-2, -1, 0, 1, 2].map((p) => {
       const f = 10 ** (Math.log10(f0) + p);
       return `<line x1="${x(f)}" x2="${x(f)}" y1="${t}" y2="${h - b}" stroke="#243047"/><text x="${x(f)}" y="${h - 26}" text-anchor="middle" fill="#94a3b8" font-size="11">${f >= 1000 ? value(f / 1000) + 'k' : value(f)}</text>`;
     }).join('');
-    const legend = `<rect x="${l}" y="${h - 18}" width="14" height="3" fill="#8b7bff"/><text x="${l + 20}" y="${h - 12}" fill="#8b7bff" font-size="11">magnitude</text>` +
+    const legend = `<rect x="${l}" y="${h - 18}" width="14" height="3" fill="#40bad6"/><text x="${l + 20}" y="${h - 12}" fill="#40bad6" font-size="11">magnitude</text>` +
       `<rect x="${l + 108}" y="${h - 18}" width="14" height="3" fill="#5ed7ff"/><text x="${l + 128}" y="${h - 12}" fill="#5ed7ff" font-size="11">phase</text>`;
-    $('af_plot').innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Filter magnitude and phase response">${grid}${phaseGrid}${marks}<line x1="${l}" x2="${w - r}" y1="${h - b}" y2="${h - b}" stroke="#64748b"/><line x1="${x(f0)}" x2="${x(f0)}" y1="${t}" y2="${h - b}" stroke="#f5c451" stroke-dasharray="5 4"/><path d="${phaseLine}" fill="none" stroke="#5ed7ff" stroke-width="2" stroke-dasharray="6 4" opacity="0.9"/><path d="${line}" fill="none" stroke="#8b7bff" stroke-width="3"/><text x="${x(f0) + 6}" y="${t + 14}" fill="#f5c451" font-size="12">f₀ ${hz(f0)}</text><text x="${w - r}" y="${h - 26}" text-anchor="end" fill="#94a3b8" font-size="11">Hz (log)</text>${legend}</svg>`;
+    $('af_plot').innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Filter magnitude and phase response">${grid}${phaseGrid}${marks}<line x1="${l}" x2="${w - r}" y1="${h - b}" y2="${h - b}" stroke="#64748b"/><line x1="${x(f0)}" x2="${x(f0)}" y1="${t}" y2="${h - b}" stroke="#f5c451" stroke-dasharray="5 4"/><path d="${phaseLine}" fill="none" stroke="#5ed7ff" stroke-width="2" stroke-dasharray="6 4" opacity="0.9"/><path d="${line}" fill="none" stroke="#40bad6" stroke-width="3"/><text x="${x(f0) + 6}" y="${t + 14}" fill="#f5c451" font-size="12">f₀ ${hz(f0)}</text><text x="${w - r}" y="${h - 26}" text-anchor="end" fill="#94a3b8" font-size="11">Hz (log)</text>${legend}</svg>`;
   }
 
   function renderFilterSchematic(type) {

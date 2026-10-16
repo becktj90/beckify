@@ -487,13 +487,14 @@
 
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = width + 'px';
+    canvas.style.height = 'auto';
 
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#0b0f1a';
+    ctx.fillStyle = '#080b10';
     ctx.fillRect(0, 0, width, height);
 
     const originX = pad + p.col / 2;
@@ -526,7 +527,7 @@
       }
     }
 
-    canvas._ebdOrigin = { x: originX, y: originY, diameter: diameter, honeycomb: honeycomb };
+    canvas._ebdOrigin = { x: originX, y: originY, diameter: diameter, honeycomb: honeycomb, cssW: width, cssH: height };
   }
 
   function draw3D() {
@@ -547,8 +548,8 @@
     ctx.clearRect(0, 0, cssW, cssH);
 
     const bg = ctx.createLinearGradient(0, 0, 0, cssH);
-    bg.addColorStop(0, '#10162a');
-    bg.addColorStop(1, '#070a12');
+    bg.addColorStop(0, '#12161e');
+    bg.addColorStop(1, '#080b10');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, cssW, cssH);
 
@@ -636,8 +637,8 @@
     if (!canvas || !canvas._ebdOrigin) return null;
     const rect = canvas.getBoundingClientRect();
     if (!(rect.width > 0) || !(rect.height > 0)) return null;
-    const cssW = parseFloat(canvas.style.width) || rect.width;
-    const cssH = parseFloat(canvas.style.height) || rect.height;
+    const cssW = (canvas._ebdOrigin && canvas._ebdOrigin.cssW) || rect.width;
+    const cssH = (canvas._ebdOrigin && canvas._ebdOrigin.cssH) || rect.height;
     const px = ((event.clientX - rect.left) / rect.width) * cssW;
     const py = ((event.clientY - rect.top) / rect.height) * cssH;
     const o = canvas._ebdOrigin;

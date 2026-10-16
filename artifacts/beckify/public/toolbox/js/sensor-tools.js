@@ -249,7 +249,7 @@
     var w = cssW;
     var h = cssH;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(13,17,23,0.95)';
+    ctx.fillStyle = '#080b10';
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
@@ -278,7 +278,7 @@
     }
     if (peak) {
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(245,196,81,0.85)';
+      ctx.strokeStyle = '#e09c56';
       ctx.lineWidth = 1.25;
       var started = false;
       for (k = 1; k < bins; k++) {
@@ -290,7 +290,7 @@
       ctx.stroke();
     }
     ctx.beginPath();
-    ctx.strokeStyle = '#8b7bff';
+    ctx.strokeStyle = '#40bad6';
     ctx.lineWidth = 1.75;
     var started2 = false;
     for (k = 1; k < bins; k++) {
@@ -300,8 +300,11 @@
       else ctx.lineTo(x2, y2);
     }
     ctx.stroke();
-    ctx.fillStyle = '#9497b8';
+    ctx.fillStyle = '#e8eef5';
     ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.fillText('Level', 8, 14);
+    ctx.fillText(logAxis ? 'Hz (log)' : 'Hz', w - 64, 14);
+    ctx.fillStyle = '#94a2b2';
     var ticks = logAxis ? [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000] : [0, 2000, 4000, 8000, 12000, 16000, 20000];
     for (var t = 0; t < ticks.length; t++) {
       var f = ticks[t];

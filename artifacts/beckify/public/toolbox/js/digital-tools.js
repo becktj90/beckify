@@ -169,7 +169,7 @@
       const label = document.createElementNS(NS, 'text'); label.setAttribute('x', item.x); label.setAttribute('y', item.y + 5); label.setAttribute('text-anchor', 'middle'); label.setAttribute('fill', '#eef0fa'); label.setAttribute('font-size', '12'); label.setAttribute('font-family', 'IBM Plex Mono, monospace'); label.textContent = item.node.type === 'var' ? item.node.name : item.node.type === 'not' ? 'NOT' : item.node.op;
       group.append(box, label); svg.append(group);
     });
-    const output = document.createElementNS(NS, 'text'); output.setAttribute('x', root.x + 58); output.setAttribute('y', root.y + 5); output.setAttribute('fill', '#8b7bff'); output.setAttribute('font-size', '14'); output.setAttribute('font-family', 'IBM Plex Mono, monospace'); output.textContent = `Y = ${evaluate(ast, inputValues()) ? 1 : 0}`; svg.append(output);
+    const output = document.createElementNS(NS, 'text'); output.setAttribute('x', root.x + 58); output.setAttribute('y', root.y + 5); output.setAttribute('fill', '#40bad6'); output.setAttribute('font-size', '14'); output.setAttribute('font-family', 'IBM Plex Mono, monospace'); output.textContent = `Y = ${evaluate(ast, inputValues()) ? 1 : 0}`; svg.append(output);
     host.append(svg);
   }
 

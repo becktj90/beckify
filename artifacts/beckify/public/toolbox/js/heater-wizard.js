@@ -235,13 +235,13 @@ function hwBuildWiringSvg(opts) {
 
   if (opts.phase === '1ph') {
     const y = cy;
-    svg.appendChild(el('line', { x1: 30, y1: y - 30, x2: 30, y2: y + 30, stroke: '#8b7bff', 'stroke-width': 2 }));
-    svg.appendChild(el('line', { x1: 30, y1: y - 30, x2: cx - 60, y2: y - 30, stroke: '#8b7bff', 'stroke-width': 2 }));
-    svg.appendChild(el('line', { x1: 30, y1: y + 30, x2: cx - 60, y2: y + 30, stroke: '#8b7bff', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: 30, y1: y - 30, x2: 30, y2: y + 30, stroke: '#40bad6', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: 30, y1: y - 30, x2: cx - 60, y2: y - 30, stroke: '#40bad6', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: 30, y1: y + 30, x2: cx - 60, y2: y + 30, stroke: '#40bad6', 'stroke-width': 2 }));
     svg.appendChild(resistor(cx - 60, y - 30, cx + 60, y - 30, color));
-    svg.appendChild(el('line', { x1: cx + 60, y1: y - 30, x2: W - 30, y2: y - 30, stroke: '#8b7bff', 'stroke-width': 2 }));
-    svg.appendChild(el('line', { x1: cx + 60, y1: y + 30, x2: W - 30, y2: y + 30, stroke: '#8b7bff', 'stroke-width': 2 }));
-    svg.appendChild(el('line', { x1: W - 30, y1: y - 30, x2: W - 30, y2: y + 30, stroke: '#8b7bff', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: cx + 60, y1: y - 30, x2: W - 30, y2: y - 30, stroke: '#40bad6', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: cx + 60, y1: y + 30, x2: W - 30, y2: y + 30, stroke: '#40bad6', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: W - 30, y1: y - 30, x2: W - 30, y2: y + 30, stroke: '#40bad6', 'stroke-width': 2 }));
     svg.appendChild(text(`V = ${opts.vFmt}`, cx, y - 42, { fill: '#e2e8f0', size: 11, weight: 700 }));
     svg.appendChild(text(`I = ${opts.iFmt}`, cx, y + 46, { fill: color, size: 11, weight: 700 }));
     svg.appendChild(text(`R = ${opts.rFmt}`, cx, H - 20, { fill: '#94a3b8', size: 10 }));
@@ -363,7 +363,7 @@ function hwBuildGaugeChart(rows, selectedAwg) {
     const w = (r.powerDensityWIn2 / maxVal) * width;
     const isSel = r.awg === selectedAwg;
     svg.append(make('text', { x: x0 - 8, y: y + barH * 0.72, fill: isSel ? '#f59e0b' : '#aeb5c4', 'font-size': 10, 'text-anchor': 'end', 'font-weight': isSel ? 700 : 400 }, `${r.awg} AWG`));
-    svg.append(make('rect', { x: x0, y, width: Math.max(1, w), height: barH, rx: 3, fill: isSel ? '#f59e0b' : '#8b7bff', opacity: isSel ? 1 : 0.65 }));
+    svg.append(make('rect', { x: x0, y, width: Math.max(1, w), height: barH, rx: 3, fill: isSel ? '#f59e0b' : '#40bad6', opacity: isSel ? 1 : 0.65 }));
     svg.append(make('text', { x: x0 + w + 6, y: y + barH * 0.72, fill: '#e2e8f0', 'font-size': 10 }, `${r.powerDensityWIn2.toFixed(1)} W/in²`));
   });
   return svg;

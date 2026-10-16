@@ -8,7 +8,23 @@
    * library or a second rendering pipeline.
    */
   const SVG_NS = 'http://www.w3.org/2000/svg';
-  const PALETTE = { accent: '#8b7bff', blue: '#60a5fa', green: '#6ee7b7', yellow: '#f5c451', red: '#ff8a8a', text: '#eef0fa', muted: '#9497b8', line: 'rgba(255,255,255,0.14)' };
+  /* Dark-mode Beckify plot tokens. Match ios/Beckify/Theme/Theme.swift chart colors. */
+  const PALETTE = {
+    bg: '#080b10',
+    accent: '#40bad6',
+    blue: '#609ce6',
+    copper: '#e09c56',
+    good: '#56d6a4',
+    warn: '#f0bc48',
+    bad: '#f47078',
+    text: '#e8eef5',
+    muted: '#94a2b2',
+    line: 'rgba(148,162,178,0.45)',
+    grid: 'rgba(148,162,178,0.22)',
+    yellow: '#e09c56',
+    green: '#56d6a4',
+    red: '#f47078',
+  };
 
   function numberFrom(text) {
     const match = String(text || '').replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
@@ -45,7 +61,12 @@
 
     // SVG height must be a numeric length or omitted. CSS owns responsive sizing.
     const svg = svgElement('svg', { viewBox: '0 0 640 180', width: '100%', focusable: 'false', 'aria-hidden': 'true' });
+    svg.appendChild(svgElement('rect', { 'data-plot-bg': '1', x: 0, y: 0, width: 640, height: 180, fill: PALETTE.bg }));
     wrap.appendChild(svg);
+    const readout = document.createElement('p');
+    readout.className = 'calculation-visual-readout';
+    readout.setAttribute('aria-live', 'polite');
+    wrap.appendChild(readout);
     const copy = result.querySelector('.result-copy-row');
     result.insertBefore(wrap, copy || null);
     return svg;
@@ -56,8 +77,10 @@
     if (!svg) return;
     const clone = svg.cloneNode(true);
     if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const viewBox = (svg.getAttribute('viewBox') || '0 0 640 180').split(/[\s,]+/).map(Number);
+    const exportHeight = Math.round(1280 * ((viewBox[3] || 180) / (viewBox[2] || 640)));
     clone.setAttribute('width', '1280');
-    clone.setAttribute('height', '360');
+    clone.setAttribute('height', String(exportHeight));
     const xml = new XMLSerializer().serializeToString(clone);
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -65,13 +88,13 @@
     image.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = 1280;
-      canvas.height = 360;
+      canvas.height = exportHeight;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         URL.revokeObjectURL(url);
         return;
       }
-      ctx.fillStyle = '#05060f';
+      ctx.fillStyle = '#080b10';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
@@ -135,22 +158,163 @@
     text(svg, 320, 145, 'V = I x R', { 'text-anchor': 'middle', fill: PALETTE.accent, 'font-weight': 700 });
   }
 
-  function waveform(svg, title, color) {
-    text(svg, 16, 24, title, { fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
-    line(svg, 24, 88, 616, 88, { stroke: PALETTE.line });
-    const points = [];
-    for (let x = 24; x <= 616; x += 6) points.push(x + ',' + (88 - Math.sin((x - 24) / 48) * 35));
-    svg.appendChild(svgElement('polyline', { points: points.join(' '), fill: 'none', stroke: color, 'stroke-width': 3, 'stroke-linejoin': 'round' }));
-    text(svg, 24, 124, '0', { fill: PALETTE.muted, 'font-size': 11 });
-    text(svg, 616, 124, 'time ->', { fill: PALETTE.muted, 'font-size': 11, 'text-anchor': 'end' });
+  function waveform(svg) {
+    const samples = [];
+    const cycles = 3;
+    const duty = 0.62;
+    for (let i = 0; i <= 90; i += 1) {
+      const t = (i / 90) * cycles;
+      const phase = t - Math.floor(t);
+      samples.push([t, phase < duty ? 1 : 0]);
+    }
+    seriesPlot(svg, {
+      xLabel: 'Time (periods)',
+      yLabel: 'Output (normalized)',
+      xUnit: 'periods',
+      yUnit: '',
+      xMin: 0,
+      xMax: cycles,
+      yMin: -0.15,
+      yMax: 1.25,
+      series: [{ name: '555 output', color: PALETTE.accent, samples }],
+    });
   }
 
   function plotAxes(svg, title, xLabel, yLabel) {
-    text(svg, 16, 24, title, { fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
+    text(svg, 16, 22, title, { fill: PALETTE.text, 'font-size': 12, 'font-weight': 700 });
+    for (let i = 0; i <= 4; i += 1) {
+      const y = 42 + ((132 - 42) * i) / 4;
+      line(svg, 48, y, 616, y, { stroke: PALETTE.grid, 'stroke-width': 1 });
+    }
     line(svg, 48, 132, 616, 132, { stroke: PALETTE.line });
     line(svg, 48, 42, 48, 132, { stroke: PALETTE.line });
-    text(svg, 616, 151, xLabel, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
-    text(svg, 42, 42, yLabel, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
+    text(svg, 616, 156, xLabel, { fill: PALETTE.text, 'font-size': 11, 'text-anchor': 'end' });
+    text(svg, 44, 36, yLabel, { fill: PALETTE.text, 'font-size': 11, 'text-anchor': 'end' });
+  }
+
+  function formatTick(value) {
+    const abs = Math.abs(value);
+    const digits = abs >= 100 ? 0 : abs >= 10 ? 1 : 2;
+    return Number(value.toFixed(digits)).toString();
+  }
+
+  function usePlotBox(svg, height) {
+    svg.setAttribute('viewBox', '0 0 640 ' + height);
+    const bg = svg.querySelector('[data-plot-bg]');
+    if (bg) {
+      bg.setAttribute('width', '640');
+      bg.setAttribute('height', String(height));
+    }
+  }
+
+  function bindHover(svg, samples, xUnit, yUnit) {
+    const readout = svg.parentElement && svg.parentElement.querySelector('.calculation-visual-readout');
+    if (!readout) return;
+    const show = (event) => {
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const local = point.matrixTransform(matrix.inverse());
+      let best = null;
+      let bestDist = 28;
+      samples.forEach((sample) => {
+        const dist = Math.hypot(sample.px - local.x, sample.py - local.y);
+        if (dist < bestDist) {
+          best = sample;
+          bestDist = dist;
+        }
+      });
+      readout.textContent = best
+        ? best.name + '  ' + formatTick(best.x) + ' ' + xUnit + '  ·  ' + formatTick(best.y) + ' ' + yUnit
+        : '';
+    };
+    svg.style.touchAction = 'manipulation';
+    svg.addEventListener('pointermove', show);
+    svg.addEventListener('pointerleave', () => { readout.textContent = ''; });
+  }
+
+  function seriesPlot(svg, spec) {
+    const height = 228;
+    const left = 62;
+    const right = 612;
+    const top = 36;
+    const bottom = 176;
+    usePlotBox(svg, height);
+    const xMin = spec.xMin == null ? 0 : spec.xMin;
+    const xMax = spec.xMax == null ? 1 : spec.xMax;
+    const yMin = spec.yMin == null ? 0 : spec.yMin;
+    const yMax = spec.yMax == null ? 1 : spec.yMax;
+    const xSpan = xMax - xMin || 1;
+    const ySpan = yMax - yMin || 1;
+    const X = (x) => left + ((x - xMin) / xSpan) * (right - left);
+    const Y = (y) => bottom - ((y - yMin) / ySpan) * (bottom - top);
+    text(svg, left, 20, spec.yLabel, { fill: PALETTE.text, 'font-size': 12, 'font-weight': 700 });
+    for (let i = 0; i <= 4; i += 1) {
+      const y = top + ((bottom - top) * i) / 4;
+      const x = left + ((right - left) * i) / 4;
+      line(svg, left, y, right, y, { stroke: PALETTE.grid, 'stroke-width': 1 });
+      line(svg, x, top, x, bottom, { stroke: PALETTE.grid, 'stroke-width': 1 });
+      text(svg, left - 8, y + 4, formatTick(yMax - (ySpan * i) / 4), { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'end' });
+      text(svg, x, bottom + 16, formatTick(xMin + (xSpan * i) / 4), { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    }
+    line(svg, left, top, left, bottom, { stroke: PALETTE.muted, 'stroke-width': 1.25 });
+    line(svg, left, bottom, right, bottom, { stroke: PALETTE.muted, 'stroke-width': 1.25 });
+    text(svg, (left + right) / 2, height - 12, spec.xLabel, { fill: PALETTE.text, 'font-size': 12, 'font-weight': 700, 'text-anchor': 'middle' });
+    const samples = [];
+    (spec.guides || []).forEach((guide) => {
+      if (guide.y < yMin || guide.y > yMax) return;
+      const y = Y(guide.y);
+      line(svg, left, y, right, y, { stroke: guide.color, 'stroke-width': 1.25, 'stroke-dasharray': '5 4' });
+      text(svg, left + 8, y - 4, guide.label, { fill: guide.color, 'font-size': 10, 'text-anchor': 'start' });
+    });
+    (spec.series || []).forEach((series, index) => {
+      const points = series.samples.map(([x, y]) => {
+        const px = X(x);
+        const py = Y(y);
+        samples.push({ name: series.name, x, y, px, py });
+        return px + ',' + py;
+      });
+      const trace = svgElement('polyline', {
+        points: points.join(' '),
+        fill: 'none',
+        stroke: series.color,
+        'stroke-width': 2.5,
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round',
+        pathLength: 1,
+      });
+      trace.setAttribute('class', 'plot-trace');
+      svg.appendChild(trace);
+      text(svg, right - index * 148, 20, series.name, { fill: series.color, 'font-size': 11, 'font-weight': 700, 'text-anchor': 'end' });
+    });
+    if (spec.marker) {
+      svg.appendChild(svgElement('circle', {
+        cx: X(spec.marker.x),
+        cy: Y(spec.marker.y),
+        r: 5.5,
+        fill: PALETTE.copper,
+        stroke: PALETTE.text,
+        'stroke-width': 1.5,
+      }));
+    }
+    bindHover(svg, samples, spec.xUnit || '', spec.yUnit || '');
+  }
+
+  function labeledNumber(result, pattern) {
+    const labels = result.querySelectorAll('.res-label');
+    const values = result.querySelectorAll('.res-val');
+    for (let i = 0; i < values.length; i += 1) {
+      if (pattern.test((labels[i] && labels[i].textContent) || '')) return numberFrom(values[i].textContent);
+    }
+    return NaN;
+  }
+
+  function inputNumber(id) {
+    const node = document.getElementById(id);
+    const value = node ? Number(node.value) : NaN;
+    return Number.isFinite(value) ? value : NaN;
   }
 
   function powerTriangle(svg, title) {
@@ -165,31 +329,94 @@
   }
 
   function reactancePlot(svg) {
-    plotAxes(svg, 'REACTANCE VS FREQUENCY', 'frequency →', 'Ω');
-    const xl = [], xc = [];
-    for (let x = 48; x <= 616; x += 7) {
-      const t = (x - 48) / 568;
-      xl.push(`${x},${132 - t * 76}`);
-      xc.push(`${x},${47 + t * 76}`);
+    const inductive = [];
+    const capacitive = [];
+    for (let i = 0; i <= 40; i += 1) {
+      const f = 0.2 + (i / 40) * 0.8;
+      inductive.push([f, f]);
+      capacitive.push([f, 0.2 / f]);
     }
-    svg.appendChild(svgElement('polyline', { points: xl.join(' '), fill: 'none', stroke: PALETTE.blue, 'stroke-width': 3 }));
-    svg.appendChild(svgElement('polyline', { points: xc.join(' '), fill: 'none', stroke: PALETTE.yellow, 'stroke-width': 3 }));
-    text(svg, 570, 58, 'XL = 2πfL', { fill: PALETTE.blue, 'font-size': 10, 'text-anchor': 'end' });
-    text(svg, 570, 126, 'XC = 1/(2πfC)', { fill: PALETTE.yellow, 'font-size': 10, 'text-anchor': 'end' });
+    seriesPlot(svg, {
+      xLabel: 'Frequency (relative)',
+      yLabel: 'Reactance (relative Ω)',
+      xUnit: 'f',
+      yUnit: 'Ω',
+      xMin: 0.2,
+      xMax: 1,
+      yMin: 0,
+      yMax: 1.15,
+      series: [
+        { name: 'XL = 2πfL', color: PALETTE.blue, samples: inductive },
+        { name: 'XC = 1/(2πfC)', color: PALETTE.copper, samples: capacitive },
+      ],
+    });
   }
 
   function resonancePlot(svg) {
-    plotAxes(svg, 'RESONANCE WINDOW', 'frequency →', 'response');
-    const points = [];
-    for (let x = 48; x <= 616; x += 7) {
-      const t = (x - 48) / 568;
-      const y = 132 - 82 * Math.exp(-Math.pow((t - 0.52) / 0.12, 2));
-      points.push(`${x},${y}`);
+    const samples = [];
+    for (let i = 0; i <= 48; i += 1) {
+      const f = i / 48;
+      samples.push([f, Math.exp(-Math.pow((f - 0.52) / 0.12, 2))]);
     }
-    svg.appendChild(svgElement('polyline', { points: points.join(' '), fill: 'none', stroke: PALETTE.green, 'stroke-width': 3 }));
-    line(svg, 343, 42, 343, 132, { stroke: PALETTE.green, 'stroke-width': 1.5, 'stroke-dasharray': '4 4' });
-    text(svg, 343, 38, 'f₀', { fill: PALETTE.green, 'font-size': 12, 'text-anchor': 'middle', 'font-weight': 700 });
-    text(svg, 343, 151, 'resonant frequency', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    seriesPlot(svg, {
+      xLabel: 'Frequency (relative)',
+      yLabel: 'Response',
+      xUnit: 'f',
+      yUnit: '',
+      xMin: 0,
+      xMax: 1,
+      yMin: 0,
+      yMax: 1.15,
+      series: [{ name: 'Resonance', color: PALETTE.accent, samples }],
+      marker: { x: 0.52, y: 1 },
+    });
+  }
+
+  function voltageDropPlot(svg, dropPct) {
+    const drop = Number.isFinite(dropPct) ? Math.abs(dropPct) : 2;
+    const yMax = Math.max(6, drop * 1.2);
+    const samples = [];
+    for (let i = 0; i <= 40; i += 1) {
+      const distance = (i / 40) * 100;
+      samples.push([distance, drop * (distance / 100)]);
+    }
+    seriesPlot(svg, {
+      xLabel: 'Distance along run (%)',
+      yLabel: 'Voltage drop (%)',
+      xUnit: '%',
+      yUnit: '%',
+      xMin: 0,
+      xMax: 100,
+      yMin: 0,
+      yMax,
+      guides: [
+        { y: 3, label: '3%', color: PALETTE.copper },
+        { y: 5, label: '5%', color: PALETTE.warn },
+      ],
+      series: [{ name: 'Resistive drop', color: PALETTE.accent, samples }],
+      marker: { x: 100, y: drop },
+    });
+  }
+
+  function motorCurve(svg, horsepower) {
+    const samples = [];
+    for (let i = 0; i <= 40; i += 1) {
+      const speed = 0.4 + (i / 40) * 1.6;
+      samples.push([speed, 1 / speed]);
+    }
+    const name = horsepower > 0 ? horsepower.toFixed(2) + ' HP, constant power' : 'Constant power';
+    seriesPlot(svg, {
+      xLabel: 'Speed (per unit of rated)',
+      yLabel: 'Torque (per unit of rated)',
+      xUnit: 'pu',
+      yUnit: 'pu',
+      xMin: 0.4,
+      xMax: 2,
+      yMin: 0,
+      yMax: 2.7,
+      series: [{ name, color: PALETTE.accent, samples }],
+      marker: { x: 1, y: 1 },
+    });
   }
 
   function network(svg, parallel) {
@@ -371,15 +598,19 @@
   }
 
   function harmonicSpectrum(svg) {
-    text(svg, 320, 23, 'HARMONIC SPECTRUM', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
-    line(svg, 80, 130, 590, 130, { stroke: PALETTE.line });
-    [0.92, 0.2, 0.36, 0.1, 0.22, 0.07, 0.14].forEach((height, index) => {
-      const x = 104 + index * 70;
-      svg.appendChild(svgElement('rect', { x, y: 130 - height * 76, width: 30, height: height * 76, rx: 4, fill: index === 0 ? PALETTE.blue : PALETTE.red }));
-      text(svg, x + 15, 148, `${index + 1}`, { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
+    const orders = [1, 0.18, 0.34, 0.08, 0.2, 0.05, 0.12];
+    const samples = orders.map((height, index) => [index + 1, height]);
+    seriesPlot(svg, {
+      xLabel: 'Harmonic order',
+      yLabel: 'Magnitude (relative)',
+      xUnit: '',
+      yUnit: 'pu',
+      xMin: 1,
+      xMax: 7,
+      yMin: 0,
+      yMax: 1.1,
+      series: [{ name: 'Spectrum', color: PALETTE.blue, samples }],
     });
-    text(svg, 320, 23, 'HARMONIC SPECTRUM', { 'text-anchor': 'middle', fill: PALETTE.muted, 'font-size': 11, 'letter-spacing': 1.5 });
-    text(svg, 320, 166, 'order →', { fill: PALETTE.muted, 'font-size': 10, 'text-anchor': 'middle' });
   }
 
   function pulseTrace(svg) {
@@ -473,9 +704,13 @@
     const values = resultNumbers(result);
     const id = section.id;
     if (id === 'sec-ohm') return ohms(shell(result, 'Ohm\'s law relationship between voltage, current, and resistance'));
-    if (id === 'sec-555') return waveform(shell(result, '555 timer output waveform over time'), '555 OUTPUT', PALETTE.accent);
+    if (id === 'sec-555') return waveform(shell(result, '555 timer output waveform over three periods'));
     if (id === 'sec-conductor-length') return conductorLength(shell(result, 'Length and estimated metal weight from a milliohm reading — end-to-end or short-to-parallel'));
-    if (id === 'sec-vdrop') return gauge(shell(result, 'Voltage drop shown as a percentage of the source voltage'), values.find((_value, index) => /drop/i.test(result.querySelectorAll('.res-label')[index]?.textContent || '')) || values[0], 'VOLTAGE DROP', PALETTE.yellow);
+    if (id === 'sec-vdrop') {
+      const percent = labeledNumber(result, /drop\s*%|percent/i);
+      const fallback = labeledNumber(result, /drop/i);
+      return voltageDropPlot(shell(result, 'Voltage drop along the run, with the 3 percent and 5 percent design notes'), Number.isFinite(percent) ? percent : fallback);
+    }
     if (id === 'sec-conduit' || id === 'sec-conduit-adv') return conduitSection(shell(result, 'Conduit cross-section and conductor fill envelope'));
     if (id === 'sec-power-dc') return energyBars(shell(result, 'DC power load and capacity relationship'), 'DC POWER BALANCE');
     if (id === 'sec-power-wizard') return;
@@ -486,7 +721,10 @@
     if (id === 'sec-harmonics') return harmonicSpectrum(shell(result, 'Harmonic spectrum by order'));
     if (id === 'sec-pfc') return powerTriangle(shell(result, 'Power triangle showing real, reactive, and apparent power'));
     if (id === 'sec-sp') return network(shell(result, 'Series or parallel circuit relationship'), /parallel/i.test(result.textContent || ''));
-    if (id === 'sec-motor') return energyBars(shell(result, 'Motor electrical input, mechanical output, and reserve relationship'), 'MOTOR POWER PATH');
+    if (id === 'sec-motor') {
+      const horsepower = result.id === 'mfla_result' ? inputNumber('mfla_hp') : labeledNumber(result, /horsepower/i);
+      return motorCurve(shell(result, 'Constant-horsepower torque falls as speed rises. Rated torque is 1.0 at rated speed.'), horsepower);
+    }
     if (id === 'sec-xfmr' || id === 'sec-xfmr-size' || id === 'sec-xfmr-engine' || id === 'sec-xfmr-wizard') return transformer(shell(result, 'Transformer primary to secondary energy transfer'));
     if (id === 'sec-wire-select') return capacity(shell(result, 'Conductor ampacity against the allowable design envelope'), 'AMPACITY SELECTION', 'selected conductor vs allowable envelope', PALETTE.green);
     if (id === 'sec-sc') return faultPath(shell(result, 'Source through overcurrent protection to fault path'));

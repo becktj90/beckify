@@ -1582,8 +1582,9 @@ body.report-open { overflow: hidden; }
 .tool-doc-btn:hover { border-color: var(--violet); color: var(--violet); transform: translateY(-1px); }
 
 /* ── Smith Chart ── */
-.sc-canvas-wrap { position: relative; display: inline-block; }
-#sc-canvas { cursor: crosshair; border-radius: 8px; display: block; }
+.sc-canvas-wrap { position: relative; display: block; width: min(100%, 500px); margin-inline: auto; }
+#sc-canvas { cursor: crosshair; border-radius: 8px; display: block; width: 100%; height: auto; background: #080b10; }
+.sc-hover { min-height: 1.25rem; margin: 8px 0 0; color: #e8eef5; font: 12px/1.4 "IBM Plex Mono", ui-monospace, monospace; text-align: center; }
 .sc-point-list { font-size: 0.78rem; max-height: 200px; overflow-y: auto; }
 .sc-point-row { display: flex; gap: 10px; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--border); }
 .sc-ex-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
@@ -1646,7 +1647,7 @@ body.report-open { overflow: hidden; }
 .emp-diagram { overflow-x: auto; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
 .emp-diagram svg { display: block; width: 100%; height: auto; }
 .card-grid.emp-diagram-grid { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
-.analog-formula { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; color: #e2e8f0; background: #0d1117; border: 1px solid var(--border); border-left: 3px solid #8b7bff; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; overflow-x: auto; }
+.analog-formula { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; color: #e2e8f0; background: #0d1117; border: 1px solid var(--border); border-left: 3px solid #40bad6; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; overflow-x: auto; }
 .analog-formula-sub { border-left-color: #5ed7ff; color: #cbd5f5; font-size: 0.85rem; }
 .analog-formula-note { color: var(--fg-muted); font-size: 0.82rem; line-height: 1.55; margin: 0; }
 .battery-tabs { margin-bottom: 16px; }
@@ -2454,7 +2455,26 @@ body.report-open { overflow: hidden; }
 .calculation-visual {
   position: relative;
   margin: 12px 0 8px;
+  background: #080b10;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 8px 8px 2px;
 }
+.calculation-visual svg { display: block; width: 100%; height: auto; }
+.calculation-visual-readout {
+  min-height: 1.25rem;
+  margin: 2px 8px 6px;
+  color: #e8eef5;
+  font: 12px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .calculation-visual .plot-trace {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: beckify-plot-trace 0.7s ease-out forwards;
+  }
+}
+@keyframes beckify-plot-trace { to { stroke-dashoffset: 0; } }
 .calculation-visual-toolbar {
   display: flex;
   justify-content: flex-end;

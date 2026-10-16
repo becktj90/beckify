@@ -4,8 +4,8 @@ import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { computePerformanceMetrics, simulateQualitativeNonlinearity } from "@/utils/controlEngine";
 
 const chartConfig = {
-  linear: { label: "Linear", color: "#8b7bff" },
-  nonlinear: { label: "With nonlinearity", color: "#f5c451" },
+  linear: { label: "Linear", color: "#40bad6" },
+  nonlinear: { label: "With nonlinearity", color: "#e09c56" },
 } as const;
 
 const fmt = (value: number | null | undefined, digits = 2) =>

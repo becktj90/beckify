@@ -224,7 +224,7 @@
 
     // Core (center rectangle)
     const cx = W / 2, cy = H / 2;
-    svg.appendChild(el('rect', { x: cx - 25, y: cy - 55, width: 50, height: 110, fill: '#1e293b', stroke: '#8b7bff', 'stroke-width': 2, rx: 4 }));
+    svg.appendChild(el('rect', { x: cx - 25, y: cy - 55, width: 50, height: 110, fill: '#1e293b', stroke: '#40bad6', 'stroke-width': 2, rx: 4 }));
     // Core lamination lines
     for (let i = -40; i <= 40; i += 10) {
       svg.appendChild(el('line', { x1: cx - 22, y1: cy + i, x2: cx + 22, y2: cy + i, stroke: '#334155', 'stroke-width': 1 }));
@@ -232,7 +232,7 @@
     svg.appendChild(text('CORE', cx, cy + 4, { fill: '#64748b', size: '9' }));
 
     // Primary winding (left coils)
-    const coilColor = '#8b7bff';
+    const coilColor = '#40bad6';
     const wx = 40, wy = cy - 30;
     for (let i = 0; i < 5; i++) {
       svg.appendChild(el('ellipse', { cx: wx, cy: wy + i * 14, rx: 20, ry: 7, fill: 'none', stroke: coilColor, 'stroke-width': 2.5 }));
@@ -245,8 +245,8 @@
     }
 
     // Primary leads
-    svg.appendChild(el('line', { x1: wx - 20, y1: wy, x2: 10, y2: wy, stroke: '#8b7bff', 'stroke-width': 2 }));
-    svg.appendChild(el('line', { x1: wx - 20, y1: wy + 56, x2: 10, y2: wy + 56, stroke: '#8b7bff', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: wx - 20, y1: wy, x2: 10, y2: wy, stroke: '#40bad6', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: wx - 20, y1: wy + 56, x2: 10, y2: wy + 56, stroke: '#40bad6', 'stroke-width': 2 }));
     // Secondary leads
     svg.appendChild(el('line', { x1: wx2 + 20, y1: wy, x2: W - 10, y2: wy, stroke: '#6ee7b7', 'stroke-width': 2 }));
     svg.appendChild(el('line', { x1: wx2 + 20, y1: wy + 56, x2: W - 10, y2: wy + 56, stroke: '#6ee7b7', 'stroke-width': 2 }));
@@ -269,9 +269,9 @@
 
     const priSym = { x: 15, y: cy + 65 };
     const secSym = { x: W - 15, y: cy + 65 };
-    if (priConn === 'delta') drawDelta(priSym.x, priSym.y, '#8b7bff');
-    else if (priConn === '1ph') draw1Ph(priSym.x, priSym.y, '#8b7bff');
-    else drawWye(priSym.x, priSym.y, '#8b7bff');
+    if (priConn === 'delta') drawDelta(priSym.x, priSym.y, '#40bad6');
+    else if (priConn === '1ph') draw1Ph(priSym.x, priSym.y, '#40bad6');
+    else drawWye(priSym.x, priSym.y, '#40bad6');
     if (secConn === 'delta' || secConn === 'delta-wye') drawDelta(secSym.x, secSym.y, '#6ee7b7');
     else if (secConn === '1ph') draw1Ph(secSym.x, secSym.y, '#6ee7b7');
     else drawWye(secSym.x, secSym.y, '#6ee7b7');
@@ -283,7 +283,7 @@
     }
 
     // Labels
-    svg.appendChild(text('PRIMARY', 40, 18, { fill: '#8b7bff', size: '9', weight: 'bold' }));
+    svg.appendChild(text('PRIMARY', 40, 18, { fill: '#40bad6', size: '9', weight: 'bold' }));
     svg.appendChild(text(`${params.priV || '—'} V  ${params.phase === '1ph' ? '1Ø' : '3Ø'}`, 40, 28, { fill: '#94a3b8', size: '8' }));
     svg.appendChild(text('SECONDARY', W - 40, 18, { fill: '#6ee7b7', size: '9', weight: 'bold' }));
     svg.appendChild(text(`${params.secV || '—'} V`, W - 40, 28, { fill: '#94a3b8', size: '8' }));
@@ -310,7 +310,7 @@
       Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
       return e;
     };
-    const line = (x1, y1, x2, y2, color = '#8b7bff', w = 2) =>
+    const line = (x1, y1, x2, y2, color = '#40bad6', w = 2) =>
       el('line', { x1, y1, x2, y2, stroke: color, 'stroke-width': w });
     const rect = (x, y, w, h, fill, stroke, rx = 0) =>
       el('rect', { x, y, width: w, height: h, fill, stroke, 'stroke-width': 1.5, rx });
@@ -328,16 +328,16 @@
 
     // Background
     svg.appendChild(el('rect', { x: 0, y: 0, width: W, height: H, fill: '#0a0e17' }));
-    svg.appendChild(txt('SINGLE-LINE DIAGRAM', W / 2, 20, '#8b7bff', 11, 'middle', 'bold'));
+    svg.appendChild(txt('SINGLE-LINE DIAGRAM', W / 2, 20, '#40bad6', 11, 'middle', 'bold'));
 
     const p = params;
     const midY = H / 2;
 
     /* ── Utility / Source (left) ── */
     const srcX = 30;
-    svg.appendChild(circle(srcX, midY, 18, 'none', '#8b7bff'));
-    svg.appendChild(txt('~', srcX, midY + 4, '#8b7bff', 14));
-    svg.appendChild(txt('SOURCE', srcX, midY + 28, '#8b7bff', 8));
+    svg.appendChild(circle(srcX, midY, 18, 'none', '#40bad6'));
+    svg.appendChild(txt('~', srcX, midY + 4, '#40bad6', 14));
+    svg.appendChild(txt('SOURCE', srcX, midY + 28, '#40bad6', 8));
     svg.appendChild(txt(`${p.priV || '?'} V`, srcX, midY + 38, '#94a3b8', 8));
     svg.appendChild(txt(p.phase === '1ph' ? '1Ø' : '3Ø', srcX, midY + 48, '#94a3b8', 8));
 
@@ -345,9 +345,9 @@
     const pdX = 120;
     svg.appendChild(line(srcX + 18, midY, pdX - 14, midY));
     // Disconnect symbol (box with switch)
-    svg.appendChild(rect(pdX - 14, midY - 14, 28, 28, '#0f172a', '#8b7bff', 3));
-    svg.appendChild(line(pdX - 6, midY + 8, pdX + 4, midY - 8, '#8b7bff', 2));
-    svg.appendChild(txt('DISC', pdX, midY + 24, '#8b7bff', 8));
+    svg.appendChild(rect(pdX - 14, midY - 14, 28, 28, '#0f172a', '#40bad6', 3));
+    svg.appendChild(line(pdX - 6, midY + 8, pdX + 4, midY - 8, '#40bad6', 2));
+    svg.appendChild(txt('DISC', pdX, midY + 24, '#40bad6', 8));
     svg.appendChild(txt('NEC 450.14', pdX, midY + 34, '#64748b', 7));
     svg.appendChild(txt(p.priDisc || '', pdX, midY + 44, '#f5c451', 7));
 
@@ -370,7 +370,7 @@
     // Phase lines visual (3 lines for 3ph)
     if (p.phase !== '1ph') {
       for (let i = -4; i <= 4; i += 4) {
-        svg.appendChild(line(priLineX - 12, midY + i, priLineX + 12, midY + i, '#8b7bff', 1));
+        svg.appendChild(line(priLineX - 12, midY + i, priLineX + 12, midY + i, '#40bad6', 1));
       }
     }
     const priLabel = p.priCond ? `${p.priCond.runs || 1}×${p.priCond.size} ${p.material || 'CU'} THHN` : '';
@@ -382,7 +382,7 @@
     const txX = 360;
     const txY = midY;
     // Two concentric circles for transformer symbol
-    svg.appendChild(circle(txX - 16, txY, 22, 'none', '#8b7bff'));
+    svg.appendChild(circle(txX - 16, txY, 22, 'none', '#40bad6'));
     svg.appendChild(circle(txX + 16, txY, 22, 'none', '#6ee7b7'));
     svg.appendChild(txt(`${p.kva || '?'} kVA`, txX, txY - 30, '#f5c451', 9, 'middle', 'bold'));
     svg.appendChild(txt(p.typeName ? p.typeName.split(' ').slice(0, 2).join(' ') : '', txX, txY + 36, '#64748b', 7));
@@ -545,7 +545,7 @@
   }
 
   function drawBank(svg, bank, rect) {
-    const coil = bank.side === 'primary' ? '#8b7bff' : '#6ee7b7';
+    const coil = bank.side === 'primary' ? '#40bad6' : '#6ee7b7';
     svg.appendChild(svgEl(svg, 'rect', {
       x: rect.x, y: rect.y, width: rect.w, height: rect.h,
       fill: '#111827', stroke: '#334155', 'stroke-width': 1, rx: 8,
@@ -1063,7 +1063,7 @@
     function section(title, color) {
       const h = document.createElement('div');
       h.className = 'wtHeading';
-      h.style.color = color || '#8b7bff';
+      h.style.color = color || '#40bad6';
       h.textContent = title;
       resultEl.appendChild(h);
     }
@@ -1093,7 +1093,7 @@
     row('Winding', windObj ? windObj.name : WZ.windingId);
     row('Turns Ratio', fmt(priV / secV, 3) + ' : 1');
 
-    section('▶ Full Load Amps (FLA)', '#8b7bff');
+    section('▶ Full Load Amps (FLA)', '#40bad6');
     const flaFormula = phase === '1ph' ? 'FLA = kVA × 1000 / V' : 'FLA = kVA × 1000 / (√3 × V)';
     note(flaFormula);
     row('Primary FLA', fmt(priFla, 2) + ' A', `at ${priV} V`);
@@ -1111,7 +1111,7 @@
     row('Secondary disconnect', (secDisc || '—') + ' A', '≥125% × secondary FLA, within sight ≤30 ft');
     note('NEC 450.14 requires a means to disconnect the transformer from all ungrounded conductors, within sight or lockable.');
 
-    section('▶ Primary Conductors', '#8b7bff');
+    section('▶ Primary Conductors', '#40bad6');
     if (priCond) {
       row('Required ampacity', fmt(priFla * 1.25, 2) + ' A', '125% × FLA per NEC 215.2(A)');
       row('Conductor size', priCond.size + ' AWG/kcmil ' + material.toUpperCase() + ' ' + WZ.insulation);
@@ -1201,7 +1201,7 @@
       kvaIs: (api.connectionById(WZ.windingId) || {}).kvaBasis,
     }) : null;
     if (taught) {
-      section('▶ Ratio and phase current', '#8b7bff');
+      section('▶ Ratio and phase current', '#40bad6');
       if (isFinite(taught.lineRatio)) row('Line voltage ratio Vp/Vs', fmt(taught.lineRatio, 4) + ' : 1');
       if (isFinite(taught.windingRatio)) row('Winding ratio (phase volts)', fmt(taught.windingRatio, 4) + ' : 1', 'Phase volts, not the line-to-line nameplate ratio, when one side is wye');
       if (isFinite(taught.primaryPhaseAmps)) row('Primary phase current', fmt(taught.primaryPhaseAmps, 2) + ' A');

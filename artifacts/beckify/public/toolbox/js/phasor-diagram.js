@@ -374,11 +374,11 @@
     svg.appendChild(svgEl('rect', { x: 1, y: 1, width: 338, height: 158, fill: '#0d1117', stroke: '#30304a' }));
     svg.appendChild(svgEl('polygon', {
       points: '70,28 130,132 10,132',
-      fill: 'none', stroke: '#8b7bff', 'stroke-width': '2.2'
+      fill: 'none', stroke: '#40bad6', 'stroke-width': '2.2'
     }));
     [['ZΔ', 70, 22], ['ZΔ', 138, 120], ['ZΔ', 4, 120]].forEach(function (lab) {
       const t = svgEl('text', {
-        x: lab[1], y: lab[2], fill: '#8b7bff', 'font-size': '10',
+        x: lab[1], y: lab[2], fill: '#40bad6', 'font-size': '10',
         'font-family': 'ui-monospace,monospace'
       });
       t.textContent = lab[0];

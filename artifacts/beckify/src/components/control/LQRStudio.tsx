@@ -15,8 +15,8 @@ import {
 } from "@/utils/controlEngine";
 
 const chartConfig = {
-  output: { label: "Output", color: "#8b7bff" },
-  control: { label: "Control", color: "#4f8bff" },
+  output: { label: "Output", color: "#40bad6" },
+  control: { label: "Control", color: "#609ce6" },
 } as const;
 
 function diagonalFromText(value: string) {

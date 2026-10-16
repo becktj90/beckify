@@ -8,19 +8,19 @@
   var EPS = 1e-12;
 
   var COLORS = {
-    bg: '#0d1117',
-    grid: 'rgba(139,123,255,0.3)',
-    resistance: '#8b7bff',
-    reactance: '#4f8bff',
-    point: '#ff8a8a',
-    pointAlt: '#ffd166',
-    vswr: '#6ee7b7',
-    axis: 'rgba(255,255,255,0.18)',
-    text: '#e6edf3',
-    muted: '#9fb0c0',
-    boundary: 'rgba(255,255,255,0.7)',
-    rotation: '#f5c451',
-    selected: '#ff6b6b',
+    bg: '#080b10',
+    grid: 'rgba(64,186,214,0.32)',
+    resistance: '#40bad6',
+    reactance: '#609ce6',
+    point: '#e09c56',
+    pointAlt: '#f0bc48',
+    vswr: '#56d6a4',
+    axis: 'rgba(232,238,245,0.28)',
+    text: '#e8eef5',
+    muted: '#94a2b2',
+    boundary: 'rgba(232,238,245,0.88)',
+    rotation: '#e09c56',
+    selected: '#f47078',
   };
 
   var RESISTANCE_VALUES = [0, 0.2, 0.5, 1, 2, 5, 10];
@@ -600,6 +600,48 @@
     return 'Point ' + (state.points.length + 1);
   }
 
+  function setHover(text) {
+    var canvas = state.canvas;
+    var readout = document.getElementById('sc-hover');
+    if (!readout && canvas && canvas.parentElement) {
+      readout = document.createElement('p');
+      readout.id = 'sc-hover';
+      readout.className = 'sc-hover';
+      readout.setAttribute('aria-live', 'polite');
+      canvas.parentElement.appendChild(readout);
+    }
+    if (readout) readout.textContent = text || '';
+  }
+
+  function formatOhm(value) {
+    if (!isFinite(value)) return '∞';
+    return value.toFixed(2);
+  }
+
+  function handleCanvasHover(ev) {
+    var rect;
+    var gamma;
+    var z;
+    var sign;
+    if (!state.canvas) return;
+    rect = state.canvas.getBoundingClientRect();
+    gamma = canvasToGamma(
+      (ev.clientX - rect.left) * (SIZE / rect.width),
+      (ev.clientY - rect.top) * (SIZE / rect.height)
+    );
+    if (!isInsideSmith(gamma)) {
+      setHover('');
+      return;
+    }
+    z = normalizedZFromGamma(gamma);
+    sign = z.im >= 0 ? '+' : '−';
+    setHover(
+      'Γ ' + gamma.re.toFixed(3) + (gamma.im >= 0 ? '+' : '−') + Math.abs(gamma.im).toFixed(3) + 'j'
+      + '  ·  z ' + formatOhm(z.re) + sign + formatOhm(Math.abs(z.im)) + 'j'
+      + '  ·  VSWR ' + (cMag(gamma) >= 1 - 1e-9 ? '∞' : ((1 + cMag(gamma)) / (1 - cMag(gamma))).toFixed(2))
+    );
+  }
+
   function handleCanvasClick(ev) {
     var rect;
     var x;
@@ -607,8 +649,8 @@
     var gamma;
     if (!state.canvas) return;
     rect = state.canvas.getBoundingClientRect();
-    x = (ev.clientX - rect.left) * (state.canvas.width / rect.width);
-    y = (ev.clientY - rect.top) * (state.canvas.height / rect.height);
+    x = (ev.clientX - rect.left) * (SIZE / rect.width);
+    y = (ev.clientY - rect.top) * (SIZE / rect.height);
     gamma = canvasToGamma(x, y);
     if (!isInsideSmith(gamma)) return;
     plotGamma(gamma, nearestPointLabel(), 'Added from a Smith chart click.');
@@ -620,12 +662,19 @@
       setMessage('Canvas #sc-canvas not found.');
       return false;
     }
-    canvas.width = SIZE;
-    canvas.height = SIZE;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = SIZE + 'px';
+    canvas.style.height = 'auto';
+    canvas.width = Math.round(SIZE * dpr);
+    canvas.height = Math.round(SIZE * dpr);
     state.canvas = canvas;
     state.ctx = canvas.getContext('2d');
+    state.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (!state.clickBound) {
       canvas.addEventListener('click', handleCanvasClick);
+      canvas.addEventListener('pointermove', handleCanvasHover);
+      canvas.addEventListener('pointerleave', function () { setHover(''); });
       state.clickBound = true;
     }
     return true;

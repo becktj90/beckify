@@ -15,7 +15,7 @@
     neu: '#eef0fa',
     gnd: '#4ade80',
     body: '#1a1d2e',
-    rim: '#8b7bff',
+    rim: '#40bad6',
     slot: '#0b0d18',
     label: '#eef0fa',
     muted: '#9497b8',
