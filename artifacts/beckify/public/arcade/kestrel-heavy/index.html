@@ -8,13 +8,32 @@
   <style>
     html, body { margin: 0; height: 100%; background: #05050d; overflow: hidden; touch-action: none;
       -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; font-family: ui-monospace, Menlo, monospace; }
-    /* Portrait 9:19.5 stage, centred and letterboxed on wide screens; fills the screen on phones. */
-    #stage { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    /* The game is portrait-only (phone 9:19.5, iPad 3:4); its UI is laid out for those shapes, so we never stretch it.
+       Phones/portrait windows: fill the screen (max 9:19.5 tall column).
+       Landscape windows (desktop monitors): a 3:4 iPad-shaped stage at full viewport height, centred, with themed side panels. */
+    #stage { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;
       height: 100vh; height: 100dvh; width: calc(100vh * 9 / 19.5); width: calc(100dvh * 9 / 19.5); max-width: 100vw; }
-    /* Landscape windows (desktop monitors, iPad landscape): fill the whole frame instead of a 9:19.5 pillarbox strip.
-       Unity re-matches its render size to the canvas (matchWebGLToCanvasSize) and the UI re-anchors. */
-    @media (min-aspect-ratio: 1/1) { #stage { top: 0; left: 0; transform: none; width: 100vw; height: 100vh; height: 100dvh; max-width: none; } }
     @media (max-aspect-ratio: 9/19.5) { #stage { width: 100vw; height: calc(100vw * 19.5 / 9); max-height: 100dvh; } }
+    @media (min-aspect-ratio: 1/1) {
+      #stage { width: calc(100vh * 3 / 4); width: calc(100dvh * 3 / 4); max-width: 100vw;
+        box-shadow: 0 0 0 1px #2a2a55, 0 0 60px 6px rgba(120, 100, 255, .18); }
+    }
+    /* Side panels: only exist on landscape windows wide enough to leave room beside the 3:4 stage. */
+    .side { display: none; }
+    @media (min-aspect-ratio: 1/1) {
+      body { background: radial-gradient(ellipse at 50% 40%, #11112a 0%, #07070f 70%, #05050d 100%); }
+      body::before { content: ""; position: fixed; inset: 0; z-index: 0; opacity: .5;
+        background-image: linear-gradient(rgba(183,171,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(183,171,255,.05) 1px, transparent 1px);
+        background-size: 48px 48px; -webkit-mask-image: radial-gradient(ellipse at center, transparent 30%, #000 85%); mask-image: radial-gradient(ellipse at center, transparent 30%, #000 85%); }
+      .side { display: flex; position: fixed; top: 0; bottom: 0; z-index: 0; flex-direction: column; justify-content: center;
+        width: calc((100vw - 100dvh * 3 / 4) / 2); padding: 0 clamp(16px, 3vw, 56px); box-sizing: border-box; color: #8f8ab8; font-size: clamp(11px, 1vw, 15px); line-height: 1.7; letter-spacing: 1px; }
+      .side.l { left: 0; align-items: flex-end; text-align: right; }
+      .side.r { right: 0; align-items: flex-start; text-align: left; }
+      .side h2 { margin: 0 0 12px; font-size: clamp(14px, 1.5vw, 24px); letter-spacing: 4px; color: #e8e4ff; }
+      .side b { color: #b7abff; font-weight: 700; }
+      .side p { margin: 0 0 6px; }
+    }
+    @media (min-aspect-ratio: 1/1) and (max-aspect-ratio: 1280/1000) { .side { display: none; } }
     #unity-canvas { width: 100%; height: 100%; display: block; background: #05050d; }
     #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
       color: #e8e4ff; text-align: center; background: #05050d; z-index: 2; padding: 24px; box-sizing: border-box; }
@@ -27,6 +46,8 @@
   </style>
 </head>
 <body>
+  <aside class="side l" aria-hidden="true"><h2>KESTREL HEAVY</h2><p>Design the rocket.</p><p>Launch it.</p><p>Watch every stage.</p></aside>
+  <aside class="side r" aria-hidden="true"><h2>CONTROLS</h2><p><b>Click / tap</b> &mdash; menus and buttons</p><p><b>Esc</b> &mdash; leave fullscreen</p><p><b>FULL</b> &mdash; fullscreen (top right)</p></aside>
   <div id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="overlay">
