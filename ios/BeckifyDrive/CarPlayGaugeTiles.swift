@@ -33,6 +33,12 @@ enum CarPlayTileRenderer {
         return render(CarPlayGaugeClusterView(tile: tile, size: size).frame(width: size.width, height: size.height), scale: scale)
     }
 
+    /// One card holding every key reading, for the single-tile home screen.
+    static func summaryImage(_ tiles: [DriveCarPlayTile], headline: String, size: CGSize, scale: CGFloat) -> UIImage {
+        let size = CGSize(width: max(1, size.width), height: max(1, size.height))
+        return render(CarPlaySummaryCardView(tiles: tiles, headline: headline, size: size).frame(width: size.width, height: size.height), scale: scale)
+    }
+
     private static func render(_ content: some View, scale: CGFloat) -> UIImage {
         let renderer = ImageRenderer(content: content.environment(\.colorScheme, .dark))
         renderer.scale = max(1, scale)
@@ -515,6 +521,110 @@ struct CarPlayGaugeClusterView: View {
     }
 }
 
+// MARK: - One-tile summary card
+
+/// Every key reading on one card: the charge ring on top, speed under it, then
+/// the rest as a grid of readouts. Drawn at the biggest image CarPlay allows, so
+/// the home screen is one large tile instead of eight small ones.
+struct CarPlaySummaryCardView: View {
+    let tiles: [DriveCarPlayTile]
+    let headline: String
+    let size: CGSize
+
+    private var w: CGFloat { size.width }
+    private var h: CGFloat { size.height }
+    private var unit: CGFloat { min(w, h) }
+    private var pad: CGFloat { unit * 0.05 }
+
+    /// Charge on EVs, else whatever tile comes first (speed on generic cars).
+    private var hero: DriveCarPlayTile? { tiles.first { $0.kind == .charge } ?? tiles.first }
+    private var speed: DriveCarPlayTile? { hero?.kind == .speed ? nil : tiles.first { $0.kind == .speed } }
+    private var cells: [DriveCarPlayTile] { tiles.filter { $0.kind != hero?.kind && $0.kind != speed?.kind } }
+    private var tint: Color { hero.map { VFDStyle.tint($0.tone) } ?? DriveTheme.accent }
+    private var heroHeight: CGFloat { h * (speed == nil ? 0.5 : 0.36) }
+
+    var body: some View {
+        ZStack {
+            VFDPanel(tint: tint, cornerRadius: unit * 0.1, side: unit)
+            VStack(spacing: h * 0.015) {
+                Text(headline.uppercased())
+                    .font(VFDStyle.mono(h * 0.035, .bold))
+                    .foregroundStyle(tint.opacity(0.8))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                if let hero {
+                    heroView(hero)
+                        .frame(height: heroHeight)
+                }
+                if let speed {
+                    VFDReadout(tile: speed, digitHeight: h * 0.1, maxWidth: w - pad * 2, showUnit: true)
+                        .frame(height: h * 0.17)
+                }
+                cellGrid
+                    .frame(maxHeight: .infinity)
+            }
+            .padding(pad)
+        }
+        .frame(width: w, height: h)
+    }
+
+    @ViewBuilder private func heroView(_ tile: DriveCarPlayTile) -> some View {
+        let dial = min(w - pad * 2, heroHeight)
+        let color = VFDStyle.tint(tile.tone)
+        switch tile.gauge {
+        case .ring(let fraction)?:
+            ZStack {
+                SegmentedArc(style: .ring, fraction: fraction, tint: color, thickness: max(3, dial * 0.07), segments: 36)
+                    .frame(width: dial, height: dial)
+                VFDReadout(tile: tile, digitHeight: dial * 0.26, maxWidth: dial * 0.6, showUnit: true)
+            }
+        case .arc(let fraction)?:
+            ZStack {
+                SegmentedArc(style: .arc, fraction: fraction, tint: color, thickness: max(3, dial * 0.07), segments: 32)
+                    .frame(width: dial, height: dial)
+                VFDReadout(tile: tile, digitHeight: dial * 0.26, maxWidth: dial * 0.6, showUnit: true)
+            }
+        default:
+            VFDReadout(tile: tile, digitHeight: dial * 0.4, maxWidth: w - pad * 2, showUnit: true)
+        }
+    }
+
+    private var cellGrid: some View {
+        let rows = stride(from: 0, to: cells.count, by: 2).map { Array(cells[$0..<min($0 + 2, cells.count)]) }
+        return VStack(spacing: h * 0.012) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: w * 0.03) {
+                    ForEach(row) { cell($0) }
+                    if row.count == 1 { Color.clear }
+                }
+            }
+        }
+    }
+
+    private func cell(_ tile: DriveCarPlayTile) -> some View {
+        let color = VFDStyle.valueColor(tile)
+        let missing = tile.value == DriveCarPlayTiles.missing
+        let reading = missing ? DriveCarPlayTiles.missing : (tile.unit.isEmpty ? tile.value : "\(tile.value) \(tile.unit)")
+        return VStack(spacing: 0) {
+            Text(tile.title.uppercased())
+                .font(VFDStyle.mono(h * 0.032, .semibold))
+                .foregroundStyle(DriveTheme.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            // "~" marks estimates, like the "est." on the small tiles.
+            Text(tile.isEstimate && !missing ? "~\(reading)" : reading)
+                .font(VFDStyle.mono(h * 0.06, .heavy))
+                .foregroundStyle(color)
+                .shadow(color: color.opacity(missing ? 0 : 0.7), radius: unit * 0.01)
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(RoundedRectangle(cornerRadius: unit * 0.03, style: .continuous).fill(Color.black.opacity(0.45)))
+        .overlay(RoundedRectangle(cornerRadius: unit * 0.03, style: .continuous).strokeBorder(color.opacity(0.3), lineWidth: max(0.5, unit * 0.004)))
+    }
+}
+
 #if DEBUG
 /// Debug-only stand-in for the CarPlay screens so CI can screenshot them:
 /// `-BeckifyDriveCarPlayPreview YES`. Same renderer CarPlay gets, fixed inputs.
@@ -576,7 +686,25 @@ struct CarPlayTilesPreview: View {
                 Text("Gauges and Readings are separate tabs. Layout here is illustrative; CarPlay controls the actual grid.")
                     .font(.caption)
                     .foregroundStyle(DriveTheme.muted)
-                Text("Gauges screen (tap a tile)")
+                Text("Home: one tile")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(DriveTheme.text)
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(Self.samples.enumerated()), id: \.offset) { _, sample in
+                            Image(uiImage: CarPlayTileRenderer.summaryImage(
+                                DriveCarPlayTiles.make(sample.input, units: Self.us),
+                                headline: sample.headline,
+                                size: Self.cardSize,
+                                scale: 3
+                            ))
+                            .resizable()
+                            .frame(width: Self.cardSize.width, height: Self.cardSize.height)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                    }
+                }
+                Text("Gauges screen (tap the tile)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(DriveTheme.text)
                 ScrollView(.horizontal) {
