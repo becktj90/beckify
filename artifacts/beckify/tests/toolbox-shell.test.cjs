@@ -20,6 +20,7 @@ const IOS_ONLY = [
 async function main() {
   const home = await import(pathToFileURL(path.join(root, "src/lib/toolbox-home.mjs")).href);
   const registry = await import(pathToFileURL(path.join(root, "src/data/toolbox-tools.mjs")).href);
+  const seo = await import(pathToFileURL(path.join(root, "src/data/seo-copy.mjs")).href);
   const tools = home.TOOL_REGISTRY;
   const ids = tools.map((tool) => tool.toolId);
   const shelves = new Set(home.TOOL_SHELVES.map((shelf) => shelf.id));
@@ -91,6 +92,8 @@ async function main() {
   assert.match(fs.readFileSync(path.join(root, "public/toolbox/sw.js"), "utf8"), /CACHE_VERSION = 'v52'/);
   assert.match(classicHtml, /<base href="\/toolbox\/">/);
   assert.match(classicHtml, /register\('\/toolbox\/sw\.js'/);
+  assert.equal(seo.seoForStaticRoute("toolbox")?.title, seo.PAGE_SEO["/toolbox/"].title);
+  assert.ok(seo.STATIC_ROUTE_PATHS.includes("toolbox"));
 }
 
 main().catch((error) => {
