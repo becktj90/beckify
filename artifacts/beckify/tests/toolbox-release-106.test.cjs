@@ -5,7 +5,7 @@ const vm = require('vm');
 const path = require('path');
 const assert = require('assert');
 const dir = path.join(__dirname, '..', 'public', 'toolbox');
-const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(dir, 'classic', 'index.html'), 'utf8');
 
 // ── Voltage drop spot check: 3Ø, 480 V, 100 A, 200 ft, 3/0 Cu → 2.66 V, 0.55 % ──
 {

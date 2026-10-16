@@ -13,7 +13,8 @@ the rest of the site.
 ```
 /           Home — hero + hub cards
 /about      Bio, family photos, contact links
-/toolbox    Embedded electrical calculators
+/toolbox    Tile-grid home (Field / Toolkit shelves, search, pins, favorites)
+/toolbox/classic   The original calculator list. Section hashes still land here.
 /projects   Project cards that link OUT to where the work actually lives
             (endless-sphere thread, hosted app, etc.) — not duplicated here
 /games      Embedded game
@@ -57,21 +58,25 @@ artifacts/beckify/
 ## How the styling system works
 
 All colors, fonts, and shared visual tokens are defined once, at the top of
-`src/index.css`, as CSS variables inside `:root`. The theme is **deep-space /
-nebula**: near-black background, glowing violet-to-blue accent, starfield
-backdrop.
+`src/index.css`, as CSS variables inside `:root`. The theme matches the Beckify
+iOS app: near-black background, cyan and blue accents, a copper highlight, and
+the starfield backdrop.
 
 ```css
 :root {
-  --background: #05060f;
+  --background: #080b10;
   --surface: rgba(255, 255, 255, 0.035);
-  --foreground: #eef0fa;
-  --muted: #9497b8;
+  --foreground: #e8eef5;
+  --muted: #94a2b2;
   --border: rgba(255, 255, 255, 0.09);
-  --accent: #8b7bff;     /* violet — buttons, links, active nav state */
-  --accent-2: #4f8bff;   /* blue — used with --accent in gradients */
+  --accent: #40bad6;     /* cyan — buttons, links, active nav state */
+  --accent-2: #609ce6;   /* blue — used with --accent in gradients */
+  --copper: #e09c56;     /* conductor / secondary emphasis */
 }
 ```
+
+Fonts, loaded from `index.html`: Sora (body), Exo 2 (display), Orbitron (wordmark),
+IBM Plex Mono (formulas and data).
 
 Want to change the accent colors? Change `--accent` / `--accent-2` in that
 one file — every button, link, badge, gradient headline, and glow that uses
@@ -172,9 +177,10 @@ Hosted on **GitHub Pages** (`.github/workflows/deploy.yml`), not Vercel.
 
 ## Store integration
 
-`src/data/shop.mjs` owns the storefront origin and three featured product cards.
-Navigation, footer, home cards, controls reference link, and static `/shop/` and
-`/store/` redirects use it. Products open Shopify for current price, availability,
+`src/data/shop.mjs` owns the storefront origin. The shop is one link in the
+nav and one in the footer, plus the `/shop/` and `/store/` redirects
+(`StoreRedirect`). It is not promoted with product cards on the home page or
+inside calculators. Products open Shopify for current price, availability,
 size selection, cart, and checkout. No storefront credentials are needed.
 
 To connect `shop.beckify.com` without moving the main site:

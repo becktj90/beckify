@@ -48,15 +48,14 @@ export interface NavLink {
   label: string;
   icon: LucideIcon;
   /**
-   * The toolbox is a standalone app served from /toolbox/, not a React route,
-   * so it needs a real navigation. Client-side routing to it would render a
-   * React page instead of the actual toolbox.
+   * Leave the SPA for a full document load. The shop does this. The toolbox
+   * home is a React route; the classic calculators are plain links.
    */
   external?: boolean;
 }
 
 export const NAV_LINKS: NavLink[] = [
-  { href: "/toolbox/", label: "Toolbox", icon: Wrench, external: true },
+  { href: "/toolbox/", label: "Toolbox", icon: Wrench },
   { href: "/control-systems", label: "Control Systems", icon: Zap },
   { href: "/apps", label: "Apps", icon: Smartphone },
   { href: "/projects", label: "Projects", icon: Rocket },
@@ -83,7 +82,6 @@ export const HOME_NAV_CARDS: HubCard[] = [
     title: "EE Toolbox",
     description: "Electrical calculators and quick-reference tools.",
     href: "/toolbox/",
-    external: true,
     icon: Wrench,
   },
   {
@@ -211,7 +209,7 @@ export const PROJECTS: Project[] = [
 export const TOOLBOX = {
   description:
     "Calculators and reference tools for facilities and electrical work, built into the site below.",
-  embedUrl: "./toolbox/index.html",
+  embedUrl: "./toolbox/classic/index.html",
 };
 
 /** ------------------------------------------------------------------------

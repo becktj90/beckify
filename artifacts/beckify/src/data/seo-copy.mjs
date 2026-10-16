@@ -130,6 +130,7 @@ export const STATIC_ROUTE_PATHS = [
   "shop",
   "store",
   "sitemap",
+  "toolbox",
 ];
 
 export const TOOL_SEO_TITLES = {

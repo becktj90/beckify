@@ -99,7 +99,7 @@ assert.match(api.analyze({ fla: 14, hp: 10, volts: 460, phase: '2', sf: 1.15 }).
 assert.match(api.analyze({ fla: '28/14', hp: 10, volts: '230/460', phase: 3, sf: 1.15 }).error, /dual FLA/i);
 assert.match(api.lockedRotorRange('F', 10, 460, '').error, /phase/i);
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 const phaseBlock = html.slice(html.indexOf('id="mnp_phase"'), html.indexOf('id="mnp_phase"') + 280);
 assert.match(phaseBlock, /<option value="" selected>/);
 assert.doesNotMatch(phaseBlock, /<option value="3" selected>/);

@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <base href="/toolbox/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https: blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#8b7bff">
-  <link rel="canonical" href="https://beckify.com/toolbox/">
+  <meta name="theme-color" content="#40bad6">
+  <link rel="canonical" href="https://beckify.com/toolbox/classic/">
   <meta name="beckify-api-base-url" content="">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,7 +19,7 @@
   <meta property="og:description" content="57 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <meta property="og:image" content="https://beckify.com/toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://beckify.com/toolbox/">
+  <meta property="og:url" content="https://beckify.com/toolbox/classic/">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="description" content="57 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <!-- Google tag (gtag.js) -->
@@ -37,7 +38,7 @@
           "@type": ["SoftwareApplication", "WebApplication"],
           "name": "Beckify Electrical Engineering Toolbox",
           "description": "Browser-based electrical calculators for Ohm's Law, voltage drop, wire ampacity, conduit fill, motor FLA, and field tools.",
-          "url": "https://beckify.com/toolbox/",
+          "url": "https://beckify.com/toolbox/classic/",
           "operatingSystem": "All",
           "applicationCategory": "EngineeringApplication",
           "isAccessibleForFree": true,
@@ -171,6 +172,7 @@
         href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=Sora:wght@400;500;600;700&amp;display=swap">
 </head>
 <body>
+<p class="classic-banner" style="margin:0;padding:10px 16px;background:#12161e;color:#e8eef5;border-bottom:1px solid rgba(255,255,255,.09);font:500 14px/1.4 Sora,system-ui,sans-serif"><a href="/toolbox/" style="color:#40bad6;font-weight:700">Toolbox home</a> <span style="color:#94a2b2">is the tile grid. This page is the classic calculator list, and every section link still lands here.</span></p>
 
 <!-- ── HEADER (slim — sidebar toggle only, branding lives on the parent site) ── -->
 <header>
@@ -11707,7 +11709,7 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function () {});
+      navigator.serviceWorker.register('/toolbox/sw.js', { scope: '/toolbox/' }).catch(function () {});
     });
   }
 </script>

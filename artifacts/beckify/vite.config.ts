@@ -15,6 +15,35 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
 
 const basePath = process.env.BASE_PATH;
 
+/** Vite's SPA fallback serves index.html for /toolbox/classic/ in dev.
+ *  GitHub Pages already maps that directory to classic/index.html. */
+function serveClassicToolboxIndex() {
+  const rewrite = (req: { url?: string }) => {
+    if (!req.url) return;
+    const queryAt = req.url.indexOf("?");
+    const path = queryAt === -1 ? req.url : req.url.slice(0, queryAt);
+    if (path !== "/toolbox/classic" && path !== "/toolbox/classic/") return;
+    const search = queryAt === -1 ? "" : req.url.slice(queryAt);
+    req.url = `/toolbox/classic/index.html${search}`;
+    (req as { originalUrl?: string }).originalUrl = req.url;
+  };
+  return {
+    name: "serve-classic-toolbox-index",
+    configureServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: unknown, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req);
+        next();
+      });
+    },
+    configurePreviewServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: unknown, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req);
+        next();
+      });
+    },
+  };
+}
+
 if (!basePath) {
   throw new Error(
     "BASE_PATH environment variable is required but was not provided.",
@@ -24,6 +53,7 @@ if (!basePath) {
 export default defineConfig({
   base: basePath,
   plugins: [
+    serveClassicToolboxIndex(),
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

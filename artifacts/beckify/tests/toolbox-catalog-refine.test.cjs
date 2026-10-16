@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 
 const root = path.join(__dirname, '..');
 const registry = require(path.join(root, 'src/data/toolbox-tools.mjs'));
-const html = fs.readFileSync(path.join(root, 'public/toolbox/index.html'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'public/toolbox/classic/index.html'), 'utf8');
 const familiesSrc = fs.readFileSync(path.join(root, 'public/toolbox/js/toolbox-families.js'), 'utf8');
 const wizardSrc = fs.readFileSync(path.join(root, 'public/toolbox/js/xfmr-wizard.js'), 'utf8');
 const appSrc = fs.readFileSync(path.join(root, 'public/toolbox/js/app.js'), 'utf8');

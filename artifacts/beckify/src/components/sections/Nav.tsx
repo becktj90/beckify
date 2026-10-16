@@ -84,6 +84,10 @@ function NavLink({
  */
 export const Nav = () => {
   const [location] = useLocation();
+  const samePath = (href: string) => {
+    const strip = (value: string) => (value.length > 1 ? value.replace(/\/$/, "") : value);
+    return strip(location) === strip(href);
+  };
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -137,7 +141,7 @@ export const Nav = () => {
                   label={label}
                   external={external}
                   variant="bar"
-                  active={location === href || (!!external && location === href.replace(/\/$/, ""))}
+                  active={samePath(href)}
                 />
               ))}
             </div>
@@ -164,7 +168,7 @@ export const Nav = () => {
                         label={label}
                         external={external}
                         variant="menu"
-                        active={location === href || (!!external && location === href.replace(/\/$/, ""))}
+                        active={samePath(href)}
                       />
                     </SheetClose>
                   ))}

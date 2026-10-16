@@ -3,22 +3,25 @@ version: alpha
 name: "Beckify Arcade"
 description: "A responsive collection of short, family-friendly browser games inside Beckify's deep-space visual world."
 colors:
-  background: "#05060F"
+  background: "#080B10"
   surface: "rgba(255, 255, 255, 0.035)"
-  text: "#EEF0FA"
-  muted: "#9497B8"
+  text: "#E8EEF5"
+  muted: "#94A2B2"
   border: "rgba(255, 255, 255, 0.09)"
-  violet: "#8B7BFF"
-  blue: "#4F8BFF"
+  accent: "#40BAD6"
+  blue: "#609CE6"
+  copper: "#E09C56"
   play: "#55E6CB"
   reward: "#FFB84A"
 typography:
   body:
-    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, sans-serif"
+    fontFamily: "Sora, Segoe UI, system-ui, sans-serif"
   display:
-    fontFamily: "Space Grotesk, Inter, system-ui, sans-serif"
+    fontFamily: "Exo 2, Sora, system-ui, sans-serif"
+  logo:
+    fontFamily: "Orbitron, Exo 2, sans-serif"
   utility:
-    fontFamily: "JetBrains Mono, Courier New, monospace"
+    fontFamily: "IBM Plex Mono, ui-monospace, monospace"
 rounded:
   DEFAULT: "0.5rem"
   stage: "1.5rem"
@@ -30,7 +33,7 @@ spacing:
 components:
   game-stage:
     border: "one luminous perimeter border"
-    focus: "visible violet ring"
+    focus: "visible cyan ring"
   game-control:
     minHeight: "2.75rem"
     touchTarget: "2.75rem"
@@ -42,7 +45,7 @@ components:
 
 ### Creative North Star
 
-Beckify Arcade should feel like a well-loved tabletop arcade cabinet tuned for a dark family game room: glowing controls, clear score readouts, and toy-like reward colors against the established nebula background.
+Beckify Arcade should feel like a well-loved tabletop arcade cabinet tuned for a dark family game room: glowing controls, clear score readouts, and toy-like reward colors against the app's near-black background.
 
 ### Product context and register
 
@@ -58,11 +61,11 @@ Beckify Arcade should feel like a well-loved tabletop arcade cabinet tuned for a
 
 ## Colors
 
-Use the existing deep-space background and translucent surfaces for the site shell. Violet and blue identify Beckify navigation and focus. Each game reserves one action color: cyan for play/positive feedback and amber for scores/rewards. Errors and hazards use game-local warm color, never red text alone.
+Use the existing near-black background and translucent surfaces for the site shell. Cyan (`#40BAD6`) and blue (`#609CE6`) identify Beckify navigation and focus. Copper (`#E09C56`) is the secondary conductor cue. Each game reserves one action color: cyan for play/positive feedback and amber for scores/rewards. Errors and hazards use game-local warm color, never red text alone.
 
 ## Typography
 
-Space Grotesk is used for game titles and state headings; Inter carries directions and button labels; JetBrains Mono is reserved for compact score, speed, and status readouts. Use sentence case for actions. Keep instructions to one sentence at a time on mobile.
+Exo 2 is used for game titles and state headings; Sora carries directions and button labels; IBM Plex Mono is reserved for compact score, speed, and status readouts. Orbitron is the wordmark only. Use sentence case for actions. Keep instructions to one sentence at a time on mobile.
 
 ## Layout
 
@@ -109,10 +112,12 @@ a phone beside equipment.
   legible, while keeping every exact value copyable and visible as text.
 - **Visual hierarchy:** Inputs and result rows remain the source of truth;
   the diagram explains their relationship and never replaces them.
-- **Color roles:** violet is the primary calculated relationship, blue is an
-  electrical reference/input, green indicates a satisfactory margin or output,
-  amber means a limit or caution, and red is reserved for an invalid condition
-  or hazard. No result depends on color alone.
+- **Color roles:** cyan is the primary calculated relationship, blue is an
+  electrical reference/input, copper marks a limit or a secondary cue, green
+  indicates a satisfactory margin or output, amber means caution, and red is
+  reserved for an invalid condition or hazard. No result depends on color alone.
+  The toolbox home uses the same tokens and the app's pixel tiles
+  (`image-rendering: pixelated`).
 - **Chart policy:** A graphic must use the active inputs or calculated result.
   Do not display a generic trend line or sample bar chart where the values are
   not a real ordered series. Prefer direct labels, thresholds, and annotated

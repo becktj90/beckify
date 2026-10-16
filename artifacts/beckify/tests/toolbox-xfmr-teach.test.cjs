@@ -151,7 +151,7 @@ assert.match(T.kFactorNote('k13'), /Harmonics tool/);
 assert.equal(T.connectionById('resistance-ground').computesOhms, false);
 
 const wizard = fs.readFileSync(path.join(js, 'xfmr-wizard.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'public', 'toolbox', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 const families = fs.readFileSync(path.join(js, 'toolbox-families.js'), 'utf8');
 const registry = fs.readFileSync(path.join(root, 'src', 'data', 'toolbox-tools.mjs'), 'utf8');
 assert.equal(/High-Leg Delta \(Corner-Grounded\)/.test(wizard), false);
@@ -165,7 +165,7 @@ assert.match(html, /js\/xfmr-teach\.js/);
 assert.match(families, /Teach & size/);
 assert.match(registry, /Teach & size/);
 assert.equal((registry.match(/slug: "transformer-design"/g) || []).length, 1);
-assert.match(fs.readFileSync(path.join(root, 'public', 'toolbox', 'sw.js'), 'utf8'), /CACHE_VERSION = 'v51'/);
+assert.match(fs.readFileSync(path.join(root, 'public', 'toolbox', 'sw.js'), 'utf8'), /CACHE_VERSION = 'v52'/);
 
 const highLegDiagram = T.diagramSpec('high-leg', 240, 480);
 assert.ok(highLegDiagram.banks.some(function (bank) { return (bank.windings || []).length >= 3; }));

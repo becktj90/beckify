@@ -5,10 +5,10 @@
   "description": "NEC calculators, reference tables and submittal exports that work offline.",
   "display": "standalone",
   "orientation": "any",
-  "start_url": "./index.html",
+  "start_url": "./classic/index.html",
   "scope": "./",
-  "background_color": "#060b12",
-  "theme_color": "#8b7bff",
+  "background_color": "#080b10",
+  "theme_color": "#40bad6",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

@@ -125,7 +125,7 @@ console.log('\n--- Balanced Δ-Y: ZΔ = 3 Zy ---');
 
 console.log('\n--- Markup is a phasor workbench, not 3-phase kVA ---');
 {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
   okTrue('section sec-phasor-diagram exists', /id="sec-phasor-diagram"/.test(html));
   okTrue('diagram host exists', /id="pd_diagram"/.test(html));
   okTrue('delta-y panel exists', /id="pd_dy_result"/.test(html));

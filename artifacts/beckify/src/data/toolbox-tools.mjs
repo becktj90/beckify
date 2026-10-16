@@ -3,7 +3,8 @@
  * TOOLBOX TOOL REGISTRY
  * ============================================================================
  * Single source of truth for every tool, category, and reference table in the
- * static toolbox at public/toolbox/index.html.
+ * static toolbox at public/toolbox/classic/index.html. The React tile home
+ * owns /toolbox/; section hashes on the classic page keep working.
  *
  * Catalog rule: one sidebar / sitemap entry per job. Overlapping calculators
  * are modes of a family (see TOOL_FAMILIES). Transformer ratio/sizing/engine/
@@ -19,6 +20,9 @@
  * plain `node`, not through Vite/tsc, so this file has to be valid there too.
  *
  * Each TOOLS tuple is [slug, title, description, sectionAnchor].
+ * Tile-home fields (toolId, shelf, tile, availability) live in
+ * toolbox-registry.mjs and are re-exported at the bottom of this file so
+ * sitemap, search, and the React shell share one registry.
  *
  * Control-theory workbench lives at /control-systems (React page), not as
  * toolbox calculator slugs. Do not add pid / bode / locus TOOLS ids here.
@@ -220,7 +224,7 @@ export function resolveToolSlug(slug) {
 export const ALL_TOOL_SLUGS = [...TOOLS.map((tool) => tool[0]), ...TOOL_ALIASES.map((tool) => tool[0])];
 
 /**
- * Live sidebar calculators that exist in public/toolbox/index.html but are
+ * Live sidebar calculators that exist in public/toolbox/classic/index.html but are
  * not first-class TOOLS SEO entries (no /toolbox/<slug>/ route yet).
  * Counted in the visitor-facing total so homepage/sitemap stay honest.
  */
@@ -266,3 +270,10 @@ export const REFERENCE_TABLES = [
   ["nema-wiring", "NEMA Wiring Configurations & Color Code Reference", "SVG receptacle-face diagrams for common NEMA straight-blade and locking devices, plus US color-code notes. Neutral and EGC colors cite NEC 200.6 and 250.119; hot colors are industry convention.", "sec-nema-wiring"],
   ["wire-colors", "Wire colors (NEC / UL 508A)", "NEC grounded/EGC/high-leg identification versus industry-convention hot colors, plus UL 508A industrial control-panel internal wiring colors (66.5 / 66.9). Not a substitute for the adopted code or standard.", "sec-wire-colors"],
 ];
+
+export {
+  DEFAULT_PIN_IDS,
+  TOOL_HOME_AREAS,
+  TOOL_REGISTRY,
+  TOOL_SHELVES,
+} from "./toolbox-registry.mjs";

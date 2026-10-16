@@ -119,7 +119,7 @@ console.log('\n--- Parallel RLC ---');
 
 console.log('\n--- Markup is time-domain homework, not resonance/MNA ---');
 {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
   okTrue('section sec-transient-circuits exists', /id="sec-transient-circuits"/.test(html));
   okTrue('waveform host exists', /id="tc_wave"/.test(html));
   okTrue('says not the resonance calculator', /not the resonance calculator/i.test(html));
