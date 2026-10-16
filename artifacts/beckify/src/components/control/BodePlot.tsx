@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { ChartExportButton } from "@/components/control/ChartExportButton";
+import { PLOT } from "@/components/control/chartPalette";
 import {
   bodeResponse,
   closedLoopBandwidth,
@@ -43,14 +44,14 @@ function log10(value: number) {
 }
 
 const chartConfig = {
-  magnitude: { label: "OL mag", color: "#8b7bff" },
-  closedMag: { label: "CL mag", color: "#6ee7b7" },
-  phase: { label: "Phase", color: "#4f8bff" },
-  step: { label: "Step", color: "#6ee7b7" },
-  root: { label: "Root locus", color: "#f5c451" },
-  pole: { label: "Poles", color: "#ff8a8a" },
-  zero: { label: "Zeros", color: "#7dd3fc" },
-  closed: { label: "Closed-loop at K", color: "#f97316" },
+  magnitude: { label: "OL mag", color: PLOT.cyan },
+  closedMag: { label: "CL mag", color: PLOT.blue },
+  phase: { label: "Phase", color: PLOT.copper },
+  step: { label: "Step", color: PLOT.good },
+  root: { label: "Root locus", color: PLOT.copper },
+  pole: { label: "Poles", color: PLOT.bad },
+  zero: { label: "Zeros", color: PLOT.cyan },
+  closed: { label: "Closed-loop at K", color: PLOT.blue },
 } as const;
 
 export function BodePlot({
@@ -205,9 +206,9 @@ export function BodePlot({
             </div>
             <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={magData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="x" tickFormatter={(value) => `10^${Number(value).toFixed(1)}`} />
-                <YAxis unit=" dB" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,162,178,0.35)" />
+                <XAxis dataKey="x" tickFormatter={(value) => `10^${Number(value).toFixed(1)}`} label={{ value: "log10 ω (rad/s)", position: "insideBottom", offset: -2, fill: "#94a2b2", fontSize: 11 }} />
+                <YAxis unit=" dB" label={{ value: "Magnitude (dB)", angle: -90, position: "insideLeft", fill: "#94a2b2", fontSize: 11 }} />
                 <Tooltip content={<ChartTooltipContent formatter={(value) => <span>{fmt(Number(value))} dB</span>} />} />
                 <Legend />
                 <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
@@ -223,9 +224,9 @@ export function BodePlot({
             </div>
             <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <LineChart data={bode.map((point) => ({ ...point, x: log10(point.omega) }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="x" tickFormatter={(value) => `10^${Number(value).toFixed(1)}`} />
-                <YAxis unit="°" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,162,178,0.35)" />
+                <XAxis dataKey="x" tickFormatter={(value) => `10^${Number(value).toFixed(1)}`} label={{ value: "log10 ω (rad/s)", position: "insideBottom", offset: -2, fill: "#94a2b2", fontSize: 11 }} />
+                <YAxis unit="°" label={{ value: "Phase (deg)", angle: -90, position: "insideLeft", fill: "#94a2b2", fontSize: 11 }} />
                 <Tooltip content={<ChartTooltipContent formatter={(value) => <span>{fmt(Number(value))}°</span>} />} />
                 <ReferenceLine y={-180} stroke="#94a3b8" strokeDasharray="4 4" />
                 <Line type="monotone" dataKey="phaseDeg" stroke="var(--color-phase)" dot={false} strokeWidth={2} />
@@ -239,13 +240,14 @@ export function BodePlot({
             </div>
             <ResponsiveContainer width="100%" height={290}>
               <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" dataKey="real" name="Real" />
-                <YAxis type="number" dataKey="imag" name="Imag" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,162,178,0.35)" />
+                <XAxis type="number" dataKey="real" name="Real" label={{ value: "Real", position: "insideBottom", offset: -2, fill: "#94a2b2", fontSize: 11 }} />
+                <YAxis type="number" dataKey="imag" name="Imag" label={{ value: "Imaginary", angle: -90, position: "insideLeft", fill: "#94a2b2", fontSize: 11 }} />
                 <Tooltip cursor={{ strokeDasharray: "3 3" }} />
-                <ReferenceLine x={-1} stroke="#ff8a8a" strokeDasharray="4 4" />
-                <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
-                <Scatter data={bode} fill="#8b7bff" line shape="circle" />
+                <Legend />
+                <ReferenceLine x={-1} stroke="#f47078" strokeDasharray="4 4" />
+                <ReferenceLine y={0} stroke="#94a2b2" strokeDasharray="4 4" />
+                <Scatter name="G(jω)" data={bode} fill={PLOT.cyan} line shape="circle" />
               </ScatterChart>
             </ResponsiveContainer>
           </div>
@@ -286,10 +288,10 @@ export function BodePlot({
                     <Tooltip cursor={{ strokeDasharray: "3 3" }} formatter={(value) => fmt(Number(value), 3)} />
                     <ReferenceLine x={0} stroke="#94a3b8" strokeDasharray="4 4" />
                     <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
-                    <Scatter name="Locus" data={locus} fill="#f5c451" />
-                    <Scatter name="CL poles" data={closedPoles} fill="#f97316" />
-                    <Scatter name="OL poles" data={poleData} fill="#ff8a8a" />
-                    <Scatter name="Zeros" data={zeroData} fill="#7dd3fc" />
+                    <Scatter name="Locus" data={locus} fill="#e09c56" />
+                    <Scatter name="CL poles" data={closedPoles} fill="#609ce6" />
+                    <Scatter name="OL poles" data={poleData} fill="#f47078" />
+                    <Scatter name="Zeros" data={zeroData} fill="#40bad6" />
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>
@@ -304,8 +306,8 @@ export function BodePlot({
                     <ReferenceLine x={0} stroke="#94a3b8" strokeDasharray="4 4" />
                     <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
                     <Legend />
-                    <Scatter name="Poles" data={poleData} fill="#ff8a8a" />
-                    <Scatter name="Zeros" data={zeroData} fill="#7dd3fc" />
+                    <Scatter name="Poles" data={poleData} fill="#f47078" />
+                    <Scatter name="Zeros" data={zeroData} fill="#40bad6" />
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>

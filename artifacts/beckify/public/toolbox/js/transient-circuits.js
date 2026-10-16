@@ -455,13 +455,13 @@
       role: 'img',
       'aria-label': 'Transient waveform of the solved circuit versus time.'
     });
-    svg.appendChild(svgEl('rect', { x: 1, y: 1, width: W - 2, height: H - 2, fill: '#0d1117', stroke: '#30304a' }));
-    svg.appendChild(svgEl('line', { x1: padL, y1: padT, x2: padL, y2: H - padB, stroke: '#334155' }));
-    svg.appendChild(svgEl('line', { x1: padL, y1: H - padB, x2: W - padR, y2: H - padB, stroke: '#334155' }));
+    svg.appendChild(svgEl('rect', { x: 1, y: 1, width: W - 2, height: H - 2, fill: '#080b10', stroke: 'rgba(148,162,178,0.35)' }));
+    svg.appendChild(svgEl('line', { x1: padL, y1: padT, x2: padL, y2: H - padB, stroke: '#94a2b2' }));
+    svg.appendChild(svgEl('line', { x1: padL, y1: H - padB, x2: W - padR, y2: H - padB, stroke: '#94a2b2' }));
     if (yMin < 0 && yMax > 0) {
       svg.appendChild(svgEl('line', {
         x1: padL, y1: y(0), x2: W - padR, y2: y(0),
-        stroke: '#334155', 'stroke-dasharray': '3 4'
+        stroke: 'rgba(148,162,178,0.28)', 'stroke-dasharray': '3 4'
       }));
     }
 
@@ -470,7 +470,7 @@
       if (!isFinite(s.y)) return;
       d += (i ? ' L ' : 'M ') + x(s.t).toFixed(1) + ' ' + y(s.y).toFixed(1);
     });
-    svg.appendChild(svgEl('path', { d: d, fill: 'none', stroke: '#6ee7b7', 'stroke-width': '2' }));
+    svg.appendChild(svgEl('path', { d: d, fill: 'none', stroke: '#40bad6', 'stroke-width': '2.25', class: 'plot-trace', pathLength: '1' }));
 
     function mark(t, color, label) {
       if (!isFinite(t) || t < tStart || t > tEnd) return;
@@ -532,7 +532,7 @@
           canvas.height = H * 2;
           const ctx = canvas.getContext('2d');
           if (!ctx) { URL.revokeObjectURL(url); return; }
-          ctx.fillStyle = '#0d1117';
+          ctx.fillStyle = '#080b10';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
           URL.revokeObjectURL(url);

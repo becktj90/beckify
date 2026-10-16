@@ -397,7 +397,7 @@
     core.forEach(function (r) {
       const rect = svgEl('rect', {
         x: r[0], y: r[1], width: r[2], height: r[3],
-        fill: '#1b2236', stroke: '#8b7bff', 'stroke-width': '2'
+        fill: '#1b2236', stroke: '#40bad6', 'stroke-width': '2'
       });
       svg.appendChild(rect);
     });
@@ -418,7 +418,7 @@
       svg.appendChild(gapLabel);
     } else {
       svg.appendChild(svgEl('rect', {
-        x: 262, y: 90, width: 28, height: 28, fill: '#1b2236', stroke: '#8b7bff', 'stroke-width': '2'
+        x: 262, y: 90, width: 28, height: 28, fill: '#1b2236', stroke: '#40bad6', 'stroke-width': '2'
       }));
     }
 

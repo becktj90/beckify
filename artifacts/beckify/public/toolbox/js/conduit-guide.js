@@ -754,7 +754,7 @@ function buildXsectionSvg(c) {
 function buildFittingSvg(type) {
   const W = 200, H = 120;
   const bg = '#0d1117';
-  const stroke = '#8b7bff';
+  const stroke = '#40bad6';
   const fill = '#1e1b4b';
   const textC = '#e2e8f0';
   let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="background:${bg};border-radius:4px;display:inline-block">`;
@@ -994,7 +994,7 @@ window.runConduitSelector = function () {
     l.style.textTransform = 'uppercase';
     l.style.letterSpacing = '0.12em';
     l.style.fontSize = '0.72em';
-    l.style.color = '#8b7bff';
+    l.style.color = '#40bad6';
     l.textContent = text;
     h.appendChild(l);
     out.appendChild(h);

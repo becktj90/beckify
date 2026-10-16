@@ -31,7 +31,7 @@
   const MAX_CONS = 8;
   const COLORS = {
     bg: '#0d1117', text: '#eef0fa', muted: '#9497b8',
-    accent: '#8b7bff', blue: '#60a5fa', green: '#6ee7b7',
+    accent: '#40bad6', blue: '#60a5fa', green: '#6ee7b7',
     yellow: '#f5c451', red: '#ff8a8a', line: 'rgba(255,255,255,0.14)',
   };
 

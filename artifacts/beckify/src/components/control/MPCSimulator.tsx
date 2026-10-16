@@ -61,9 +61,9 @@ function simulatePredictiveController({
 }
 
 const chartConfig = {
-  output: { label: "Output", color: "#8b7bff" },
+  output: { label: "Output", color: "#40bad6" },
   clamp: { label: "Constraint", color: "#ff8a8a" },
-  control: { label: "Control", color: "#4f8bff" },
+  control: { label: "Control", color: "#609ce6" },
 } as const;
 
 function matrixToText(matrix: Matrix) {
@@ -177,7 +177,7 @@ export function MPCSimulator({
               <XAxis type="number" dataKey="x1" name="x1" />
               <YAxis type="number" dataKey="x2" name="x2" />
               <Tooltip formatter={(value) => Number(value).toFixed(3)} />
-              <Scatter data={phasePortrait} fill="#6ee7b7" line />
+              <Scatter data={phasePortrait} fill="#56d6a4" line />
             </ScatterChart>
           </ResponsiveContainer>
         </div>

@@ -6,7 +6,7 @@
   const C = {
     wire: '#8fa3bf',
     part: '#e2e8f0',
-    amp: '#8b7bff',
+    amp: '#40bad6',
     label: '#94a3b8',
     hot: '#f5c451',
     node: '#cbd5f5',

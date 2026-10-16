@@ -48,8 +48,8 @@ export function CircuitSimulator() {
           <svg viewBox="0 0 520 230" className="h-auto w-full" role="img" aria-label="Voltage source connected to resistor and ground">
             <defs><linearGradient id="wire-gradient" x1="0" x2="1"><stop stopColor="#4f8bff" /><stop offset="1" stopColor="#6ee7b7" /></linearGradient></defs>
             <path d="M80 115H145M215 115H375V175H80V115M80 115V175" fill="none" stroke="url(#wire-gradient)" strokeWidth="5" strokeLinecap="round" />
-            <path d="M145 90V140M215 90V140" stroke="#8b7bff" strokeWidth="7" />
-            <rect x="145" y="92" width="70" height="46" rx="8" fill="#162334" stroke="#8b7bff" strokeWidth="2" />
+            <path d="M145 90V140M215 90V140" stroke="#40bad6" strokeWidth="7" />
+            <rect x="145" y="92" width="70" height="46" rx="8" fill="#162334" stroke="#40bad6" strokeWidth="2" />
             <text x="180" y="121" textAnchor="middle" fill="#eef0fa" fontSize="15">R</text>
             <circle cx="80" cy="115" r="10" fill="#6ee7b7" /><path d="M350 175h50M358 183h34M366 191h18" stroke="#eef0fa" strokeWidth="3" />
             <text x="80" y="83" textAnchor="middle" fill="#eef0fa" fontSize="15">{voltage.toFixed(1)} V</text>

@@ -54,7 +54,7 @@ function wtHeading(parent, text) {
   l.style.textTransform = 'uppercase';
   l.style.letterSpacing = '0.12em';
   l.style.fontSize = '0.72em';
-  l.style.color = '#8b7bff';
+  l.style.color = '#40bad6';
   l.textContent = text;
   h.appendChild(l);
   parent.appendChild(h);

@@ -17,8 +17,8 @@ import {
 } from "@/utils/controlEngine";
 
 const chartConfig = {
-  plant: { label: "Plant", color: "#4f8bff" },
-  lead: { label: "With lead", color: "#8b7bff" },
+  plant: { label: "Plant", color: "#609ce6" },
+  lead: { label: "With lead", color: "#40bad6" },
 } as const;
 
 type LeadMode = "phase" | "raise" | "cancel";

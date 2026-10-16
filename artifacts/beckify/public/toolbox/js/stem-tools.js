@@ -4,7 +4,7 @@
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const COLORS = {
     bg: '#0d1117',
-    accent: '#8b7bff',
+    accent: '#40bad6',
     green: '#6ee7b7',
     red: '#ff8a8a',
     yellow: '#f5c451',
@@ -66,7 +66,7 @@
   const PERIODIC_ROWS = [
     [1, 18], [3, 10], [11, 18], [19, 36], [37, 54], [55, 86], [87, 118]
   ];
-  const ELEMENT_COLORS = ['#8b7bff', '#60a5fa', '#6ee7b7', '#f5c451', '#ff8a8a'];
+  const ELEMENT_COLORS = ['#40bad6', '#60a5fa', '#6ee7b7', '#f5c451', '#ff8a8a'];
   function elementCategory(number) {
     if ([1, 2, 6, 7, 8, 9, 15, 16, 17, 34, 35, 53].indexOf(number) >= 0) return 1;
     if ([3, 11, 19, 37, 55, 87].indexOf(number) >= 0) return 2;

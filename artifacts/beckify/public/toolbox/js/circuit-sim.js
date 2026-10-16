@@ -3,7 +3,7 @@
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const BG = '#0d1117';
-  const ACCENT = '#8b7bff';
+  const ACCENT = '#40bad6';
   const GREEN = '#6ee7b7';
   const MUTED = '#64748b';
   const TEXT = '#e5e7eb';

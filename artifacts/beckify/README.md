@@ -162,6 +162,12 @@ Icons come from [lucide-react](https://lucide.dev/icons). Import any icon by
 name at the top of `site-content.ts` and reference it in your data — no need
 to touch component files.
 
+## Plot and chart bar
+
+Every Beckify tool plot, chart, and diagram has to match or beat the iOS app.
+The standing requirement, including the visual QA step before a tool PR merges,
+is in [docs/plot-quality.md](docs/plot-quality.md). New tools use the same bar.
+
 ## Crawl / Search Console notes
 
 Hosted on **GitHub Pages** (`.github/workflows/deploy.yml`), not Vercel.

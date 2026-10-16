@@ -34,10 +34,10 @@ const MODES: { id: ControllerMode; label: string; hint: string }[] = [
 ];
 
 const chartConfig = {
-  response: { label: "Closed loop", color: "#8b7bff" },
-  openLoop: { label: "Open loop", color: "#4f8bff" },
-  windup: { label: "Unclamped", color: "#f5c451" },
-  clamped: { label: "Anti-windup", color: "#6ee7b7" },
+  response: { label: "Closed loop", color: "#40bad6" },
+  openLoop: { label: "Open loop", color: "#609ce6" },
+  windup: { label: "Unclamped", color: "#e09c56" },
+  clamped: { label: "Anti-windup", color: "#56d6a4" },
   disturbance: { label: "Load disturbance", color: "#ff8a8a" },
 } as const;
 
@@ -402,7 +402,7 @@ export function StepTuner({ plant }: { plant: Plant }) {
               <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: -12 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.25} />
                 <XAxis dataKey="t" unit=" s" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11, fill: "#94a2b2" }} label={{ value: "Output", angle: -90, position: "insideLeft", fill: "#e8eef5", fontSize: 11 }} />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <ReferenceLine y={1} stroke="#7f8ba3" strokeDasharray="4 4" />
