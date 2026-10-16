@@ -767,6 +767,15 @@ nav.sticky {
   flex: 1 1 auto;
 }
 
+/* Desktop: the 5.5rem reserve is for the phone nav; the desktop pill nav plus
+   page padding is ~7.75rem, so the stage overflowed and its bottom was cut. */
+@media (min-width: 1024px) {
+  .game-stage.ng-playfield.kh-stage-fill:not(.is-immersive):not(:fullscreen) {
+    min-height: calc(100dvh - 7.75rem);
+    height: calc(100dvh - 7.75rem);
+  }
+}
+
 .game-stage.is-immersive.ng-playfield,
 .game-stage:fullscreen.ng-playfield {
   max-height: none !important;
