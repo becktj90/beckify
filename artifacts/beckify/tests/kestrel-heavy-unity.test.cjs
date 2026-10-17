@@ -26,3 +26,12 @@ assert.match(host, /type === "chrome"/);
 assert.match(host, /type === "fullscreen"/);
 assert.match(host, /runnerHasChrome/);
 console.log('kestrel-heavy-unity runner protocol: ok');
+
+// Full-bleed: no host card/border/padding/nav chrome around the iframe; a small back link remains.
+const page = fs.readFileSync(path.join(root, 'src/pages/kestrel-heavy.tsx'), 'utf8');
+assert.doesNotMatch(page, /Layout/);
+assert.match(host, /fixed inset-0[^"]*h-\[100dvh\]/);
+assert.doesNotMatch(host, /rounded-2xl|kh-stage-fill|shadow-\[0_20px/);
+assert.match(host, /kh-back-link/);
+assert.match(host, /env\(safe-area-inset-top\)/);
+console.log('kestrel-heavy full-bleed host: ok');
