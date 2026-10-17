@@ -1,5 +1,5 @@
 // Change only this origin after Shopify verifies the custom domain and HTTPS.
-export const SHOP_ORIGIN = "https://beckify-store.myshopify.com";
+export const SHOP_ORIGIN = "https://shop.beckify.com";
 export const shopProductUrl = (handle) => `${SHOP_ORIGIN}/products/${handle}`;
 
 export const FEATURED_PRODUCTS = [

@@ -194,8 +194,9 @@ To connect `shop.beckify.com` without moving the main site:
 1. Add a DNS CNAME record named `shop` pointing to `shops.myshopify.com`.
 2. In Shopify Settings → Domains, connect `shop.beckify.com` and complete any
    ownership verification Shopify requests. Wait until HTTPS is active.
-3. Verify storefront and product links, then change `SHOP_ORIGIN` in
-   `src/data/shop.mjs` to `https://shop.beckify.com` and rebuild.
+3. Verified storefront and product links, then changed `SHOP_ORIGIN` in
+   `src/data/shop.mjs` to `https://shop.beckify.com` and rebuilt.
+   `shop.beckify.com` is live and connected in Shopify.
 
 Keep the root/www GitHub Pages records and repository CNAME unchanged.
 DNS instructions: https://help.shopify.com/en/manual/domains/add-a-domain/connecting-domains/connect-subdomain
