@@ -8,13 +8,19 @@
   </url>
   <url>
     <loc>https://beckify.com/about/</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://beckify.com/privacy/</loc>
     <lastmod>2026-10-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/contact/</loc>
+    <lastmod>2026-10-17</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -26,19 +32,19 @@
   </url>
   <url>
     <loc>https://beckify.com/games/</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://beckify.com/games/kestrel-heavy/</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://beckify.com/projects/</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -50,7 +56,7 @@
   </url>
   <url>
     <loc>https://beckify.com/projects/honda-xr650r/</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>

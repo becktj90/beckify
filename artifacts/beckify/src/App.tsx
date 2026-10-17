@@ -13,6 +13,7 @@ import Home from "@/pages/home";
  */
 const NotFound = lazy(() => import("@/pages/not-found"));
 const AboutPage = lazy(() => import("@/pages/about"));
+const ContactPage = lazy(() => import("@/pages/contact"));
 const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
 const AppsPage = lazy(() => import("@/pages/apps"));
@@ -54,6 +55,8 @@ function Router() {
         <Route path="/about/" component={AboutPage} />
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/privacy/" component={PrivacyPage} />
+        <Route path="/contact" component={ContactPage} />
+        <Route path="/contact/" component={ContactPage} />
         <Route path="/apps" component={AppsPage} />
         <Route path="/apps/" component={AppsPage} />
         <Route path="/projects" component={ProjectsPage} />

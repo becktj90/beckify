@@ -137,7 +137,7 @@ export const PROFILE = {
  * Used on the About page and in the footer.
  * Set `external: true` for links that should open in a new tab.
  * -------------------------------------------------------------------- */
-const EMAIL_ADDRESS = "trevorjohnbeck@gmail.com";
+export const EMAIL_ADDRESS = "trevorjohnbeck@gmail.com";
 const PHONE_DISPLAY = "+1 (510) 432-4862";
 const PHONE_TEL = "+15104324862";
 

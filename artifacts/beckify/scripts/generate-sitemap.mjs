@@ -112,6 +112,7 @@ const urls = [
   ["/", "weekly", "1.0", lastChange("src/pages/home.tsx", "index.html")],
   ["/about", "yearly", "0.5", lastChange("src/pages/about.tsx")],
   ["/privacy", "yearly", "0.5", lastChange("src/pages/privacy.tsx")],
+  ["/contact", "yearly", "0.5", lastChange("src/pages/contact.tsx")],
   ["/apps", "monthly", "0.6", lastChange("src/pages/apps.tsx")],
   ["/games", "monthly", "0.5", lastChange("src/pages/games.tsx")],
   ["/games/kestrel-heavy", "monthly", "0.5", lastChange("src/pages/kestrel-heavy.tsx")],

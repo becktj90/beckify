@@ -38,6 +38,7 @@ async function main() {
     locs.every((loc) => loc === "https://beckify.com/" || !unique.has(loc.replace(/\/$/, ""))),
   );
   ok("privacy uses trailing slash", locs.includes("https://beckify.com/privacy/"));
+  ok("contact uses trailing slash", locs.includes("https://beckify.com/contact/"));
   ok("kestrel-heavy uses trailing slash", locs.includes("https://beckify.com/games/kestrel-heavy/"));
   ok("legacy new-glenn-runner is not sitemapped", !/new-glenn/i.test(xml));
   ok("removed /gear is not sitemapped", !locs.includes("https://beckify.com/gear/") && !locs.includes("https://beckify.com/gear"));
