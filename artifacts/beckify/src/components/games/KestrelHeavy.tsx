@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 import { KESTREL_VIEWPORT_SOURCE, isArcadeViewportMessage, syncEmbeddedArcadeViewport } from "@/lib/game-fullscreen";
@@ -10,6 +10,11 @@ export function KestrelHeavy() {
   const stageRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { immersive, toggleFullscreen, exitFullscreen, viewportTick } = useGameFullscreen();
+  // The Unity runner page draws its own FULL/EXIT button and announces it with a "chrome" message;
+  // once it does, the host hides its duplicate and handles the runner's "fullscreen" requests instead.
+  const [runnerHasChrome, setRunnerHasChrome] = useState(false);
+  const immersiveRef = useRef(immersive);
+  immersiveRef.current = immersive;
 
   const pushViewport = useCallback(() => {
     const iframe = iframeRef.current;
@@ -22,7 +27,20 @@ export function KestrelHeavy() {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       if (!isArcadeViewportMessage(event.data)) return;
-      if (event.data.type === "request") pushViewport();
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const type = event.data.type;
+      if (type === "chrome") {
+        setRunnerHasChrome(true);
+        pushViewport();
+      } else if (type === "request") {
+        pushViewport();
+      } else if (type === "fullscreen") {
+        const want = event.data.enter === true;
+        if (want !== immersiveRef.current) {
+          if (want) void toggleFullscreen(stageRef.current);
+          else void exitFullscreen();
+        }
+      }
     };
     iframe?.addEventListener("load", pushViewport);
     window.addEventListener("message", onMessage);
@@ -30,7 +48,7 @@ export function KestrelHeavy() {
       iframe?.removeEventListener("load", pushViewport);
       window.removeEventListener("message", onMessage);
     };
-  }, [pushViewport]);
+  }, [pushViewport, toggleFullscreen, exitFullscreen]);
 
   useEffect(() => {
     pushViewport();
@@ -68,6 +86,7 @@ export function KestrelHeavy() {
           allowFullScreen
           data-viewport-source={KESTREL_VIEWPORT_SOURCE}
         />
+        {!runnerHasChrome && (
         <button
           type="button"
           className="game-fs-toggle absolute right-3 top-3 z-10 inline-flex min-h-11 items-center rounded-md border border-white/40 bg-[#0a0f24]/90 px-3 text-xs font-bold tracking-wide text-white shadow-lg"
@@ -78,6 +97,7 @@ export function KestrelHeavy() {
           {immersive ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           <span className="ml-1.5">{immersive ? "EXIT" : "FULL"}</span>
         </button>
+        )}
       </div>
     </section>
   );

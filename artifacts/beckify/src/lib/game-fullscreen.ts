@@ -20,10 +20,12 @@ export const KESTREL_VIEWPORT_SOURCE = "beckify-kestrel-viewport";
 
 export type ArcadeViewportMessage = {
   source: typeof KESTREL_VIEWPORT_SOURCE;
-  type?: "viewport" | "request";
+  type?: "viewport" | "request" | "chrome" | "fullscreen";
   immersive: boolean;
   width: number;
   height: number;
+  /** Only on type "fullscreen": the runner's own FULL/EXIT button was pressed. */
+  enter?: boolean;
 };
 
 export function isIosPhone(userAgent: string): boolean {
