@@ -26,6 +26,8 @@ async function main() {
   ok("home title names calculators and builds", /calculator/i.test(seo.PAGE_SEO["/"].title) && /build/i.test(seo.PAGE_SEO["/"].title));
   ok("toolbox title names Ohm's Law and voltage drop", /Ohm's Law/i.test(seo.PAGE_SEO["/toolbox/"].title) && /voltage drop/i.test(seo.PAGE_SEO["/toolbox/"].title));
   ok("privacy copy keeps the Analyze upload rule and bundle ID", /tap Analyze/.test(seo.PAGE_SEO["/privacy"].description) && /com\.beckify\.toolbox/.test(seo.PAGE_SEO["/privacy"].description));
+  ok("contact SEO copy exists and names the shop", /shop\.beckify\.com/.test(seo.PAGE_SEO["/contact"].description) && seo.PAGE_SEO["/contact"].title.length <= 70);
+  ok("contact is a static route", seo.STATIC_ROUTE_PATHS.includes("contact"));
   ok("privacy copy does not invent analytics", /No analytics/.test(seo.PAGE_SEO["/privacy"].description));
 
   console.log("\n--- Featured tool titles ---");

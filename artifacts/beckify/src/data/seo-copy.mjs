@@ -108,6 +108,11 @@ export const PAGE_SEO = {
     description:
       "Privacy policy for the Beckify iOS and iPadOS app (bundle ID com.beckify.toolbox). Nameplate and panel photos upload only when you tap Analyze. Sensors and Saved Jobs stay on the device. No analytics, ads, tracking, or accounts.",
   },
+  "/contact": {
+    title: "Contact Beckify — email for the app, site, and shop",
+    description:
+      "How to reach Beckify by email about the iPhone and iPad app, the website, Kestrel Heavy, and orders from shop.beckify.com.",
+  },
   "/apps": {
     title: "Beckify for iPhone and iPad — field electrical toolbox on the App Store",
     description:
@@ -154,6 +159,7 @@ export const PAGE_SEO = {
 export const STATIC_ROUTE_PATHS = [
   "about",
   "privacy",
+  "contact",
   "apps",
   "projects",
   "projects/vespa-p200e",

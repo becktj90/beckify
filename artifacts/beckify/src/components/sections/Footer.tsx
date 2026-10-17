@@ -18,6 +18,9 @@ export const Footer = () => (
         <Link href="/sitemap/" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
           Site Map
         </Link>
+        <Link href="/contact/" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
+          Contact
+        </Link>
         <Link href="/privacy/" className="p-2 -m-2 transition-colors duration-200 hover:text-[var(--accent)]">
           Privacy
         </Link>
