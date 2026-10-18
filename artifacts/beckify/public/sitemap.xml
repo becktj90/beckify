@@ -457,6 +457,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/control-panel/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/control-strategies/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/electronics-bench/</loc>
     <lastmod>2026-10-17</lastmod>
     <changefreq>monthly</changefreq>

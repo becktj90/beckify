@@ -1,0 +1,15 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const js = path.join(__dirname, '..', 'public', 'toolbox', 'js');
+const ctx = vm.createContext({ console, Math, JSON, Number, String, Object, Array, isFinite, parseFloat, Date, Set });
+ctx.window = ctx; ctx.globalThis = ctx;
+for (const f of ['bk-tool.js', 'bk-tools-control.js']) vm.runInContext(fs.readFileSync(path.join(js, f), 'utf8'), ctx, { filename: f });
+const T = ctx.BeckifyTool;
+const run = (over) => { const d = T.registry.controlStrategies; return T.run(d, Object.assign(T.defaults(d), over || {})); };
+let r = run(); assert.ok(r.ok); assert.equal(r.r.rows.length, 8); assert.match(r.r.headline, /PID|Bang/);
+r = run({ channels: 'mimo', loop: 'processLoop' }); assert.match(r.r.headline, /MPC/);
+r = run({ linearity: 'nonlinear', loop: 'fastLoop' }); assert.ok(r.ok && r.r.rows[0][1].startsWith('6/6') || r.r.rows[0][1].startsWith('5/6') || r.r.rows[0][1].startsWith('4/6'));
+console.log('ok');
