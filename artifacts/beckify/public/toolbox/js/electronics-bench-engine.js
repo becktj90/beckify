@@ -210,6 +210,38 @@
     fields: [n('vp', 'Vp', 'V', 'Peak of the AC sine. This clamp is not a DC model.'), n('vf', 'Vf', 'V')],
     visible: { report: ['vp', 'vf'] }, defaults: { vp: '10', vf: '0.7' } });
 
+  spec({ id: 'bjtBias', family: 'bjt', title: 'Divider bias', blurb: 'Four-resistor NPN bias. Vbe is 0.7 V. β is constant.',
+    defaultUnknown: 'point', unknowns: [u('point', 'Q point'), u('re', 'Re for Ic'), u('rc', 'Rc for Vc')],
+    fields: [n('vcc', 'Vcc', 'V'), n('r1', 'R1 (base top)', 'Ω'), n('r2', 'R2 (base bottom)', 'Ω'), n('rc', 'Rc', 'Ω'), n('re', 'Re', 'Ω'), n('beta', 'β', ''), n('ic', 'Target Ic', 'A'), n('vc', 'Target Vc', 'V')],
+    visible: { point: ['vcc', 'r1', 'r2', 'rc', 're', 'beta'], re: ['vcc', 'r1', 'r2', 'rc', 'beta', 'ic'], rc: ['vcc', 'r1', 'r2', 're', 'beta', 'vc'] },
+    defaults: { vcc: '12', r1: '47000', r2: '10000', rc: '2200', re: '1000', beta: '100', ic: '0.001', vc: '9' } });
+  spec({ id: 'ceAmp', family: 'bjt', title: 'Common-emitter amp', blurb: 'Same bias, plus a midband gain estimate. Vt = 26 mV.',
+    defaultUnknown: 'gain', unknowns: [u('gain', 'Gain'), u('rc', 'Rc for |Av|')],
+    fields: [n('vcc', 'Vcc', 'V'), n('r1', 'R1', 'Ω'), n('r2', 'R2', 'Ω'), n('rc', 'Rc', 'Ω'), n('re', 'Re', 'Ω'), n('beta', 'β', ''), n('rl', 'RL (AC)', 'Ω'),
+      ch('bypass', 'Emitter', [['bypassed', 'Bypassed'], ['open', 'Unbypassed']]), n('av', 'Target |Av|', '')],
+    visible: { gain: ['vcc', 'r1', 'r2', 'rc', 're', 'beta', 'rl', 'bypass'], rc: ['vcc', 'r1', 'r2', 're', 'beta', 'rl', 'bypass', 'av'] },
+    defaults: { vcc: '12', r1: '47000', r2: '10000', rc: '2200', re: '1000', beta: '100', rl: '10000', bypass: 'bypassed', av: '10' } });
+  spec({ id: 'bjtSwitch', family: 'bjt', title: 'BJT switch', blurb: 'Low-side NPN. Saturated when forced β is under the device β.',
+    defaultUnknown: 'state', unknowns: [u('state', 'On or off'), u('rb', 'Rb to saturate')],
+    fields: [n('vcc', 'Vcc', 'V'), n('rc', 'Rc (load)', 'Ω'), n('rb', 'Rb', 'Ω'), n('beta', 'β', ''), n('vin', 'Vin high', 'V')],
+    visible: { state: ['vcc', 'rc', 'rb', 'beta', 'vin'], rb: ['vcc', 'rc', 'beta', 'vin'] },
+    defaults: { vcc: '12', rc: '1000', rb: '10000', beta: '100', vin: '5' } });
+  spec({ id: 'csAmp', family: 'mosfet', title: 'Common-source amp', blurb: 'NMOS square law. kn is µCox·W/L in A/V². Rs = 0 is a pure CS stage.',
+    defaultUnknown: 'point', unknowns: [u('point', 'Q point'), u('rd', 'Rd for |Av|')],
+    fields: [n('vdd', 'Vdd', 'V'), n('vg', 'Vg', 'V'), n('rd', 'Rd', 'Ω'), n('rs', 'Rs', 'Ω'), n('kn', 'kn', 'A/V²', 'Square-law parameter, not a SPICE model card.'), n('vt', 'Vt', 'V'), n('av', 'Target |Av|', '')],
+    visible: { point: ['vdd', 'vg', 'rd', 'rs', 'kn', 'vt'], rd: ['vdd', 'vg', 'rs', 'kn', 'vt', 'av'] },
+    defaults: { vdd: '12', vg: '2', rd: '200', rs: '0', kn: '0.02', vt: '1', av: '4' } });
+  spec({ id: 'mosSwitch', family: 'mosfet', title: 'MOSFET switch', blurb: 'Low-side NMOS. On-state uses the Rds(on) you enter, not the square law.',
+    defaultUnknown: 'state', unknowns: [u('state', 'On or off'), u('rdson', 'Rds(on) max')],
+    fields: [n('vdd', 'Vdd', 'V'), n('rd', 'Rd (load)', 'Ω'), n('vgs', 'Vgs', 'V'), n('vt', 'Vt', 'V'), n('rdson', 'Rds(on)', 'Ω'), n('vdslimit', 'Vds limit', 'V')],
+    visible: { state: ['vdd', 'rd', 'vgs', 'vt', 'rdson'], rdson: ['vdd', 'rd', 'vgs', 'vt', 'vdslimit'] },
+    defaults: { vdd: '12', rd: '100', vgs: '5', vt: '2', rdson: '0.05', vdslimit: '0.1' } });
+  spec({ id: 'cmosInverter', family: 'mosfet', title: 'CMOS inverter', blurb: 'Matched-strength threshold and an ideal rail-to-rail logic level.',
+    defaultUnknown: 'threshold', unknowns: [u('threshold', 'Threshold'), u('vout', 'Logic level')],
+    fields: [n('vdd', 'Vdd', 'V'), n('vtn', 'Vtn', 'V'), n('vtp', '|Vtp|', 'V'), n('vin', 'Vin', 'V')],
+    visible: { threshold: ['vdd', 'vtn', 'vtp'], vout: ['vdd', 'vtn', 'vtp', 'vin'] },
+    defaults: { vdd: '5', vtn: '0.7', vtp: '0.7', vin: '1' } });
+
   function visibleFields(id, unknown, inputs) {
     const s = specOf(id);
     const ids = s.visible[unknown] || s.visible[s.defaultUnknown] || [];
@@ -643,6 +675,178 @@
     });
   };
 
+  const VBE = 0.7, VCESAT = 0.2, VT = 0.026;
+  const npnPart = (id, l, x, y) => part(id, 'npn', l, '', x, y, x, y);
+  const nmosPart = (id, l, x, y, sc) => Object.assign(part(id, 'nmos', l, '', x, y, x, y), sc ? { scale: sc } : {});
+  const pmosPart = (id, l, x, y, sc) => Object.assign(part(id, 'pmos', l, '', x, y, x, y), sc ? { scale: sc } : {});
+
+  function bjtBiasCalc(vcc, r1, r2, rc, re, beta) {
+    const vbb = vcc * r2 / (r1 + r2), rb = 1 / (1 / r1 + 1 / r2);
+    const ieActive = (vbb - VBE) / (re + rb / (beta + 1));
+    if (ieActive <= 0) return { vbb, rb, ib: 0, ic: 0, ie: 0, vb: vbb, vc: vcc, ve: 0, vce: vcc, saturated: false, cutoff: true, iR1: (vcc - vbb) / r1, iR2: vbb / r2 };
+    const icA = ieActive * beta / (beta + 1), veA = ieActive * re, vcA = vcc - icA * rc, vceA = vcA - veA;
+    if (vceA < VCESAT) {
+      const ic = (vcc - VCESAT) / (rc + re), ie = ic, ve = ie * re, vc = ve + VCESAT, vb = ve + VBE;
+      const iR1 = Math.max(0, (vcc - vb) / r1), iR2 = Math.max(0, vb / r2);
+      return { vbb, rb, ib: Math.max(0, iR1 - iR2), ic, ie, vb, vc, ve, vce: VCESAT, saturated: true, cutoff: false, iR1, iR2 };
+    }
+    const vb = veA + VBE;
+    return { vbb, rb, ib: icA / beta, ic: icA, ie: ieActive, vb, vc: vcA, ve: veA, vce: vceA, saturated: false, cutoff: false, iR1: (vcc - vb) / r1, iR2: vb / r2 };
+  }
+  function bjtElements(vcc, r1, r2, rc, re) {
+    return [npnPart('npn', 'Q', 52, 44), wire('railL', 18, 14, 72, 14), res('r1', 'R1', eng(r1) + ' Ω', 28, 14, 28, 40), res('r2', 'R2', eng(r2) + ' Ω', 28, 40, 28, 70),
+      wire('base', 28, 40, 36, 44), res('rc', 'Rc', eng(rc) + ' Ω', 70, 14, 70, 32), wire('col', 70, 32, 62, 28), res('re', 'Re', eng(re) + ' Ω', 62, 60, 62, 70),
+      wire('gndw', 28, 70, 70, 70), gnd('g', 70, 70), src('vcc', 'Vcc', eng(vcc) + ' V', 18, 70, 18, 14)];
+  }
+  const bjtNodes = (b, vcc) => [node('vcc', 'Vcc', vcc, 'V', 18, 14), node('b', 'Vb', b.vb, 'V', 28, 40), node('c', 'Vc', b.vc, 'V', 70, 32), node('e', 'Ve', b.ve, 'V', 62, 60), node('gnd', 'GND', 0, 'V', 70, 70)];
+  const bjtBranches = (b) => [branch('ir1', 'IR1', b.iR1, 'A', 28, 18, 28, 36), branch('ic', 'Ic', b.ic, 'A', 70, 18, 70, 30), branch('ie', 'Ie', b.ie, 'A', 62, 62, 62, 68)];
+
+  SOLVERS.bjtBias = (unknown, inp) => {
+    const vcc = pos(inp, 'vcc', 'Vcc'), r1 = pos(inp, 'r1', 'R1'), r2 = pos(inp, 'r2', 'R2'), beta = pos(inp, 'beta', 'β');
+    let rc = 0, re = 0;
+    if (unknown === 'point') { rc = pos(inp, 'rc', 'Rc'); re = pos(inp, 're', 'Re'); }
+    else if (unknown === 're') {
+      rc = pos(inp, 'rc', 'Rc'); const icT = pos(inp, 'ic', 'Ic');
+      const vbb = vcc * r2 / (r1 + r2), rb = 1 / (1 / r1 + 1 / r2);
+      if (!(vbb > VBE)) throw outOfRange('The base divider sits at or below 0.7 V, so this β model is cut off.');
+      const ie = icT * (beta + 1) / beta;
+      re = (vbb - VBE) / ie - rb / (beta + 1);
+      if (!(re > 0)) throw outOfRange('That Ic is too high for the base divider. Re would not be positive.');
+    } else if (unknown === 'rc') {
+      re = pos(inp, 're', 'Re'); const vcT = finite(inp, 'vc', 'Vc');
+      const pre = bjtBiasCalc(vcc, r1, r2, 1, re, beta);
+      if (pre.cutoff || !(pre.ic > 0)) throw outOfRange('The transistor is cut off, so Rc does not set Vc.');
+      if (!(vcT < vcc)) throw outOfRange('Vc has to be below Vcc.');
+      rc = (vcc - vcT) / pre.ic;
+      if (!(rc > 0)) throw outOfRange('Rc would not be positive.');
+    } else throw badUnknown();
+    const bias = bjtBiasCalc(vcc, r1, r2, rc, re, beta);
+    let warning = null;
+    if (bias.cutoff) warning = 'Vbb is below 0.7 V. This model says the transistor is cut off.';
+    if (bias.saturated) warning = 'Active-region β put Vce under 0.2 V. Nodes use a saturation sketch with Vce fixed at 0.2 V.';
+    return pack('bjtBias', { headline: 'Ic = ' + eng(bias.ic) + ' A', elements: bjtElements(vcc, r1, r2, rc, re), nodes: bjtNodes(bias, vcc), branches: bjtBranches(bias),
+      quantities: [q('ic', 'Ic', bias.ic, 'A', unknown === 're'), q('ib', 'Ib', bias.ib, 'A'), q('ie', 'Ie', bias.ie, 'A'), q('vb', 'Vb', bias.vb, 'V'), q('vc', 'Vc', bias.vc, 'V', unknown === 'rc'),
+        q('ve', 'Ve', bias.ve, 'V'), q('vce', 'Vce', bias.vce, 'V'), q('re', 'Re', re, 'Ω', unknown === 're'), q('rc', 'Rc', rc, 'Ω', unknown === 'rc'), q('r1', 'R1', r1, 'Ω'), q('r2', 'R2', r2, 'Ω'), q('vcc', 'Vcc', vcc, 'V')],
+      steps: ['Vbb = Vcc·R2/(R1+R2) = ' + eng(bias.vbb) + ' V', 'Ie = (Vbb − 0.7) / (Re + Rb/(β+1))', 'Vc = Vcc − Ic·Rc,  Vce = Vc − Ve'],
+      notes: ['Vbe is fixed at 0.7 V. β does not change with current.', 'Base loading is in the Thevenin term Rb/(β+1).', 'Not a Gummel–Poon model. Early effect is ignored.'], warning });
+  };
+
+  SOLVERS.ceAmp = (unknown, inp) => {
+    const vcc = pos(inp, 'vcc', 'Vcc'), r1 = pos(inp, 'r1', 'R1'), r2 = pos(inp, 'r2', 'R2'), re = pos(inp, 're', 'Re'), beta = pos(inp, 'beta', 'β'), rl = pos(inp, 'rl', 'RL');
+    const bypass = choice(inp, 'bypass', ['bypassed', 'open'], 'bypassed', 'Emitter');
+    const seed = bjtBiasCalc(vcc, r1, r2, 1, re, beta);
+    if (seed.cutoff || !(seed.ic > 0)) throw outOfRange('Cut off. There is no small-signal gm.');
+    const gm0 = seed.ic / VT, denom = bypass === 'bypassed' ? 1 : (1 + gm0 * re);
+    let rc = 0;
+    if (unknown === 'rc') {
+      const av = pos(inp, 'av', '|Av|'), k = av * denom / gm0;
+      if (!(rl > k)) throw outOfRange('RL is too small to reach that gain with Rc || RL.');
+      rc = k * rl / (rl - k);
+    } else if (unknown === 'gain') rc = pos(inp, 'rc', 'Rc'); else throw badUnknown();
+    const bias = bjtBiasCalc(vcc, r1, r2, rc, re, beta);
+    const gm = bias.ic / VT, denomU = bypass === 'bypassed' ? 1 : (1 + gm * re), rac = 1 / (1 / rc + 1 / rl);
+    const av = bias.saturated || bias.cutoff ? 0 : -gm * rac / denomU;
+    const rpi = beta / gm, rinBase = bypass === 'bypassed' ? rpi : (rpi + (beta + 1) * re), rin = 1 / (1 / r1 + 1 / r2 + 1 / rinBase);
+    return pack('ceAmp', { headline: 'Av = ' + av.toFixed(2), elements: bjtElements(vcc, r1, r2, rc, re).concat([cap('cc', 'Cc', 'AC', 70, 32, 86, 32), res('rl', 'RL', eng(rl) + ' Ω', 86, 32, 86, 70)]),
+      nodes: bjtNodes(bias, vcc), branches: bjtBranches(bias),
+      quantities: [q('av', 'Av', av, '', unknown === 'gain' || unknown === 'rc'), q('gm', 'gm', gm, 'S'), q('rin', 'Rin', rin, 'Ω'), q('rout', 'Rout', rc, 'Ω'), q('rc', 'Rc', rc, 'Ω', unknown === 'rc'),
+        q('ic', 'Ic', bias.ic, 'A'), q('vce', 'Vce', bias.vce, 'V'), q('vc', 'Vc', bias.vc, 'V'), q('vb', 'Vb', bias.vb, 'V'), q('vcc', 'Vcc', vcc, 'V'), q('r1', 'R1', r1, 'Ω'), q('r2', 'R2', r2, 'Ω'), q('re', 'Re', re, 'Ω'), q('rl', 'RL', rl, 'Ω')],
+      steps: ['gm = Ic / 26 mV = ' + eng(gm) + ' S', bypass === 'bypassed' ? 'Av ≈ −gm · (Rc || RL)' : 'Av ≈ −gm · (Rc || RL) / (1 + gm·Re)', 'Rin ≈ R1 || R2 || rπ (plus (β+1)Re if Re is unbypassed)'],
+      notes: ['Midband estimate. Coupling and bypass capacitors are shorts for the signal.', 'Vt is 26 mV, a room-temperature value.', 'Rout is about Rc. The load is AC-coupled and does not move the DC point.'],
+      warning: bias.saturated ? 'The DC point is saturated, so the gain number is not meaningful. It is reported as 0.' : null });
+  };
+
+  SOLVERS.bjtSwitch = (unknown, inp) => {
+    const vcc = pos(inp, 'vcc', 'Vcc'), rc = pos(inp, 'rc', 'Rc'), beta = pos(inp, 'beta', 'β'), vin = pos(inp, 'vin', 'Vin');
+    if (!(vin > VBE)) throw outOfRange('Vin has to be above 0.7 V to forward-bias the base.');
+    if (!(vcc > VCESAT)) throw outOfRange('Vcc has to be above 0.2 V.');
+    const icSat = (vcc - VCESAT) / rc, ibNeed = icSat / beta;
+    let rb;
+    if (unknown === 'rb') rb = (vin - VBE) / ibNeed; else if (unknown === 'state') rb = pos(inp, 'rb', 'Rb'); else throw badUnknown();
+    const ib = (vin - VBE) / rb, saturated = ib >= ibNeed;
+    const ic = saturated ? icSat : Math.min(beta * ib, icSat), vc = saturated ? VCESAT : (vcc - ic * rc), forced = ic / ib;
+    return pack('bjtSwitch', { headline: saturated ? 'Saturated' : 'Not saturated',
+      elements: [src('vin', 'Vin', eng(vin) + ' V', 16, 62, 16, 36), res('rb', 'Rb', eng(rb) + ' Ω', 16, 36, 40, 36), npnPart('q', 'Q', 50, 40), wire('crail', 62, 14, 62, 28),
+        res('rc', 'Rc', eng(rc) + ' Ω', 62, 14, 78, 14), src('vcc', 'Vcc', eng(vcc) + ' V', 86, 62, 86, 14), wire('top', 78, 14, 86, 14), wire('base', 40, 36, 34, 40),
+        wire('ecol', 62, 28, 60, 24), wire('emitter', 60, 56, 60, 62), wire('bot', 16, 62, 86, 62), gnd('g', 50, 62)],
+      nodes: [node('in', 'Vin', vin, 'V', 16, 36), node('b', 'Vb', VBE, 'V', 40, 36), node('c', 'Vc', vc, 'V', 62, 28), node('e', 'Ve', 0, 'V', 60, 56), node('vcc', 'Vcc', vcc, 'V', 86, 14)],
+      branches: [branch('ib', 'Ib', ib, 'A', 22, 36, 38, 36), branch('ic', 'Ic', ic, 'A', 64, 14, 76, 14)],
+      quantities: [q('rb', 'Rb', rb, 'Ω', unknown === 'rb'), q('rc', 'Rc', rc, 'Ω'), q('vin', 'Vin', vin, 'V'), q('ib', 'Ib', ib, 'A'), q('ic', 'Ic', ic, 'A'), q('vc', 'Vc', vc, 'V'),
+        q('forced', 'β forced', forced, ''), q('state', saturated ? 'Saturated' : 'Active', saturated ? 1 : 0, ''), q('vcc', 'Vcc', vcc, 'V')],
+      steps: ['Ic(sat) = (Vcc − 0.2) / Rc = ' + eng(icSat) + ' A', 'Ib = (Vin − 0.7) / Rb = ' + eng(ib) + ' A', saturated ? 'Ib is enough. Vc sits near 0.2 V.' : 'Ib is short of Ic(sat)/β. The device stays active.'],
+      notes: ['Saturation test: forced β = Ic/Ib is below the device β.', 'Vce(sat) is taken as 0.2 V. Vbe is 0.7 V.', 'The emitter is at ground. This is a low-side switch, not a level shifter.'] });
+  };
+
+  function mosOverdrive(vg, rs, kn, vt) {
+    if (rs === 0) { const x = vg - vt; return x > 0 ? x : null; }
+    const a = 0.5 * kn * rs, c = vt - vg, disc = 1 - 4 * a * c;
+    if (disc < 0) return null;
+    const x = (-1 + Math.sqrt(disc)) / (2 * a);
+    return x > 0 ? x : null;
+  }
+  SOLVERS.csAmp = (unknown, inp) => {
+    const vdd = pos(inp, 'vdd', 'Vdd'), vg = finite(inp, 'vg', 'Vg'), rs = nonNeg(inp, 'rs', 'Rs'), kn = pos(inp, 'kn', 'kn'), vt = finite(inp, 'vt', 'Vt');
+    const over = mosOverdrive(vg, rs, kn, vt);
+    let rd = 0;
+    if (unknown === 'rd') {
+      const av = pos(inp, 'av', '|Av|');
+      if (!(over > 0)) throw outOfRange('The MOSFET is off, so Rd does not set gain.');
+      const gm = kn * over; rd = av * (1 + gm * rs) / gm;
+    } else if (unknown === 'point') rd = pos(inp, 'rd', 'Rd'); else throw badUnknown();
+    let id, vgs, vs;
+    if (over > 0) { id = 0.5 * kn * over * over; vgs = vt + over; vs = id * rs; } else { id = 0; vgs = vg; vs = 0; }
+    const vd = vdd - id * rd, vds = vd - vs, vov = Math.max(0, vgs - vt);
+    let note = null;
+    if (id === 0) note = 'Vgs is not above Vt. Id = 0 in this square-law model.';
+    else if (vds < vov) note = 'Vds is below Vov, so the device is not in saturation. The square law overstates Id.';
+    const gm = id > 0 ? kn * vov : 0, av = (id > 0 && gm > 0) ? -gm * rd / (1 + gm * rs) : 0;
+    return pack('csAmp', { headline: 'Id = ' + eng(id) + ' A',
+      elements: [src('vdd', 'Vdd', eng(vdd) + ' V', 78, 68, 78, 14), wire('rail', 40, 14, 78, 14), res('rd', 'Rd', eng(rd) + ' Ω', 62, 14, 62, 34), nmosPart('m', 'M', 50, 44), wire('d', 62, 34, 62, 26),
+        res('rs', 'Rs', eng(rs) + ' Ω', 58, 62, 58, 68), src('vg', 'Vg', eng(vg) + ' V', 18, 68, 18, 44), wire('g', 18, 44, 32, 44), wire('bot', 18, 68, 78, 68), gnd('gnd', 50, 68)],
+      nodes: [node('g', 'Vg', vg, 'V', 18, 44), node('d', 'Vd', vd, 'V', 62, 34), node('s', 'Vs', vs, 'V', 58, 62), node('vdd', 'Vdd', vdd, 'V', 78, 14), node('gnd', 'GND', 0, 'V', 50, 68)],
+      branches: [branch('id', 'Id', id, 'A', 62, 18, 62, 32)],
+      quantities: [q('id', 'Id', id, 'A'), q('vgs', 'Vgs', vgs, 'V'), q('vd', 'Vd', vd, 'V'), q('vs', 'Vs', vs, 'V'), q('vds', 'Vds', vds, 'V'), q('gm', 'gm', gm, 'S'), q('av', 'Av', av, '', true),
+        q('rd', 'Rd', rd, 'Ω', unknown === 'rd'), q('vdd', 'Vdd', vdd, 'V'), q('vg', 'Vg', vg, 'V'), q('rs', 'Rs', rs, 'Ω')],
+      steps: ['Id = (kn/2)·(Vgs − Vt)²', 'gm = kn·(Vgs − Vt)', 'Av = −gm·Rd / (1 + gm·Rs)'],
+      notes: ['Square law, long-channel, no channel-length modulation.', 'kn is µCox·W/L in A/V². Rs = 0 is an undegenerated CS stage.', 'Gain assumes the MOSFET is saturated (Vds > Vov).'], warning: note });
+  };
+
+  SOLVERS.mosSwitch = (unknown, inp) => {
+    const vdd = pos(inp, 'vdd', 'Vdd'), rd = pos(inp, 'rd', 'Rd'), vgs = finite(inp, 'vgs', 'Vgs'), vt = finite(inp, 'vt', 'Vt'), on = vgs > vt;
+    let rdson;
+    if (unknown === 'rdson') {
+      if (!on) throw outOfRange('Vgs is not above Vt, so the switch stays off and Rds(on) does not set Vds.');
+      const limit = pos(inp, 'vdslimit', 'Vds limit');
+      if (!(limit < vdd)) throw outOfRange('The Vds limit has to be below Vdd.');
+      rdson = rd * limit / (vdd - limit);
+    } else if (unknown === 'state') rdson = nonNeg(inp, 'rdson', 'Rds(on)'); else throw badUnknown();
+    const id = on ? vdd / (rd + rdson) : 0, vds = on ? id * rdson : vdd;
+    return pack('mosSwitch', { headline: on ? 'On, Vds = ' + eng(vds) + ' V' : 'Off',
+      elements: [src('vdd', 'Vdd', eng(vdd) + ' V', 76, 68, 76, 16), wire('t', 40, 16, 76, 16), res('rd', 'Rd', eng(rd) + ' Ω', 58, 16, 58, 36), nmosPart('m', 'M', 48, 46), wire('d', 58, 36, 60, 28),
+        wire('s', 56, 64, 56, 68), src('vg', 'Vgs', eng(vgs) + ' V', 16, 68, 16, 46), wire('g', 16, 46, 30, 46), wire('b', 16, 68, 76, 68), gnd('gnd', 48, 68)],
+      nodes: [node('g', 'Vgs', vgs, 'V', 16, 46), node('d', 'Vds', vds, 'V', 58, 36), node('s', 'Vs', 0, 'V', 56, 64), node('vdd', 'Vdd', vdd, 'V', 76, 16)],
+      branches: [branch('id', 'Id', id, 'A', 58, 20, 58, 34)],
+      quantities: [q('id', 'Id', id, 'A'), q('vds', 'Vds', vds, 'V'), q('rdson', 'Rds(on)', rdson, 'Ω', unknown === 'rdson'), q('rd', 'Rd', rd, 'Ω'), q('vgs', 'Vgs', vgs, 'V'), q('state', on ? 'On' : 'Off', on ? 1 : 0, ''), q('vdd', 'Vdd', vdd, 'V')],
+      steps: [on ? 'Id = Vdd / (Rd + Rds(on))' : 'Vgs ≤ Vt, so Id = 0 and the drain sits at Vdd.', 'Vds = Id · Rds(on)'],
+      notes: ['The on-state uses the Rds(on) you type. The square law is not used here.', 'Off means Vgs is not above Vt. Leakage is taken as zero.', 'A logic FET still needs a rated Vgs. This screen does not check the absolute maximum.'] });
+  };
+
+  SOLVERS.cmosInverter = (unknown, inp) => {
+    const vdd = pos(inp, 'vdd', 'Vdd'), vtn = nonNeg(inp, 'vtn', 'Vtn'), vtp = nonNeg(inp, 'vtp', '|Vtp|'), vm = (vdd - vtp + vtn) / 2;
+    let vin, vout;
+    if (unknown === 'vout') { vin = finite(inp, 'vin', 'Vin'); vout = vin < vm ? vdd : (vin > vm ? 0 : vm); }
+    else if (unknown === 'threshold') { vin = vm; vout = vm; } else throw badUnknown();
+    return pack('cmosInverter', { headline: 'Vm = ' + eng(vm) + ' V',
+      elements: [src('vdd', 'Vdd', eng(vdd) + ' V', 70, 70, 70, 12), pmosPart('p', 'P', 46, 26, 0.6), nmosPart('n', 'N', 46, 54, 0.6),
+        wire('rail', 53.2, 15.2, 53.2, 12), wire('rail2', 53.2, 12, 70, 12), wire('pd', 50.8, 36.8, 50.8, 40), wire('pn', 50.8, 40, 53.2, 40), wire('nd', 53.2, 43.2, 53.2, 40), wire('out', 53.2, 40, 84, 40),
+        wire('ns', 50.8, 64.8, 50.8, 70), wire('in', 16, 40, 26, 40), wire('gp', 26, 26, 26, 54), wire('gp2', 26, 26, 35.2, 26), wire('gn2', 26, 54, 35.2, 54), src('vin', 'Vin', eng(vin) + ' V', 16, 70, 16, 40), wire('bot', 16, 70, 70, 70), gnd('g', 50.8, 70)],
+      nodes: [node('in', 'Vin', vin, 'V', 16, 40), node('out', 'Vout', vout, 'V', 84, 40), node('vm', 'Vm', vm, 'V', 53, 40), node('vdd', 'Vdd', vdd, 'V', 70, 12), node('gnd', 'GND', 0, 'V', 50.8, 70)],
+      branches: [branch('i', 'Istatic', 0, 'A', 62, 20, 62, 36)],
+      quantities: [q('vm', 'Vm', vm, 'V', unknown === 'threshold'), q('vout', 'Vout', vout, 'V', unknown === 'vout'), q('vin', 'Vin', vin, 'V'), q('nml', 'NM sketch', Math.max(0, vm - vtn), 'V'), q('vdd', 'Vdd', vdd, 'V')],
+      steps: ['Vm = (Vdd − |Vtp| + Vtn) / 2 = ' + eng(vm) + ' V', 'Ideal rails: Vin below Vm drives Vout to Vdd.'],
+      notes: ['Matched kn = kp. The threshold is the usual long-channel estimate.', 'The logic level is an ideal step. A real transfer curve is not vertical.', 'Static current is taken as zero. Shoot-through during the edge is not modeled.'] });
+  };
+
   function solve(circuit, unknown, inputs) {
     const s = specOf(circuit);
     if (!s.unknowns.some((x) => x.id === unknown)) throw outOfRange('That unknown is not on this circuit.');
@@ -1020,6 +1224,72 @@
     b.jumper('src', 'Vdc', 6, 'a', 6, 'topPlus', 'red'); b.jumper('mid', 'Mid', 12, 'b', 12, 'e', 'orange');
     b.jumper('out', 'Vpk', 18, 'b', 24, 'b', 'yellow'); b.jumper('g1', 'GND', 18, 'j', 18, 'botMinus', 'black'); b.jumper('g2', 'GND', 24, 'j', 24, 'botMinus', 'black');
     return b.finish(b.caption('Bridge on a DC source is two forward drops in series (D1 then D2) into RL || C. Ripple is zero on DC — switch to AC sine to size C from a ripple target.'));
+  };
+
+  function transistor(b, npn, emitterNet) {
+    const leads = [b.hole(16, 'f', emitterNet || (npn ? 'Ve' : 'GND')), b.hole(17, 'f', npn ? 'Vb' : 'Vgs'), b.hole(18, 'f', npn ? 'Vc' : 'Vd')];
+    b.components.push(npn ? { id: 'q', part: { type: 'npn', name: '2N3904', label: '2N3904' }, leads } : { id: 'm', part: { type: 'nmos', name: '2N7000', label: '2N7000' }, leads });
+  }
+  LAYOUTS.bjtBias = (b) => {
+    const r1 = b.qty('r1'), r2 = b.qty('r2'), rc = b.qty('rc'), re = b.qty('re'), vcc = b.qty('vcc');
+    b.singleSupply(trim(vcc) + ' V', 'Vcc', 'GND'); transistor(b, true);
+    b.resistor('r1', 'R1', r1, b.hole(11, 'i', 'Vcc'), b.hole(17, 'i', 'Vb')); b.resistor('r2', 'R2', r2, b.hole(17, 'j', 'Vb'), b.hole(22, 'j', 'GND'));
+    b.resistor('rc', 'Rc', rc, b.hole(18, 'g', 'Vc'), b.hole(24, 'g', 'Vcc')); b.resistor('re', 'Re', re, b.hole(16, 'j', 'Ve'), b.hole(12, 'j', 'GND'));
+    b.jumper('v1', 'Vcc', 11, 'g', 11, 'botPlus', 'red'); b.jumper('v2', 'Vcc', 24, 'j', 24, 'botPlus', 'red');
+    b.jumper('g1', 'GND', 22, 'g', 22, 'botMinus', 'black'); b.jumper('g2', 'GND', 12, 'h', 12, 'botMinus', 'black');
+    return b.finish(b.caption('2N3904 with its flat face toward you, leads E B C left to right. R1 and R2 set the base. Rc and Re are the collector and emitter resistors.'));
+  };
+  LAYOUTS.ceAmp = (b) => {
+    const r1 = b.qty('r1'), r2 = b.qty('r2'), rc = b.qty('rc'), re = b.qty('re'), vcc = b.qty('vcc'), rl = b.qty('rl');
+    b.singleSupply(trim(vcc) + ' V', 'Vcc', 'GND'); transistor(b, true);
+    b.resistor('r1', 'R1', r1, b.hole(11, 'i', 'Vcc'), b.hole(17, 'i', 'Vb')); b.resistor('r2', 'R2', r2, b.hole(17, 'j', 'Vb'), b.hole(22, 'j', 'GND'));
+    b.resistor('rc', 'Rc', rc, b.hole(18, 'g', 'Vc'), b.hole(24, 'g', 'Vcc')); b.resistor('re', 'Re', re, b.hole(16, 'j', 'Ve'), b.hole(12, 'j', 'GND'));
+    b.capacitor('cc', 'Cc', 1e-6, b.hole(20, 'c', 'Vc'), b.hole(26, 'c', 'Vout')); b.resistor('rl', 'RL', rl, b.hole(26, 'e', 'Vout'), b.hole(26, 'f', 'GND'));
+    b.jumper('v1', 'Vcc', 11, 'g', 11, 'botPlus', 'red'); b.jumper('v2', 'Vcc', 24, 'j', 24, 'botPlus', 'red');
+    b.jumper('g1', 'GND', 22, 'g', 22, 'botMinus', 'black'); b.jumper('g2', 'GND', 12, 'h', 12, 'botMinus', 'black');
+    b.jumper('col', 'Vc', 18, 'i', 20, 'e', 'orange'); b.jumper('loadg', 'GND', 26, 'j', 26, 'botMinus', 'black');
+    if (!b.solution.steps.some((x) => x.indexOf('/ (1 + gm·Re)') >= 0)) { b.capacitor('ce', 'Ce', 10e-6, b.hole(16, 'h', 'Ve'), b.hole(14, 'h', 'GND')); b.jumper('ceg', 'GND', 14, 'j', 14, 'botMinus', 'black'); }
+    return b.finish(b.caption('CE stage on a 2N3904 (E B C). Bias matches the BJT bias board; Cc couples the collector into RL. Ce is illustrative when the emitter is bypassed for midband gain. Coupling/bypass are AC shorts in the solve — not a SPICE transient.'));
+  };
+  LAYOUTS.bjtSwitch = (b) => {
+    const rb = b.qty('rb'), rc = b.qty('rc'), vcc = b.qty('vcc'), vin = b.qty('vin');
+    b.singleSupply(trim(vcc) + ' V', 'Vcc', 'GND'); transistor(b, true, 'GND');
+    b.components.push({ id: 'vin', part: { type: 'source', label: 'Vin ' + trim(vin) + ' V' }, leads: [b.hole(6, 'e', 'Vin'), b.hole(6, 'f', 'GND')] });
+    b.resistor('rb', 'Rb', rb, b.hole(6, 'b', 'Vin'), b.hole(14, 'b', 'Vb')); b.resistor('rc', 'Rc', rc, b.hole(18, 'i', 'Vc'), b.hole(24, 'i', 'Vcc'));
+    b.jumper('base', 'Vb', 14, 'd', 17, 'i', 'yellow'); b.jumper('emit', 'GND', 16, 'j', 16, 'botMinus', 'black');
+    b.jumper('srcg', 'GND', 6, 'j', 6, 'botMinus', 'black'); b.jumper('vcc', 'Vcc', 24, 'g', 24, 'botPlus', 'red');
+    return b.finish(b.caption('Low-side 2N3904 switch, E B C left to right. Vin is its own source referenced to the blue rail. The emitter jumper is the ground lead.'));
+  };
+  LAYOUTS.csAmp = (b) => {
+    const rd = b.qty('rd'), vdd = b.qty('vdd'), vg = b.qty('vg'), rs = b.qty('rs') || 0;
+    b.singleSupply(trim(vdd) + ' V', 'Vdd', 'GND');
+    b.components.push({ id: 'm', part: { type: 'nmos', name: '2N7000', label: '2N7000' }, leads: [b.hole(16, 'f', rs > 1e-12 ? 'Vs' : 'GND'), b.hole(17, 'f', 'Vg'), b.hole(18, 'f', 'Vd')] });
+    b.components.push({ id: 'vg', part: { type: 'source', label: 'Vg ' + trim(vg) + ' V' }, leads: [b.hole(6, 'e', 'Vg'), b.hole(6, 'f', 'GND')] });
+    b.resistor('rd', 'Rd', rd, b.hole(18, 'i', 'Vd'), b.hole(24, 'i', 'Vdd'));
+    if (rs > 1e-12) { b.resistor('rs', 'Rs', rs, b.hole(16, 'j', 'Vs'), b.hole(12, 'j', 'GND')); b.jumper('rsg', 'GND', 12, 'h', 12, 'botMinus', 'black'); }
+    else b.jumper('src', 'GND', 16, 'j', 16, 'botMinus', 'black');
+    b.jumper('gate', 'Vg', 6, 'c', 17, 'i', 'yellow'); b.jumper('srcg', 'GND', 6, 'j', 6, 'botMinus', 'black'); b.jumper('vdd', 'Vdd', 24, 'g', 24, 'botPlus', 'red');
+    return b.finish(b.caption('CS stage on a 2N7000 (S G D). Rd is the drain load. Rs is present only when degeneration is non-zero; Rs = 0 ties the source to the blue rail. Square-law bias — not a SPICE model card.'));
+  };
+  LAYOUTS.mosSwitch = (b) => {
+    const rd = b.qty('rd'), vdd = b.qty('vdd'), vgs = b.qty('vgs');
+    b.singleSupply(trim(vdd) + ' V', 'Vdd', 'GND'); transistor(b, false);
+    b.components.push({ id: 'vgs', part: { type: 'source', label: 'Vgs ' + trim(vgs) + ' V' }, leads: [b.hole(6, 'e', 'Vgs'), b.hole(6, 'f', 'GND')] });
+    b.resistor('rd', 'Rd', rd, b.hole(18, 'i', 'Vd'), b.hole(24, 'i', 'Vdd'));
+    b.jumper('gate', 'Vgs', 6, 'c', 17, 'i', 'yellow'); b.jumper('src', 'GND', 16, 'j', 16, 'botMinus', 'black');
+    b.jumper('srcg', 'GND', 6, 'j', 6, 'botMinus', 'black'); b.jumper('vdd', 'Vdd', 24, 'g', 24, 'botPlus', 'red');
+    return b.finish(b.caption('2N7000 with its flat face toward you, leads S G D left to right. Rd is the load. Rds(on) is inside the MOSFET, not a second part.'));
+  };
+  LAYOUTS.cmosInverter = (b) => {
+    const vdd = b.qty('vdd'), vin = b.qty('vin') !== undefined ? b.qty('vin') : (b.qty('vm') !== undefined ? b.qty('vm') : vdd / 2);
+    b.singleSupply(trim(vdd) + ' V', 'Vdd', 'GND');
+    b.components.push({ id: 'p', part: { type: 'pmos', name: 'PMOS', label: 'PMOS' }, leads: [b.hole(18, 'c', 'Vdd'), b.hole(17, 'c', 'Vin'), b.hole(16, 'c', 'Vout')] });
+    b.components.push({ id: 'n', part: { type: 'nmos', name: 'NMOS', label: 'NMOS' }, leads: [b.hole(14, 'f', 'GND'), b.hole(15, 'f', 'Vin'), b.hole(16, 'f', 'Vout')] });
+    b.components.push({ id: 'vin', part: { type: 'source', label: 'Vin ' + trim(vin) + ' V' }, leads: [b.hole(6, 'e', 'Vin'), b.hole(6, 'f', 'GND')] });
+    b.jumper('out', 'Vout', 16, 'e', 16, 'g', 'green'); b.jumper('gatep', 'Vin', 6, 'c', 17, 'a', 'yellow'); b.jumper('gaten', 'Vin', 15, 'i', 17, 'e', 'yellow');
+    b.jumper('ps', 'Vdd', 18, 'a', 18, 'topPlus', 'red'); b.jumper('ns', 'GND', 14, 'j', 14, 'botMinus', 'black'); b.jumper('srcg', 'GND', 6, 'j', 6, 'botMinus', 'black');
+    b.jumper('probe', 'Vout', 16, 'b', 24, 'b', 'green'); b.jumper('pgnd', 'GND', 24, 'j', 24, 'botMinus', 'black');
+    return b.finish(b.caption('CMOS inverter sketch: discrete PMOS (rows a–e) and NMOS (rows f–j) sharing Vin and Vout across the gutter. Ideal rail-to-rail logic — static current is zero in the solve. Not a matched IC process or a SPICE deck.'));
   };
 
   global.BeckifyBenchEngine = {

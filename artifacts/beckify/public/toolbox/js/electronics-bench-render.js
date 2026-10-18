@@ -133,6 +133,22 @@
     return M(tip) + Lx({ x: base.x + n.x * size * 0.5, y: base.y + n.y * size * 0.5 }) + Lx({ x: base.x - n.x * size * 0.5, y: base.y - n.y * size * 0.5 }) + 'Z';
   }
 
+  // Transistor symbols are drawn in schematic units (the solver's wires meet their pins), scaled to pixels.
+  function npnPath(c, sc) {
+    const k = SX * (sc || 1), P = (dx, dy) => ({ x: c.x + dx * k, y: c.y + dy * k });
+    let d = M(P(-16, 0)) + Lx(P(-4, 0)) + M(P(-4, -12)) + Lx(P(-4, 12)) + M(P(-4, -6)) + Lx(P(10, -16)) + M(P(-4, 6)) + Lx(P(10, 16));
+    return d + arrowHead(P(10, 16), { x: 0.62, y: 0.78 }, 7 * k * 0.8);
+  }
+  function mosPath(c, pch, sc) {
+    const k = SX * (sc || 1), P = (dx, dy) => ({ x: c.x + dx * k, y: c.y + dy * k });
+    let d = M(P(-18, 0)) + Lx(P(-8, 0));
+    if (pch) { const r = 2.5 * k; d += M(P(-7, 0)) + 'A' + f2(r) + ' ' + f2(r) + ' 0 1 0 ' + f2(c.x - 12 * k) + ' ' + f2(c.y) + 'A' + f2(r) + ' ' + f2(r) + ' 0 1 0 ' + f2(c.x - 7 * k) + ' ' + f2(c.y); }
+    d += M(P(-8, -12)) + Lx(P(-8, 12));
+    [-8, 0, 8].forEach((o) => { d += M(P(-4, o - 3)) + Lx(P(-4, o + 3)); });
+    d += M(P(-4, -8)) + Lx(P(12, -8)) + Lx(P(12, -18)) + M(P(-4, 8)) + Lx(P(8, 8)) + Lx(P(8, 18));
+    return d + arrowHead(P(pch ? -4 : 6, 8), { x: pch ? -1 : 1, y: 0 }, 6 * k * 0.8);
+  }
+
   function strokeEl(el, hot) {
     const a = mp(el.a), b = mp(el.b);
     const sw = (w) => (hot ? w * 1.35 : w);
@@ -146,6 +162,9 @@
       case 'diode': return path(diodePath(a, b, false), C.fg, 1.7);
       case 'led': return path(diodePath(a, b, true), C.energized, 1.7);
       case 'ground': return path(groundPath(a), C.fg, 1.7);
+      case 'npn': return path(npnPath(a, el.scale), C.fg, 1.7);
+      case 'nmos': return path(mosPath(a, false, el.scale), C.fg, 1.7);
+      case 'pmos': return path(mosPath(a, true, el.scale), C.fg, 1.7);
       default: return '';
     }
   }
@@ -185,7 +204,9 @@
       if (layer === 'minimal') return;
       breq.push({ text: br.name + ' ' + reading(Math.abs(br.value), br.unit || 'A'), x: mid.x, y: mid.y, size: 14, color: C.energized });
     });
-    const placed = placeLabels(nreq.concat(breq, reqs), obstacles, { w: SW, h: SH });
+    const all = nreq.concat(breq, reqs);
+    if (all.length > 10) all.forEach((r) => { r.size = Math.max(10, r.size - (all.length > 13 ? 3 : 2)); });
+    const placed = placeLabels(all, obstacles, { w: SW, h: SH });
     placed.forEach((p) => { svg += labelSvg(p); });
     // current arrows with animated dot, then node dots
     const reduce = global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -118,6 +118,52 @@ for (const id of E.circuits()) {
   near(get(biased, 'vout'), 2.7, 1e-12);
 }
 
+/* BJT and MOSFET family */
+{
+  const get = (sol, id) => sol.quantities.find((x) => x.id === id).value;
+  const bias = E.solve('bjtBias', 'point', D('bjtBias'));
+  const vbb = 12 * 10000 / 57000, rb = 1 / (1 / 47000 + 1 / 10000), ie = (vbb - 0.7) / (1000 + rb / 101);
+  near(get(bias, 'ie'), ie, 1e-12); near(get(bias, 'ic'), ie * 100 / 101, 1e-12);
+  near(get(bias, 'vce'), 12 - get(bias, 'ic') * 2200 - ie * 1000, 1e-9);
+  const re = E.solve('bjtBias', 're', D('bjtBias'));
+  near(get(E.solve('bjtBias', 'point', Object.assign({}, D('bjtBias'), { re: String(get(re, 're')) })), 'ic'), 0.001, 1e-9, 'Re round trip');
+  const rcs = E.solve('bjtBias', 'rc', D('bjtBias'));
+  near(get(E.solve('bjtBias', 'point', Object.assign({}, D('bjtBias'), { rc: String(get(rcs, 'rc')) })), 'vc'), 9, 1e-6, 'Rc round trip');
+  assert.equal(E.solve('bjtBias', 'point', Object.assign({}, D('bjtBias'), { r2: '1000' })).warning.includes('cut off'), true);
+  assert.ok(E.solve('bjtBias', 'point', Object.assign({}, D('bjtBias'), { rc: '20000', re: '100' })).warning.includes('saturation'));
+  const ce = E.solve('ceAmp', 'gain', D('ceAmp'));
+  near(get(ce, 'av'), -(get(ce, 'ic') / 0.026) * (1 / (1 / 2200 + 1 / 10000)), 1e-9, 'CE gain');
+  const ceo = E.solve('ceAmp', 'gain', Object.assign({}, D('ceAmp'), { bypass: 'open' }));
+  assert.ok(Math.abs(get(ceo, 'av')) < Math.abs(get(ce, 'av')));
+  assert.ok(E.solve('ceAmp', 'rc', D('ceAmp')).quantities.find((x) => x.id === 'av').value < 0);
+  const sw = E.solve('bjtSwitch', 'state', D('bjtSwitch'));
+  near(get(sw, 'ic'), 11.8 / 1000, 1e-12); assert.equal(sw.headline, 'Saturated');
+  assert.equal(E.solve('bjtSwitch', 'state', Object.assign({}, D('bjtSwitch'), { rb: '1000000' })).headline, 'Not saturated');
+  assert.throws(() => E.solve('bjtSwitch', 'state', Object.assign({}, D('bjtSwitch'), { vin: '0.5' })), /above 0.7/);
+  const cs = E.solve('csAmp', 'point', D('csAmp'));
+  near(get(cs, 'id'), 0.5 * 0.02 * 1, 1e-12); near(get(cs, 'av'), -0.02 * 200, 1e-12);
+  const csd = E.solve('csAmp', 'point', Object.assign({}, D('csAmp'), { rs: '100' }));
+  const vov = get(csd, 'vgs') - 1; near(get(csd, 'id'), 0.01 * vov * vov, 1e-12);
+  near(get(csd, 'vs'), get(csd, 'id') * 100, 1e-12);
+  assert.ok(E.solve('csAmp', 'point', Object.assign({}, D('csAmp'), { vg: '0.5' })).warning.includes('Id = 0'));
+  near(get(E.solve('csAmp', 'rd', D('csAmp')), 'av'), -4, 1e-9);
+  const ms = E.solve('mosSwitch', 'state', D('mosSwitch'));
+  near(get(ms, 'vds'), 12 / 100.05 * 0.05, 1e-12);
+  assert.equal(E.solve('mosSwitch', 'state', Object.assign({}, D('mosSwitch'), { vgs: '1' })).headline, 'Off');
+  near(get(E.solve('mosSwitch', 'rdson', D('mosSwitch')), 'rdson'), 100 * 0.1 / 11.9, 1e-12);
+  const cm = E.solve('cmosInverter', 'threshold', D('cmosInverter'));
+  near(get(cm, 'vm'), 2.5, 1e-12);
+  near(get(E.solve('cmosInverter', 'vout', D('cmosInverter')), 'vout'), 5, 1e-12);
+  near(get(E.solve('cmosInverter', 'vout', Object.assign({}, D('cmosInverter'), { vin: '4' })), 'vout'), 0, 1e-12);
+  for (const id of ['bjtBias', 'ceAmp', 'bjtSwitch']) {
+    const odd = E.solve(id, id === 'ceAmp' ? 'gain' : (id === 'bjtBias' ? 'point' : 'state'), Object.assign({}, D(id), { vcc: '5', beta: '250' }));
+    assert.ok(odd.layout.audit.ok, id + ' audit at other values');
+  }
+  assert.ok(E.solve('csAmp', 'point', Object.assign({}, D('csAmp'), { rs: '100' })).layout.audit.ok, 'degenerated CS audit');
+  const sch = R.renderSchematic(E.solve('cmosInverter', 'threshold', D('cmosInverter')));
+  assert.ok(sch.includes('<path') && /A10 10 0 1 0/.test(sch), 'pmos bubble drawn');
+}
+
 /* audit catches mistakes: a short, an off-board hole, and a split net */
 {
   const sol = E.solve('seriesResistors', 'current', D('seriesResistors'));
