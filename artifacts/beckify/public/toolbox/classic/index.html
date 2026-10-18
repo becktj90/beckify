@@ -16,12 +16,12 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta property="og:site_name" content="Beckify">
   <meta property="og:title" content="Electrical engineering toolbox — Ohm's Law, voltage drop, ampacity, conduit fill">
-  <meta property="og:description" content="58 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta property="og:description" content="62 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <meta property="og:image" content="https://beckify.com/toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://beckify.com/toolbox/classic/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="description" content="58 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta name="description" content="62 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFZ9X595E"></script>
   <script>
@@ -241,6 +241,10 @@
       <div class="sidebar-section-title">05 · Test &amp; analysis</div>
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Trace Analyzer</button>
       <button class="nav-btn" data-target="sec-electronics-bench" data-keywords="electronics bench lab breadboard generator schematic solderless resistor capacitor inductor led rc rl rlc filter divider thevenin norton kirchhoff series parallel hookup jumper wires rails">Electronics Bench &amp; Breadboard</button>
+      <button class="nav-btn" data-target="sec-noise-snr" data-keywords="noise snr johnson thermal shot noise figure en in kT bandwidth signal to noise">Noise &amp; SNR</button>
+      <button class="nav-btn" data-target="sec-linear-regulator" data-keywords="lm317 ldo linear regulator dropout heatsink theta ja junction vout r1 r2">Linear / LDO Regulator</button>
+      <button class="nav-btn" data-target="sec-instrumentation-amp" data-keywords="instrumentation amp inamp difference amp gain rg cmrr common mode swing">Instrumentation Amp</button>
+      <button class="nav-btn" data-target="sec-adc-dac" data-keywords="adc dac lsb bits resolution quantization snr nyquist sample rate full scale">ADC / DAC</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
@@ -297,7 +301,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">58 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">62 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <section class="home-featured" aria-labelledby="featured-tools-heading">
@@ -377,6 +381,10 @@
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Trace Analyzer</a></li>
             <li><a class="home-tool-link" href="#sec-electronics-bench">Electronics Bench &amp; Breadboard</a></li>
+            <li><a class="home-tool-link" href="#sec-noise-snr">Noise &amp; SNR</a></li>
+            <li><a class="home-tool-link" href="#sec-linear-regulator">Linear / LDO Regulator</a></li>
+            <li><a class="home-tool-link" href="#sec-instrumentation-amp">Instrumentation Amp</a></li>
+            <li><a class="home-tool-link" href="#sec-adc-dac">ADC / DAC</a></li>
             <li><a class="home-tool-link" href="#sec-circuit-sim">Circuit Simulator</a></li>
             <li><a class="home-tool-link" href="#sec-smith-chart">Smith Chart</a></li>
             <li><a class="home-tool-link" href="#sec-emp-emc">EMP / EMC Shielding</a></li>
@@ -6172,6 +6180,54 @@
       <div id="eb-root"></div>
     </section><!-- end sec-electronics-bench -->
 
+    <section id="sec-adc-dac" class="section">
+      <div class="section-header">
+        <h2>ADC / DAC</h2>
+        <p>LSB, code count, ideal quantization SNR, Nyquist, and an optional DAC code-to-voltage.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — ADC / DAC</summary>
+          <div class="section-info-body">Ideal converter. Real parts have INL, DNL, offset, and noise.</div>
+        </details>
+      </div>
+      <div id="bk-adc-root"></div>
+    </section><!-- end sec-adc-dac -->
+
+    <section id="sec-instrumentation-amp" class="section">
+      <div class="section-header">
+        <h2>Instrumentation Amp</h2>
+        <p>Three-op-amp InAmp gain from Rg, or a matched four-resistor difference amp, with output swing and common-mode checks.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Instrumentation Amp</summary>
+          <div class="section-info-body">Ideal gain and matched resistors. CMRR and offset are not modeled.</div>
+        </details>
+      </div>
+      <div id="bk-inamp-root"></div>
+    </section><!-- end sec-instrumentation-amp -->
+
+    <section id="sec-linear-regulator" class="section">
+      <div class="section-header">
+        <h2>Linear / LDO Regulator</h2>
+        <p>LM317-style Vout from R1 and R2, dropout margin, pass-element power, and a junction-temperature estimate.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Linear / LDO Regulator</summary>
+          <div class="section-info-body">Thermal estimate only. Check the datasheet for dropout, Iadj, and thermal resistance.</div>
+        </details>
+      </div>
+      <div id="bk-ldo-root"></div>
+    </section><!-- end sec-linear-regulator -->
+
+    <section id="sec-noise-snr" class="section">
+      <div class="section-header">
+        <h2>Noise &amp; SNR</h2>
+        <p>Johnson and optional shot noise, amplifier e_n and i_n, total referred noise, SNR, and a rough noise figure.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Noise &amp; SNR</summary>
+          <div class="section-info-body">Ideal white-noise model. Noise sources add in power. Check the amplifier datasheet for e_n and i_n.</div>
+        </details>
+      </div>
+      <div id="bk-noise-root"></div>
+    </section><!-- end sec-noise-snr -->
+
     <!-- ════════════════════════════════════════
          CIRCUIT SIMULATOR
          ════════════════════════════════════════ -->
@@ -11662,6 +11718,8 @@
 <script src="js/electronics-bench-engine.js"></script>
 <script src="js/electronics-bench-render.js"></script>
 <script src="js/electronics-bench.js"></script>
+<script src="js/bk-tool.js"></script>
+<script src="js/bk-tools-analog.js"></script>
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
 <script src="js/emp-emc.js"></script>
