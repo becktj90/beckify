@@ -1697,21 +1697,31 @@ body.report-open { overflow: hidden; }
   grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
 }
 .ebd-workspace {
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(139, 123, 255, 0.08), transparent 55%),
-    #070a12;
+  border-radius: 12px;
+  background: #080b10;
   padding: 10px;
   margin-bottom: 12px;
 }
-.ebd-workspace-3d {
-  background:
-    radial-gradient(ellipse at 70% 10%, rgba(79, 139, 255, 0.12), transparent 50%),
-    radial-gradient(ellipse at 20% 80%, rgba(139, 123, 255, 0.08), transparent 45%),
-    #070a12;
+.ebd-workspace-3d { background: #080b10; }
+.ebd-iso-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #12161e;
+  padding: 10px 10px 4px;
+  margin-bottom: 12px;
+  overflow: hidden;
 }
+.ebd-iso-title {
+  color: #94a2b2;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin: 0 2px 8px;
+}
+.ebd-iso { display: block; width: 100%; max-width: 100%; border-radius: 8px; }
 .ebd-canvas {
   display: block;
   max-width: 100%;
@@ -1740,8 +1750,8 @@ body.report-open { overflow: hidden; }
   gap: 8px;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid color-mix(in srgb, hsl(var(--ebd-hue) 62% 45%) 45%, var(--border));
-  background: color-mix(in srgb, hsl(var(--ebd-hue) 62% 38%) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ebd-color, #40bad6) 50%, var(--border));
+  background: color-mix(in srgb, var(--ebd-color, #40bad6) 14%, transparent);
   font-size: 0.74rem;
   color: var(--fg-muted);
 }

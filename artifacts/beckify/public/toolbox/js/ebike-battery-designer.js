@@ -6,6 +6,7 @@
 (function (global) {
   'use strict';
 
+  // Canvases scale their backing store by devicePixelRatio via BeckifyGfx.setupCanvas; ink is the app palette (#080b10 ground).
   const MAX_S = 24;
   const MAX_DIM = 28;
   const GROUP_HUES = [
@@ -281,10 +282,16 @@
     return {
       depth: depth,
       draw: function () {
+        const G = global.BeckifyGfx;
         const body = ctx.createLinearGradient(bottom.x - rx, bottom.y, bottom.x + rx, bottom.y);
-        body.addColorStop(0, 'hsl(' + cell.hue + ' 55% 24%)');
-        body.addColorStop(0.45, 'hsl(' + cell.hue + ' 62% 42%)');
-        body.addColorStop(1, 'hsl(' + cell.hue + ' 50% 20%)');
+        body.addColorStop(0, '#1d4478');
+        body.addColorStop(0.3, '#3873bf');
+        body.addColorStop(1, '#16315a');
+
+        ctx.beginPath();
+        ctx.ellipse(bottom.x, bottom.y, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#16315a';
+        ctx.fill();
 
         ctx.beginPath();
         ctx.moveTo(bottom.x - rx, bottom.y);
@@ -296,24 +303,20 @@
         ctx.fill();
 
         ctx.beginPath();
-        ctx.ellipse(bottom.x, bottom.y, rx, ry, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'hsl(' + cell.hue + ' 45% 18%)';
-        ctx.fill();
-
-        ctx.beginPath();
         ctx.ellipse(top.x, top.y, tx, ty, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'hsl(' + cell.hue + ' 70% 52%)';
+        ctx.fillStyle = '#c7c7c7';
         ctx.fill();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(238,240,250,0.55)';
+        ctx.lineWidth = 0.7;
+        ctx.strokeStyle = '#737373';
         ctx.stroke();
 
-        if (tx >= 6) {
-          ctx.fillStyle = 'rgba(255,255,255,0.92)';
-          ctx.font = '600 ' + Math.max(8, Math.min(12, tx)) + 'px Exo 2, IBM Plex Mono, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(String(cell.group), top.x, top.y);
+        ctx.beginPath();
+        ctx.ellipse(top.x, top.y, tx * 0.62, ty * 0.62, 0, 0, Math.PI * 2);
+        ctx.fillStyle = G.mix(G.seriesColor(cell.group), '#ffffff', 0.35);
+        ctx.fill();
+
+        if (tx >= 7) {
+          G.label(ctx, String(cell.group), top.x, top.y + 0.5, { size: Math.max(7, Math.min(11, tx * 0.7)), weight: 700, color: '#080b10' });
         }
       },
     };
@@ -466,7 +469,7 @@
       const g = idx + 1;
       const chip = document.createElement('div');
       chip.className = 'ebd-group-chip' + (count === analysis.targetP ? ' is-ok' : '');
-      chip.style.setProperty('--ebd-hue', String(groupHue(g)));
+      chip.style.setProperty('--ebd-color', global.BeckifyGfx.seriesColor(g));
       chip.innerHTML = '<strong>S' + g + '</strong><span>' + count + ' / ' + analysis.targetP + '</span>';
       balance.append(chip);
     });
@@ -476,6 +479,7 @@
   function drawCanvas() {
     const canvas = $('ebd_canvas');
     if (!canvas || !canvas.getContext) return;
+    const G = global.BeckifyGfx;
     const opts = readOpts();
     const diameter = Math.max(10, opts.cellD || 18.5);
     const honeycomb = opts.honeycomb;
@@ -483,22 +487,16 @@
     const pad = 18;
     const width = Math.ceil(pad * 2 + (state.cols - 1) * p.col + p.col + (honeycomb ? p.col / 2 : 0));
     const height = Math.ceil(pad * 2 + (state.rows - 1) * p.row + p.col);
-    const dpr = Math.min(2, global.devicePixelRatio || 1);
-
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    canvas.style.width = '100%';
-    canvas.style.maxWidth = width + 'px';
-    canvas.style.height = 'auto';
-
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#080b10';
-    ctx.fillRect(0, 0, width, height);
+    const host = canvas.parentElement;
+    const avail = Math.max(240, ((host && host.clientWidth) || width) - 22);
+    const k = Math.max(0.55, Math.min(2.4, avail / width));
+    const ctx = G.setupCanvas(canvas, Math.round(width * k), Math.round(height * k));
+    ctx.scale(k, k);
+    G.panel(ctx, width, height);
 
     const originX = pad + p.col / 2;
     const originY = pad + p.col / 2;
+    const fontPx = Math.max(8, Math.min(13, diameter * 0.5));
 
     for (let r = 0; r < state.rows; r += 1) {
       for (let c = 0; c < state.cols; c += 1) {
@@ -507,21 +505,21 @@
         ctx.beginPath();
         ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
         if (group > 0) {
-          ctx.fillStyle = 'hsl(' + groupHue(group) + ' 62% 38%)';
+          const col = G.seriesColor(group);
+          const rg = ctx.createRadialGradient(pt.x - pt.radius * 0.35, pt.y - pt.radius * 0.4, pt.radius * 0.1, pt.x, pt.y, pt.radius);
+          rg.addColorStop(0, G.mix(col, '#ffffff', 0.28));
+          rg.addColorStop(1, G.mix(col, '#080b10', 0.35));
+          ctx.fillStyle = rg;
           ctx.fill();
-          ctx.lineWidth = 1.4;
-          ctx.strokeStyle = 'rgba(238,240,250,0.85)';
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = G.alpha('#e8eef5', 0.55);
           ctx.stroke();
-          ctx.fillStyle = '#fff';
-          ctx.font = '600 10px Exo 2, IBM Plex Mono, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(String(group), pt.x, pt.y + 0.5);
+          G.label(ctx, String(group), pt.x, pt.y + 0.5, { size: fontPx, weight: 700, color: '#080b10' });
         } else {
-          ctx.fillStyle = 'rgba(255,255,255,0.035)';
+          ctx.fillStyle = 'rgba(255,255,255,0.025)';
           ctx.fill();
           ctx.lineWidth = 1;
-          ctx.strokeStyle = 'rgba(148,151,184,0.35)';
+          ctx.strokeStyle = G.P.hairline.replace('0.06', '0.16');
           ctx.stroke();
         }
       }
@@ -530,31 +528,146 @@
     canvas._ebdOrigin = { x: originX, y: originY, diameter: diameter, honeycomb: honeycomb, cssW: width, cssH: height };
   }
 
+  /* ── Finished pack · isometric (port of PackIsometricDiagram) ── */
+
+  function packModelFromGrid(grid, opts) {
+    const diameter = Math.max(8, Number(opts.cellD) || 18.5);
+    const length = Math.max(20, Number(opts.cellL) || 65.2);
+    const honeycomb = !!opts.honeycomb;
+    const p = pitch(diameter, honeycomb);
+    const cells = [];
+    const groups = {};
+    for (let r = 0; r < grid.length; r += 1) {
+      for (let c = 0; c < grid[r].length; c += 1) {
+        const g = grid[r][c] | 0;
+        if (g <= 0) continue;
+        const x = c * p.col + (honeycomb && (r % 2) ? p.col / 2 : 0);
+        const y = r * p.row;
+        cells.push({ x: x, y: y, group: g, row: r });
+        groups[g] = true;
+      }
+    }
+    if (!cells.length || cells.length > 400) return null;
+    const xs = cells.map((m) => m.x), ys = cells.map((m) => m.y);
+    const minX = Math.min.apply(null, xs), minY = Math.min.apply(null, ys);
+    cells.forEach((m) => { m.x = m.x - minX + diameter / 2; m.y = m.y - minY + diameter / 2; });
+    const strip = 0.15;
+    return {
+      cells: cells,
+      order: Object.keys(groups).map(Number).sort((u, v) => u - v),
+      lengthMM: Math.max.apply(null, cells.map((m) => m.x)) + diameter / 2,
+      widthMM: Math.max.apply(null, cells.map((m) => m.y)) + diameter / 2,
+      heightMM: length + strip * 2,
+      cellD: diameter,
+      strip: strip,
+      honeycomb: honeycomb,
+    };
+  }
+
+  function drawIso() {
+    const canvas = $('ebd_iso');
+    if (!canvas || !canvas.getContext) return;
+    const G = global.BeckifyGfx;
+    const P = G.P;
+    const opts = readOpts();
+    const m = packModelFromGrid(state.grid, opts);
+    const host = canvas.parentElement;
+    const W = Math.max(280, Math.min(920, (host && host.clientWidth) || 720));
+    const H = W < 520 ? 300 : 360;
+    const ctx = G.setupCanvas(canvas, W, H);
+    G.panel(ctx, W, H);
+    if (!m) {
+      G.label(ctx, 'Paint cells in the 2D view to see the finished pack.', W / 2, H / 2, { size: 13, weight: 500, color: P.muted });
+      return;
+    }
+    const proj = (x, y, z) => ({ x: (x - y) * 0.8660254, y: (x + y) * 0.5 - z });
+    const L = m.lengthMM, Wd = m.widthMM, Ht = m.heightMM;
+    const corners = [proj(0, 0, 0), proj(L, 0, 0), proj(0, Wd, 0), proj(L, Wd, 0), proj(0, 0, Ht), proj(L, 0, Ht), proj(0, Wd, Ht), proj(L, Wd, Ht)];
+    const minX = Math.min.apply(null, corners.map((c) => c.x)), maxX = Math.max.apply(null, corners.map((c) => c.x));
+    const minY = Math.min.apply(null, corners.map((c) => c.y)), maxY = Math.max.apply(null, corners.map((c) => c.y));
+    const padX = W < 520 ? 38 : 54, padTop = 40, padBottom = 54;
+    const scale = Math.min((W - 2 * padX) / Math.max(maxX - minX, 1), (H - padTop - padBottom) / Math.max(maxY - minY, 1));
+    const ox = padX + (W - 2 * padX - (maxX - minX) * scale) / 2 - minX * scale;
+    const oy = padTop + (H - padTop - padBottom - (maxY - minY) * scale) / 2 - minY * scale;
+    const pt = (x, y, z) => { const r = proj(x, y, z); return { x: ox + r.x * scale, y: oy + r.y * scale }; };
+
+    // Floor shadow
+    ctx.beginPath();
+    [pt(0, 0, 0), pt(L, 0, 0), pt(L, Wd, 0), pt(0, Wd, 0)].forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.045)';
+    ctx.fill();
+
+    const rad = m.cellD / 2;
+    const a = rad * 1.2247449 * scale, b = rad * 0.7071068 * scale;
+    const cellTop = Ht - m.strip, bottomZ = m.strip;
+    const ordered = m.cells.slice().sort((u, v) => (u.x + u.y) - (v.x + v.y));
+    ordered.forEach((cell) => {
+      const top = pt(cell.x, cell.y, cellTop), bot = pt(cell.x, cell.y, bottomZ);
+      ctx.fillStyle = P.wrap;
+      ctx.beginPath(); ctx.ellipse(bot.x, bot.y, a, b, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(top.x - a, top.y, a * 2, bot.y - top.y);
+      ctx.fillStyle = G.alpha(P.wrapLight, 0.55);
+      ctx.fillRect(top.x - a, top.y, a * 0.55, bot.y - top.y);
+      ctx.beginPath(); ctx.ellipse(top.x, top.y, a, b, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#c7c7c7'; ctx.fill();
+      ctx.lineWidth = 0.6; ctx.strokeStyle = '#737373'; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(top.x, top.y, a * 0.45, b * 0.45, 0, 0, Math.PI * 2);
+      ctx.fillStyle = G.mix(G.seriesColor(cell.group), '#ffffff', 0.12); ctx.fill();
+    });
+
+    // Nickel strips across each pair of series groups, on the top face
+    for (let i = 0; i + 1 < m.order.length; i += 2) {
+      const sel = m.cells.filter((c) => c.group === m.order[i] || c.group === m.order[i + 1]);
+      const x0 = Math.min.apply(null, sel.map((c) => c.x)) - rad * 0.55, x1 = Math.max.apply(null, sel.map((c) => c.x)) + rad * 0.55;
+      const y0 = Math.min.apply(null, sel.map((c) => c.y)) - rad * 0.9, y1 = Math.max.apply(null, sel.map((c) => c.y)) + rad * 0.9;
+      ctx.beginPath();
+      [pt(x0, y0, Ht), pt(x1, y0, Ht), pt(x1, y1, Ht), pt(x0, y1, Ht)].forEach((q, j) => (j ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(217,217,217,0.5)'; ctx.fill();
+      ctx.lineWidth = 0.8; ctx.strokeStyle = 'rgba(242,242,242,0.8)'; ctx.stroke();
+    }
+
+    // Pack leads: B− on the first group, B+ on the last
+    function lead(group, text, tint, dir) {
+      const cell = m.cells.filter((c) => c.group === group).sort((u, v) => u.row - v.row || u.x - v.x)[0];
+      if (!cell) return;
+      const s = pt(cell.x, cell.y - rad * 0.2, Ht);
+      const e = { x: s.x + dir * 26, y: s.y - 24 };
+      ctx.strokeStyle = tint; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+      G.label(ctx, text, e.x + dir * 4, e.y - 8, { size: 11, weight: 700, color: tint });
+    }
+    lead(m.order[0], 'B−', P.muted, -1);
+    lead(m.order[m.order.length - 1], 'B+', P.bad, 1);
+
+    const tl = pt(0, 0, Ht), tr = pt(L, 0, Ht);
+    G.label(ctx, m.order.length + ' groups in series →', (tl.x + tr.x) / 2 + 12, (tl.y + tr.y) / 2 - 28, { size: 10.5, color: P.accent });
+
+    const off = Math.max(m.cellD * 0.9, 10);
+    G.dimension(ctx, pt(0, Wd + off, 0), pt(L, Wd + off, 0), 'L ' + fmt(L, 0) + ' mm', { dy: 12 });
+    G.dimension(ctx, pt(L + off, 0, 0), pt(L + off, Wd, 0), 'W ' + fmt(Wd, 0) + ' mm', { color: P.good, dx: 16, dy: 6 });
+    const h0 = pt(0, Wd + off * 0.2, 0), h1 = pt(0, Wd + off * 0.2, Ht);
+    G.dimension(ctx, { x: h0.x - 34, y: h0.y }, { x: h1.x - 34, y: h1.y }, 'H ' + fmt(Ht, 1), { color: P.copper, dx: -6 });
+
+    const par = Math.round(m.cells.length / m.order.length);
+    G.label(ctx, m.order.length + 'S' + par + 'P  ·  ' + m.cells.length + ' cells', 12, 16, { size: 14, weight: 700, align: 'left' });
+    G.label(ctx, 'cells and nickel only · tops tinted by series group', 10, H - 12, { size: 10, weight: 500, color: P.muted, align: 'left' });
+    canvas.setAttribute('aria-label', 'Isometric view of the finished pack, ' + m.cells.length + ' cells, ' + fmt(L, 0) + ' by ' + fmt(Wd, 0) + ' by ' + fmt(Ht, 1) + ' millimeters.');
+  }
+
   function draw3D() {
     const canvas = $('ebd_canvas_3d');
     if (!canvas || !canvas.getContext) return;
     const opts = readOpts();
     const pack = buildPackCells(state.grid, opts);
-    const cssW = Math.max(480, Math.min(920, (canvas.parentElement && canvas.parentElement.clientWidth) || 720));
+    const cssW = Math.max(280, Math.min(920, (canvas.parentElement && canvas.parentElement.clientWidth - 22) || 720));
     const cssH = 420;
-    const dpr = Math.min(2, global.devicePixelRatio || 1);
-    canvas.width = Math.round(cssW * dpr);
-    canvas.height = Math.round(cssH * dpr);
-    canvas.style.width = cssW + 'px';
-    canvas.style.height = cssH + 'px';
-
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, cssH);
-
-    const bg = ctx.createLinearGradient(0, 0, 0, cssH);
-    bg.addColorStop(0, '#12161e');
-    bg.addColorStop(1, '#080b10');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, cssW, cssH);
+    const ctx = global.BeckifyGfx.setupCanvas(canvas, cssW, cssH);
+    global.BeckifyGfx.panel(ctx, cssW, cssH);
 
     // Floor grid
-    ctx.strokeStyle = 'rgba(148,151,184,0.12)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1;
     for (let i = 0; i < 9; i += 1) {
       const y = cssH * 0.62 + i * 10;
@@ -565,7 +678,7 @@
     }
 
     if (!pack.cells.length) {
-      ctx.fillStyle = '#9497b8';
+      ctx.fillStyle = '#94a2b2';
       ctx.font = '500 14px Exo 2, IBM Plex Mono, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Paint cells in the 2D view to inspect the pack in 3D.', cssW / 2, cssH / 2);
@@ -589,7 +702,7 @@
     drawers.sort((a, b) => b.depth - a.depth);
     for (let i = 0; i < drawers.length; i += 1) drawers[i].draw();
 
-    ctx.fillStyle = 'rgba(148,151,184,0.85)';
+    ctx.fillStyle = '#94a2b2';
     ctx.font = '500 11px IBM Plex Mono, monospace';
     ctx.textAlign = 'left';
     ctx.fillText(pack.cells.length + ' cells · drag to orbit · scroll to zoom', 14, cssH - 14);
@@ -622,6 +735,7 @@
     renderStats(analysis);
     if (state.view === '3d') draw3D();
     else drawCanvas();
+    drawIso();
     const status = $('ebd_status');
     if (status) {
       status.textContent = analysis.exactTarget
@@ -885,6 +999,12 @@
     applyPackPreset('52v');
     setMode('paint');
     setView('2d');
+    drawIso();
+    let rz = 0;
+    global.addEventListener('resize', () => {
+      clearTimeout(rz);
+      rz = setTimeout(() => { if (state.view === '3d') draw3D(); else drawCanvas(); drawIso(); }, 120);
+    });
   }
 
   global.__ebikeBatteryDesignerTestApi = {
@@ -895,6 +1015,7 @@
     cellCenter: cellCenter,
     countGroups: countGroups,
     buildPackCells: buildPackCells,
+    packModelFromGrid: packModelFromGrid,
     projectPoint: projectPoint,
     cameraBasis: cameraBasis,
     CELL_PRESETS: CELL_PRESETS,
