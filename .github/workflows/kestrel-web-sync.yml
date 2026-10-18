@@ -1,11 +1,11 @@
 name: Sync Kestrel Heavy web build
 
 # Keeps beckify.com/arcade/kestrel-heavy equal to the newest successful "WebGL build" on kestrel-heavy main.
-# Triggers: cron every 30 min (works with no secrets), manual, or repository_dispatch (type kestrel-webgl-built)
+# Triggers: cron every 3 hours (works with no secrets), manual, or repository_dispatch (type kestrel-webgl-built)
 # sent by kestrel-heavy. Opens a PR, squash-merges it, deletes the branch, then dispatches the Pages deploy.
 on:
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '7 */3 * * *'
   workflow_dispatch:
   repository_dispatch:
     types: [kestrel-webgl-built]
