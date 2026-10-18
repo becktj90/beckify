@@ -80,6 +80,8 @@ for (const id of E.circuits()) {
     const r = E.solveSafe(id, u.id, spec.defaults);
     assert.ok(r.ok, `${id}/${u.id}: ${r.error}`);
     const sol = r.solution;
+    const NO_BOARD = ['classOverview', 'idealBuck', 'complexConvert', 'impedanceCombo', 'lMatch', 'quarterWave', 'stubCancel'];
+    if (NO_BOARD.indexOf(id) >= 0) { assert.ok(!sol.layout, id + ' has no breadboard'); assert.ok(R.renderSchematic(sol).startsWith('<svg')); continue; }
     assert.ok(sol.layout, id + ' has a breadboard');
     assert.ok(sol.layout.audit.ok, `${id}/${u.id} audit ${JSON.stringify(sol.layout.audit)}`);
     assert.ok(E.visibleFields(id, u.id, spec.defaults).length >= 2, id + ' fields');
@@ -219,6 +221,38 @@ for (const id of E.circuits()) {
     assert.ok(R.renderBreadboard(sol.layout, { pitch: 20 }).includes('<svg'), id + ' board');
   }
   for (let d = 0; d <= 9; d++) assert.ok(E.solve('sevenSegment', 'map', Object.assign({}, D('sevenSegment'), { digit: String(d) })).layout.audit.ok, 'digit ' + d + ' audit');
+}
+
+/* amplifier and power basics */
+{
+  const get = (sol, id) => sol.quantities.find((x) => x.id === id).value;
+  const co = E.solve('classOverview', 'dissipation', D('classOverview'));
+  near(get(co, 'pdc'), 10 / (Math.PI / 4), 1e-9); near(get(co, 'pd'), 10 / (Math.PI / 4) - 10, 1e-9);
+  near(get(E.solve('classOverview', 'dissipation', Object.assign({}, D('classOverview'), { ampClass: 'A' })), 'pdc'), 40, 1e-9);
+  near(get(E.solve('classOverview', 'dissipation', Object.assign({}, D('classOverview'), { eta: '50' })), 'pd'), 10, 1e-9);
+  assert.throws(() => E.solve('classOverview', 'dissipation', Object.assign({}, D('classOverview'), { eta: '120' })), /at most 100/);
+  const dp = E.solve('discretePower', 'power', D('discretePower'));
+  const bb = E.solve('bjtBias', 'point', D('discretePower'));
+  near(get(dp, 'pq'), get(bb, 'ic') * get(bb, 'vce'), 1e-12);
+  const op = E.solve('opAmpPower', 'load', D('opAmpPower'));
+  near(get(op, 'vout'), 1, 1e-12); near(get(op, 'pload'), 1 / 8, 1e-12);
+  const opc = E.solve('opAmpPower', 'load', Object.assign({}, D('opAmpPower'), { vin: '10' }));
+  near(get(opc, 'vout'), 12, 1e-12); assert.ok(opc.warning);
+  near(get(E.solve('opAmpPower', 'rf', D('opAmpPower')), 'rf'), 10000, 1e-6);
+  const ld = E.solve('linearDrop', 'drop', D('linearDrop'));
+  near(get(ld, 'pd'), 3.5, 1e-12); near(get(ld, 'eta'), 5 / 12 * 100, 1e-9);
+  near(get(E.solve('linearDrop', 'iload', D('linearDrop')), 'iload'), 2 / 7, 1e-12);
+  near(get(E.solve('linearDrop', 'vin', D('linearDrop')), 'vin'), 7, 1e-12);
+  assert.throws(() => E.solve('linearDrop', 'drop', Object.assign({}, D('linearDrop'), { vin: '4' })), /above Vout/);
+  const bk = E.solve('idealBuck', 'duty', D('idealBuck'));
+  near(get(bk, 'duty'), 5 / 12, 1e-12); near(get(bk, 'iin'), 2 * 5 / 12, 1e-12);
+  near(get(E.solve('idealBuck', 'vout', D('idealBuck')), 'vout'), 0.4167 * 12, 1e-9);
+  assert.throws(() => E.solve('idealBuck', 'duty', Object.assign({}, D('idealBuck'), { vout: '13' })), /steps down/);
+  for (const id of ['classOverview', 'discretePower', 'opAmpPower', 'linearDrop', 'idealBuck']) {
+    const sol = E.solve(id, E.SPECS.find((x) => x.id === id).defaultUnknown, D(id));
+    if (sol.layout) assert.ok(sol.layout.audit.ok, id + ' audit: ' + JSON.stringify(sol.layout.audit));
+    assert.ok(R.renderSchematic(sol).includes('<svg'), id + ' schematic');
+  }
 }
 
 /* audit catches mistakes: a short, an off-board hole, and a split net */

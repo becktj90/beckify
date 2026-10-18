@@ -298,6 +298,27 @@
     visible: { map: ['digit', 'vcc', 'vf', 'r'], r: ['digit', 'vcc', 'vf', 'iseg'] },
     defaults: { digit: '8', vcc: '5', vf: '2', r: '330', iseg: '0.009' } });
 
+  spec({ id: 'classOverview', family: 'amplifier', title: 'Class overview', blurb: 'Ideal class efficiencies used as a planning sketch, not a measured amplifier.',
+    defaultUnknown: 'dissipation', unknowns: [u('dissipation', 'Supply and heat')],
+    fields: [ch('ampClass', 'Class', [['A', 'A'], ['B', 'B'], ['AB', 'AB'], ['D', 'D']]), n('pout', 'Pout', 'W'), n('vsupply', 'Supply', 'V'), Object.assign(n('eta', 'Efficiency override', '%', 'Leave blank to use the ideal class figure.'), { optional: true })],
+    visible: { dissipation: ['ampClass', 'pout', 'vsupply', 'eta'] }, defaults: { ampClass: 'B', pout: '10', vsupply: '24', eta: '' } });
+  spec({ id: 'discretePower', family: 'amplifier', title: 'Discrete CE stage', blurb: 'Class-A CE stage. Quiescent transistor power and resistor power from the bias point.',
+    defaultUnknown: 'power', unknowns: [u('power', 'Quiescent power')],
+    fields: [n('vcc', 'Vcc', 'V'), n('r1', 'R1', 'Ω'), n('r2', 'R2', 'Ω'), n('rc', 'Rc', 'Ω'), n('re', 'Re', 'Ω'), n('beta', 'β', '')],
+    visible: { power: ['vcc', 'r1', 'r2', 'rc', 're', 'beta'] }, defaults: { vcc: '12', r1: '47000', r2: '10000', rc: '2200', re: '1000', beta: '100' } });
+  spec({ id: 'opAmpPower', family: 'amplifier', title: 'Op-amp load amp', blurb: 'Non-inverting stage into a resistive load. Ideal output current.',
+    defaultUnknown: 'load', unknowns: [u('load', 'Load power'), u('rf', 'Rf')],
+    fields: [n('vin', 'Vin', 'V'), n('rg', 'Rg', 'Ω'), n('rf', 'Rf', 'Ω'), n('rl', 'RL', 'Ω'), n('vsat', 'Swing limit', 'V'), n('av', 'Target Av', '')],
+    visible: { load: ['vin', 'rg', 'rf', 'rl', 'vsat'], rf: ['vin', 'rg', 'rl', 'vsat', 'av'] }, defaults: { vin: '0.5', rg: '10000', rf: '10000', rl: '8', vsat: '12', av: '2' } });
+  spec({ id: 'linearDrop', family: 'power', title: 'Linear regulator drop', blurb: 'Pass element drops Vin − Vout. Heat is that drop times load current.',
+    defaultUnknown: 'drop', unknowns: [u('drop', 'Drop and heat'), u('iload', 'Max current'), u('vin', 'Min Vin')],
+    fields: [n('vin', 'Vin', 'V'), n('vout', 'Vout', 'V'), n('iload', 'Iload', 'A'), n('pdmax', 'Pd max', 'W'), n('dropout', 'Dropout', 'V')],
+    visible: { drop: ['vin', 'vout', 'iload'], iload: ['vin', 'vout', 'pdmax'], vin: ['vout', 'iload', 'dropout'] }, defaults: { vin: '12', vout: '5', iload: '0.5', pdmax: '2', dropout: '2' } });
+  spec({ id: 'idealBuck', family: 'power', title: 'Ideal buck', blurb: 'Lossless step-down. Duty is Vout/Vin. Input current follows power balance.',
+    defaultUnknown: 'duty', unknowns: [u('duty', 'Duty and Iin'), u('vout', 'Vout'), u('iin', 'Iin')],
+    fields: [n('vin', 'Vin', 'V'), n('vout', 'Vout', 'V'), n('iout', 'Iout', 'A'), n('duty', 'Duty', '')],
+    visible: { duty: ['vin', 'vout', 'iout'], vout: ['vin', 'duty', 'iout'], iin: ['vin', 'vout', 'iout'] }, defaults: { vin: '12', vout: '5', iout: '2', duty: '0.4167' } });
+
   function visibleFields(id, unknown, inputs) {
     const s = specOf(id);
     const ids = s.visible[unknown] || s.visible[s.defaultUnknown] || [];
@@ -1125,6 +1146,79 @@
       notes: ['Segment map is the usual common-cathode pattern: 0 lights a–f, 1 lights b and c, 8 lights all.', 'Blank segments draw no current in this model.', 'A decoder chip is not simulated. You pick the digit and the map is shown.'] });
   };
 
+  const zBlock = (id, label, detail, x1, y1, x2, y2) => part(id, 'zBlock', label, detail, x1, y1, x2, y2);
+  SOLVERS.classOverview = (unknown, inp) => {
+    if (unknown !== 'dissipation') throw badUnknown();
+    const kind = choice(inp, 'ampClass', ['A', 'B', 'AB', 'D'], 'B', 'Class'), pout = pos(inp, 'pout', 'Pout'), vsupply = pos(inp, 'vsupply', 'Supply');
+    const ideals = { A: [0.25, 'Class A into a resistor, ideal maximum 25%.'], B: [Math.PI / 4, 'Class B push-pull, ideal maximum π/4.'], AB: [0.6, 'Class AB planning figure 60%, between A and B. Not a measurement.'], D: [0.9, 'Class D planning figure 90% for an ideal switch. Not a measurement.'] };
+    let eta = ideals[kind][0];
+    const raw = String(inp.eta == null ? '' : inp.eta).trim();
+    if (raw !== '') { const pct = num(inp, 'eta', 'Efficiency'); if (!(pct > 0 && pct <= 100)) throw outOfRange('Efficiency has to be above 0% and at most 100%.'); eta = pct / 100; }
+    const pdc = pout / eta, pd = pdc - pout, isup = pdc / vsupply;
+    return pack('classOverview', { headline: 'Pd = ' + eng(pd) + ' W',
+      elements: [src('vs', 'Vs', eng(vsupply) + ' V', 18, 64, 18, 24), zBlock('dev', 'Class ' + kind, Math.round(eta * 100) + '%', 40, 24, 68, 24), res('rl', 'Load', eng(pout) + ' W', 68, 24, 86, 50), gnd('g', 86, 64), wire('b', 18, 64, 86, 64)],
+      nodes: [node('s', 'Supply', vsupply, 'V', 18, 24), node('o', 'Pout', pout, 'W', 86, 50), node('gnd', 'GND', 0, 'V', 86, 64)],
+      branches: [branch('is', 'Isupply', isup, 'A', 18, 50, 18, 30)],
+      quantities: [q('eta', 'η', eta * 100, '%', true), q('pdc', 'From supply', pdc, 'W'), q('pd', 'Heat', pd, 'W'), q('is', 'Isupply', isup, 'A'), q('pout', 'Pout', pout, 'W')],
+      steps: [ideals[kind][1], 'Psupply = Pout / η,  heat = Psupply − Pout'],
+      notes: ['Efficiencies are ideal class figures, or the override you typed.', 'Class A here is the resistively loaded 25% case, not a transformer-coupled 50% case.', 'Not a heatsink design and not a measured amplifier.'] });
+  };
+  SOLVERS.discretePower = (unknown, inp) => {
+    if (unknown !== 'power') throw badUnknown();
+    const vcc = pos(inp, 'vcc', 'Vcc'), r1 = pos(inp, 'r1', 'R1'), r2 = pos(inp, 'r2', 'R2'), rc = pos(inp, 'rc', 'Rc'), re = pos(inp, 're', 'Re'), beta = pos(inp, 'beta', 'β');
+    const b = bjtBiasCalc(vcc, r1, r2, rc, re, beta), pq = b.ic * b.vce, psup = vcc * (b.ic + b.iR1);
+    return pack('discretePower', { headline: 'Pq = ' + eng(pq) + ' W', elements: bjtElements(vcc, r1, r2, rc, re), nodes: bjtNodes(b, vcc), branches: bjtBranches(b),
+      quantities: [q('pq', 'P in Q', pq, 'W', true), q('prc', 'P in Rc', b.ic * b.ic * rc, 'W'), q('pre', 'P in Re', b.ie * b.ie * re, 'W'), q('psup', 'From Vcc', psup, 'W'), q('ic', 'Ic', b.ic, 'A'), q('vce', 'Vce', b.vce, 'V'), q('vc', 'Vc', b.vc, 'V'), q('vb', 'Vb', b.vb, 'V'), q('vcc', 'Vcc', vcc, 'V'), q('rc', 'Rc', rc, 'Ω'), q('r1', 'R1', r1, 'Ω'), q('r2', 'R2', r2, 'Ω'), q('re', 'Re', re, 'Ω')],
+      steps: ['Same divider-bias point as the BJT screen.', 'Pq ≈ Ic·Vce. Resistor power is I²R.'],
+      notes: ['Quiescent class-A sketch. Signal swing would move the instantaneous power.', 'Supply power counts collector current plus the base-divider current.', 'Vbe = 0.7 V, constant β. Not a thermal design.'],
+      warning: b.saturated ? 'The point is saturated, so this is not a linear class-A bias.' : (b.cutoff ? 'The transistor is cut off, so quiescent power in Q is about zero.' : null) });
+  };
+  SOLVERS.opAmpPower = (unknown, inp) => {
+    const vin = finite(inp, 'vin', 'Vin'), rg = pos(inp, 'rg', 'Rg'), rl = pos(inp, 'rl', 'RL'), vsat = pos(inp, 'vsat', 'Swing limit');
+    let rf;
+    if (unknown === 'rf') { const a = pos(inp, 'av', 'Av'); if (!(a > 1)) throw outOfRange('This non-inverting stage needs Av > 1.'); rf = rg * (a - 1); }
+    else if (unknown === 'load') rf = pos(inp, 'rf', 'Rf'); else throw badUnknown();
+    const av = 1 + rf / rg, sw = clampSwing(av * vin, vsat), iout = sw.shown / rl, pl = sw.shown * iout;
+    return pack('opAmpPower', { headline: 'Pload = ' + eng(pl) + ' W',
+      elements: [src('vin', 'Vin', eng(vin) + ' V', 14, 62, 14, 36.8), wire('p', 14, 36.8, 53, 36.8), opAmpPart('oa', 60, 40, false), wire('m', 53, 43.2, 40, 43.2), wire('m2', 40, 43.2, 40, 54), res('rg', 'Rg', eng(rg) + ' Ω', 40, 54, 40, 70), gnd('g', 40, 70), res('rf', 'Rf', eng(rf) + ' Ω', 40, 54, 78, 54), wire('fb', 78, 54, 78, 40), wire('o', 69, 40, 86, 40), res('rl', 'RL', eng(rl) + ' Ω', 86, 40, 86, 66), gnd('g2', 86, 66), gnd('g0', 14, 62)],
+      nodes: [node('in', 'Vin', vin, 'V', 14, 36.8), node('out', 'Vout', sw.shown, 'V', 86, 40), node('gnd', 'GND', 0, 'V', 86, 66)],
+      branches: [branch('iout', 'Iout', iout, 'A', 86, 46, 86, 62)],
+      quantities: [q('vout', 'Vout', sw.shown, 'V'), q('iout', 'Iout', iout, 'A'), q('pload', 'Pload', pl, 'W', true), q('av', 'Av', av, ''), q('rf', 'Rf', rf, 'Ω', unknown === 'rf')],
+      steps: ['Av = 1 + Rf/Rg', 'Iout = Vout / RL,  Pload = Vout · Iout'],
+      notes: ['Teaching power stage: an ideal op-amp into a resistor.', 'Supply current is about the load current. Quiescent current is omitted.', 'A real op-amp has a short-circuit current limit this screen does not apply.'],
+      warning: sw.clipped ? 'The ideal output is past the swing limit, so load power uses the clipped voltage.' : null });
+  };
+  SOLVERS.linearDrop = (unknown, inp) => {
+    let vin = 0, vout = 0, iload = 0;
+    if (unknown === 'drop') { vin = pos(inp, 'vin', 'Vin'); vout = pos(inp, 'vout', 'Vout'); iload = pos(inp, 'iload', 'Iload'); if (!(vin > vout)) throw outOfRange('Vin has to be above Vout. A linear pass element cannot boost.'); }
+    else if (unknown === 'iload') { vin = pos(inp, 'vin', 'Vin'); vout = pos(inp, 'vout', 'Vout'); const pd = pos(inp, 'pdmax', 'Pd max'); if (!(vin > vout)) throw outOfRange('Vin has to be above Vout.'); iload = pd / (vin - vout); }
+    else if (unknown === 'vin') { vout = pos(inp, 'vout', 'Vout'); iload = pos(inp, 'iload', 'Iload'); vin = vout + pos(inp, 'dropout', 'Dropout'); }
+    else throw badUnknown();
+    const drop = vin - vout, pd = drop * iload;
+    return pack('linearDrop', { headline: 'Pd = ' + eng(pd) + ' W',
+      elements: [src('vin', 'Vin', eng(vin) + ' V', 16, 64, 16, 22), zBlock('pass', 'Pass', eng(drop) + ' V', 36, 22, 62, 22), res('rl', 'Load', eng(vout) + ' V', 74, 22, 74, 64), wire('a', 16, 22, 36, 22), wire('b', 62, 22, 74, 22), wire('g', 16, 64, 74, 64), gnd('gnd', 74, 64)],
+      nodes: [node('in', 'Vin', vin, 'V', 16, 22), node('out', 'Vout', vout, 'V', 74, 22), node('gnd', 'GND', 0, 'V', 74, 64)],
+      branches: [branch('i', 'Iload', iload, 'A', 40, 22, 58, 22)],
+      quantities: [q('drop', 'Vdrop', drop, 'V', unknown === 'drop'), q('pd', 'Pd', pd, 'W'), q('eta', 'η', vout / vin * 100, '%'), q('iload', 'Iload', iload, 'A', unknown === 'iload'), q('vin', 'Vin', vin, 'V', unknown === 'vin'), q('vout', 'Vout', vout, 'V'), q('pload', 'Pload', vout * iload, 'W')],
+      steps: ['Vdrop = Vin − Vout', 'Pd = Vdrop · Iload,  η = Vout / Vin'],
+      notes: ['Linear drop only. The pass element burns the difference.', 'No quiescent current, no ripple rejection, no adjust pin.', 'Min Vin is Vout plus the dropout you enter.'] });
+  };
+  SOLVERS.idealBuck = (unknown, inp) => {
+    const vin = pos(inp, 'vin', 'Vin'), iout = pos(inp, 'iout', 'Iout');
+    let vout = 0, duty = 0;
+    if (unknown === 'duty' || unknown === 'iin') { vout = pos(inp, 'vout', 'Vout'); if (!(vout < vin)) throw outOfRange('An ideal buck only steps down. Vout must be below Vin.'); duty = vout / vin; }
+    else if (unknown === 'vout') { duty = pos(inp, 'duty', 'Duty'); if (!(duty < 1)) throw outOfRange('Duty for a buck is below 1.'); vout = duty * vin; }
+    else throw badUnknown();
+    const iin = iout * duty;
+    return pack('idealBuck', { headline: 'D = ' + duty.toFixed(3),
+      elements: [src('vin', 'Vin', eng(vin) + ' V', 14, 64, 14, 20), zBlock('sw', 'Switch', 'D=' + duty.toFixed(2), 32, 20, 52, 20), ind('l', 'L', 'ideal', 52, 20, 74, 20), cap('c', 'C', 'ideal', 80, 20, 80, 64), res('rl', 'Load', eng(iout) + ' A', 68, 36, 68, 64), wire('g', 14, 64, 80, 64), gnd('gnd', 80, 64)],
+      nodes: [node('in', 'Vin', vin, 'V', 14, 20), node('sw', 'Switch avg', vout, 'V', 52, 20), node('out', 'Vout', vout, 'V', 80, 20), node('gnd', 'GND', 0, 'V', 80, 64)],
+      branches: [branch('iin', 'Iin', iin, 'A', 18, 48, 18, 26), branch('il', 'IL', iout, 'A', 56, 20, 70, 20)],
+      quantities: [q('duty', 'Duty', duty, '', unknown === 'duty'), q('vout', 'Vout', vout, 'V', unknown === 'vout'), q('iin', 'Iin', iin, 'A', unknown === 'iin'), q('pout', 'Pout', vout * iout, 'W')],
+      steps: ['D = Vout / Vin', 'Iin = Iout · D  (lossless power balance)'],
+      notes: ['Ideal continuous buck. Efficiency is 100% in this sketch.', 'Switch-node average equals Vout. Ripple current is not computed.', 'Not a controller design. No diode drop, no MOSFET, no compensation.'] });
+  };
+
   function solve(circuit, unknown, inputs) {
     const s = specOf(circuit);
     if (!s.unknowns.some((x) => x.id === unknown)) throw outOfRange('That unknown is not on this circuit.');
@@ -1691,6 +1785,24 @@
       if (p[5]) b.jumper('v' + p[1], 'Vcc', p[2], 'a', p[2], 'topPlus', 'red'); else b.jumper('v' + p[1], 'Vcc', p[2], p[4] === 'j' ? 'g' : 'j', p[2], 'botPlus', 'red');
     });
     return b.finish(b.caption('Common-cathode 5161AS. Pins 3 and 8 are the cathode, on the blue rail. Each lit segment has its own resistor from the red rail. Dark segments are open. DP is unused.'));
+  };
+
+  LAYOUTS.discretePower = (b) => { const bd = LAYOUTS.bjtBias(b); bd.caption = b.caption('Class-A common-emitter stage on a 2N3904 with its flat face toward you, leads E B C left to right. R1 and R2 set the base, Rc is the collector load, and Re sets the emitter. Quiescent power in the transistor is Ic × Vce. Add a heatsink and check the bias before you rely on it for real power.'); return bd; };
+  LAYOUTS.opAmpPower = (b) => {
+    const rf = b.qty('rf'), av = b.qty('av'), rg = rf / (av - 1), vout = b.qty('vout') || 0, iout = b.qty('iout') || 0, rl = (Math.abs(vout) > 1e-12 && Math.abs(iout) > 1e-12) ? Math.abs(vout / iout) : 1000;
+    b.placeOpAmp('SUM', 'Vin'); b.dualSupply();
+    b.components.push(srcPart('vin', 'Vin', b.hole(7, 'd', 'Vin'), b.hole(4, 'd', 'GND')));
+    b.resistor('rg', 'Rg', rg, b.hole(13, 'c', 'SUM'), b.hole(9, 'c', 'GND')); b.resistor('rf', 'Rf', rf, b.hole(13, 'a', 'SUM'), b.hole(18, 'a', 'Vout')); b.resistor('rl', 'RL', rl, b.hole(18, 'c', 'Vout'), b.hole(22, 'c', 'GND'));
+    b.jumper('gndsrc', 'GND', 4, 'b', 4, 'topMinus', 'black'); b.jumper('in', 'Vin', 7, 'b', 14, 'b', 'yellow'); b.jumper('rgg', 'GND', 9, 'a', 9, 'topMinus', 'black'); b.jumper('rlg', 'GND', 22, 'a', 22, 'topMinus', 'black');
+    b.jumper('cross', 'Vout', 18, 'e', 18, 'f', 'green'); b.jumper('fb', 'Vout', 18, 'j', 14, 'i', 'green');
+    return b.finish(b.caption('741 pinout. Vin drives pin 3, Rg and Rf set the gain, and RL is the load from Vout to the ground rail. Pin 7 is +V and pin 4 is −V. A 741 cannot source much current, so keep RL large on the real part. The ideal model does not limit output current.'));
+  };
+  LAYOUTS.linearDrop = (b) => {
+    const vin = b.qty('vin'), vout = b.qty('vout'), iload = b.qty('iload'), drop = Math.max(vin - vout, 1e-9), rpass = drop / Math.max(iload, 1e-9), rload = vout / Math.max(iload, 1e-9);
+    b.singleSupply(trim(vin) + ' V', 'Vin', 'GND');
+    b.resistor('pass', 'Pass', rpass, b.hole(6, 'c', 'Vin'), b.hole(16, 'c', 'Vout')); b.resistor('rl', 'Load', rload, b.hole(16, 'e', 'Vout'), b.hole(16, 'f', 'GND'));
+    b.jumper('vin', 'Vin', 6, 'a', 6, 'topPlus', 'red'); b.jumper('out', 'Vout', 16, 'b', 24, 'b', 'yellow'); b.jumper('gnd', 'GND', 16, 'j', 16, 'botMinus', 'black'); b.jumper('gndb', 'GND', 24, 'j', 24, 'botMinus', 'black');
+    return b.finish(b.caption('Linear drop sketched as a series pass resistance and the load. Heat is (Vin − Vout)·Iload. Not a real regulator pinout.'));
   };
 
   global.BeckifyBenchEngine = {
