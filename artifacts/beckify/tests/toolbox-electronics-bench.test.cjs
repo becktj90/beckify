@@ -164,6 +164,35 @@ for (const id of E.circuits()) {
   assert.ok(sch.includes('<path') && /A[0-9.]+ [0-9.]+ 0 1 0 /.test(sch), 'pmos bubble drawn');
 }
 
+/* op-amp family: golden values, clipping, audit */
+{
+  const get = (sol, id) => sol.quantities.find((x) => x.id === id).value;
+  const ia = E.solve('invertingAmp', 'gain', D('invertingAmp'));
+  near(get(ia, 'vout'), -2, 1e-12);
+  const clip = E.solve('invertingAmp', 'gain', Object.assign({}, D('invertingAmp'), { vin: '5' }));
+  near(get(clip, 'vout'), -12, 1e-12); assert.ok(clip.warning, 'clip warns');
+  near(get(E.solve('invertingAmp', 'rf', D('invertingAmp')), 'rf'), 100000, 1e-6);
+  near(get(E.solve('invertingAmp', 'vin', D('invertingAmp')), 'vin'), 0.2, 1e-12);
+  near(get(E.solve('nonInvertingAmp', 'gain', D('nonInvertingAmp')), 'vout'), 2, 1e-12);
+  near(get(E.solve('nonInvertingAmp', 'rf', D('nonInvertingAmp')), 'rf'), 90000, 1e-6);
+  assert.throws(() => E.solve('nonInvertingAmp', 'rf', Object.assign({}, D('nonInvertingAmp'), { av: '1' })), /greater than 1/);
+  near(get(E.solve('summingAmp', 'output', D('summingAmp')), 'vout'), -2, 1e-12);
+  near(get(E.solve('summingAmp', 'rf', D('summingAmp')), 'rf'), 10000, 1e-6);
+  near(get(E.solve('diffAmp', 'output', D('diffAmp')), 'vout'), 0.2, 1e-12);
+  near(get(E.solve('integrator', 'ramp', D('integrator')), 'vt'), -1, 1e-12);
+  near(get(E.solve('integrator', 'time', D('integrator')), 'time'), 0.1, 1e-12);
+  near(get(E.solve('integrator', 'c', D('integrator')), 'c'), 1e-6, 1e-15);
+  near(get(E.solve('differentiator', 'output', D('differentiator')), 'vout'), -1, 1e-12);
+  near(get(E.solve('differentiator', 'r', D('differentiator')), 'r'), 10000, 1e-6);
+  assert.equal(E.solve('comparator', 'output', D('comparator')).headline, 'Output high');
+  assert.equal(E.solve('comparator', 'output', Object.assign({}, D('comparator'), { vin: '1' })).headline, 'Output low');
+  for (const id of ['invertingAmp', 'nonInvertingAmp', 'summingAmp', 'diffAmp', 'integrator', 'differentiator', 'comparator']) {
+    const sol = E.solve(id, E.SPECS.find((x) => x.id === id).defaultUnknown, D(id));
+    assert.ok(sol.layout.audit.ok, id + ' audit: ' + JSON.stringify(sol.layout.audit));
+    assert.ok(R.renderSchematic(sol).includes('<text'), id + ' schematic');
+  }
+}
+
 /* audit catches mistakes: a short, an off-board hole, and a split net */
 {
   const sol = E.solve('seriesResistors', 'current', D('seriesResistors'));

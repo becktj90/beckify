@@ -242,6 +242,41 @@
     visible: { threshold: ['vdd', 'vtn', 'vtp'], vout: ['vdd', 'vtn', 'vtp', 'vin'] },
     defaults: { vdd: '5', vtn: '0.7', vtp: '0.7', vin: '1' } });
 
+  spec({ id: 'invertingAmp', family: 'opamp', title: 'Inverting amp', blurb: 'Ideal op-amp. The inverting input sits at 0 V.',
+    defaultUnknown: 'gain', unknowns: [u('gain', 'Vout'), u('rf', 'Rf'), u('vin', 'Vin')],
+    fields: [n('vin', 'Vin', 'V'), n('rin', 'Rin', 'Ω'), n('rf', 'Rf', 'Ω'), n('vsat', 'Swing limit', 'V', 'Magnitude of the largest |Vout| you will accept.'), n('av', 'Target |Av|', ''), n('voutmag', 'Target |Vout|', 'V')],
+    visible: { gain: ['vin', 'rin', 'rf', 'vsat'], rf: ['vin', 'rin', 'vsat', 'av'], vin: ['rin', 'rf', 'vsat', 'voutmag'] },
+    defaults: { vin: '0.2', rin: '10000', rf: '100000', vsat: '12', av: '10', voutmag: '2' } });
+  spec({ id: 'nonInvertingAmp', family: 'opamp', title: 'Non-inverting amp', blurb: 'Gain is 1 + Rf/Rg. Both inputs sit at Vin.',
+    defaultUnknown: 'gain', unknowns: [u('gain', 'Vout'), u('rf', 'Rf'), u('rg', 'Rg')],
+    fields: [n('vin', 'Vin', 'V'), n('rg', 'Rg', 'Ω'), n('rf', 'Rf', 'Ω'), n('vsat', 'Swing limit', 'V'), n('av', 'Target Av', '')],
+    visible: { gain: ['vin', 'rg', 'rf', 'vsat'], rf: ['vin', 'rg', 'vsat', 'av'], rg: ['vin', 'rf', 'vsat', 'av'] },
+    defaults: { vin: '0.2', rg: '10000', rf: '90000', vsat: '12', av: '10' } });
+  spec({ id: 'summingAmp', family: 'opamp', title: 'Summing amp', blurb: 'Two-input inverting summer. The summing node is a virtual ground.',
+    defaultUnknown: 'output', unknowns: [u('output', 'Vout'), u('rf', 'Rf')],
+    fields: [n('v1', 'V1', 'V'), n('r1', 'R1', 'Ω'), n('v2', 'V2', 'V'), n('r2', 'R2', 'Ω'), n('rf', 'Rf', 'Ω'), n('vsat', 'Swing limit', 'V'), n('vout', 'Target |Vout|', 'V')],
+    visible: { output: ['v1', 'r1', 'v2', 'r2', 'rf', 'vsat'], rf: ['v1', 'r1', 'v2', 'r2', 'vsat', 'vout'] },
+    defaults: { v1: '1', r1: '10000', v2: '1', r2: '10000', rf: '10000', vsat: '12', vout: '2' } });
+  spec({ id: 'diffAmp', family: 'opamp', title: 'Difference amp', blurb: 'Matched pairs. Vout = (Rf/R1)·(V2 − V1).',
+    defaultUnknown: 'output', unknowns: [u('output', 'Vout'), u('rf', 'Rf')],
+    fields: [n('v1', 'V1', 'V'), n('v2', 'V2', 'V'), n('r1', 'Rin', 'Ω'), n('rf', 'Rf', 'Ω'), n('vsat', 'Swing limit', 'V'), n('gain', 'Target gain', '')],
+    visible: { output: ['v1', 'v2', 'r1', 'rf', 'vsat'], rf: ['v1', 'v2', 'r1', 'vsat', 'gain'] },
+    defaults: { v1: '1', v2: '1.2', r1: '10000', rf: '10000', vsat: '12', gain: '1' } });
+  spec({ id: 'integrator', family: 'opamp', title: 'Integrator', blurb: 'Constant input makes a ramp. Ideal, no practical reset resistor.',
+    defaultUnknown: 'ramp', unknowns: [u('ramp', 'v(t)'), u('time', 'Time'), u('c', 'C')],
+    fields: [n('r', 'R', 'Ω'), n('c', 'C', 'F'), n('vin', 'Vin', 'V'), n('t', 't', 's'), n('v0', 'v(0)', 'V'), n('vt', 'Target v', 'V'), n('vsat', 'Swing limit', 'V')],
+    visible: { ramp: ['r', 'c', 'vin', 't', 'v0', 'vsat'], time: ['r', 'c', 'vin', 'v0', 'vt', 'vsat'], c: ['r', 'vin', 't', 'v0', 'vt', 'vsat'] },
+    defaults: { r: '100000', c: '0.000001', vin: '1', t: '0.1', v0: '0', vt: '-1', vsat: '12' } });
+  spec({ id: 'differentiator', family: 'opamp', title: 'Differentiator', blurb: 'A constant slope in gives a constant voltage out. Ideal, no high-frequency roll-off.',
+    defaultUnknown: 'output', unknowns: [u('output', 'Vout'), u('r', 'R'), u('c', 'C')],
+    fields: [n('r', 'R', 'Ω'), n('c', 'C', 'F'), n('slope', 'Slope', 'V/s'), n('vout', 'Target Vout', 'V'), n('vsat', 'Swing limit', 'V')],
+    visible: { output: ['r', 'c', 'slope', 'vsat'], r: ['c', 'slope', 'vout', 'vsat'], c: ['r', 'slope', 'vout', 'vsat'] },
+    defaults: { r: '10000', c: '0.000001', slope: '100', vout: '-1', vsat: '12' } });
+  spec({ id: 'comparator', family: 'opamp', title: 'Comparator', blurb: 'Open loop. Output sits on one rail or the other. No linear gain.',
+    defaultUnknown: 'output', unknowns: [u('output', 'Rail')],
+    fields: [n('vin', 'Vin', 'V'), n('vref', 'Vref', 'V'), n('voh', 'High rail', 'V'), n('vol', 'Low rail', 'V')],
+    visible: { output: ['vin', 'vref', 'voh', 'vol'] }, defaults: { vin: '2', vref: '1.5', voh: '5', vol: '0' } });
+
   function visibleFields(id, unknown, inputs) {
     const s = specOf(id);
     const ids = s.visible[unknown] || s.visible[s.defaultUnknown] || [];
@@ -847,6 +882,138 @@
       notes: ['Matched kn = kp. The threshold is the usual long-channel estimate.', 'The logic level is an ideal step. A real transfer curve is not vertical.', 'Static current is taken as zero. Shoot-through during the edge is not modeled.'] });
   };
 
+  const clampSwing = (ideal, limit) => { const cap = Math.abs(limit); return ideal > cap ? { shown: cap, clipped: true } : (ideal < -cap ? { shown: -cap, clipped: true } : { shown: ideal, clipped: false }); };
+  const opAmpPart = (id, x, y, flip) => part(id, 'opAmp', '', '', x, y, x, y, flip ? 1 : 0);
+  const clipWarn = (sw, what) => (sw.clipped ? what : null);
+
+  SOLVERS.invertingAmp = (unknown, inp) => {
+    const rin = pos(inp, 'rin', 'Rin'), vsat = pos(inp, 'vsat', 'Swing limit');
+    let vin = 0, rf = 0;
+    if (unknown === 'gain') { vin = finite(inp, 'vin', 'Vin'); rf = pos(inp, 'rf', 'Rf'); }
+    else if (unknown === 'rf') { vin = finite(inp, 'vin', 'Vin'); rf = pos(inp, 'av', '|Av|') * rin; }
+    else if (unknown === 'vin') { rf = pos(inp, 'rf', 'Rf'); vin = pos(inp, 'voutmag', '|Vout|') * rin / rf; }
+    else throw badUnknown();
+    const ideal = -rf / rin * vin, sw = clampSwing(ideal, vsat), i = vin / rin;
+    return pack('invertingAmp', { headline: 'Vout = ' + eng(sw.shown) + ' V', elements: [src('in', 'Vin', eng(vin) + ' V', 14, 62, 14, 36.8), res('rin', 'Rin', eng(rin) + ' Ω', 14, 36.8, 34, 36.8), wire('w1', 34, 36.8, 53, 36.8), opAmpPart('oa', 60, 40, true), wire('fa', 44, 36.8, 44, 20), res('rf', 'Rf', eng(rf) + ' Ω', 44, 20, 78, 20), wire('fb', 78, 20, 78, 40), wire('o', 69, 40, 92, 40), wire('pa', 53, 43.2, 48, 43.2), wire('pb', 48, 43.2, 48, 54), gnd('g', 48, 54), gnd('g0', 14, 62)],
+      nodes: [node('in', 'Vin', vin, 'V', 14, 36.8), node('sum', 'V−', 0, 'V', 44, 36.8), node('out', 'Vout', sw.shown, 'V', 92, 40), node('gnd', 'GND', 0, 'V', 48, 54)],
+      branches: [branch('i', 'Iin', i, 'A', 20, 36.8, 28, 36.8)],
+      quantities: [q('vout', 'Vout', sw.shown, 'V', true), q('ideal', 'Ideal Vout', ideal, 'V'), q('av', 'Av', -rf / rin, '', unknown === 'rf'), q('rf', 'Rf', rf, 'Ω', unknown === 'rf'), q('rin', 'Rin', rin, 'Ω'), q('vin', 'Vin', vin, 'V', unknown === 'vin'), q('iin', 'Iin', i, 'A')],
+      steps: ['Av = −Rf / Rin = ' + (-rf / rin).toFixed(3), 'V− = 0 (virtual ground),  I = Vin / Rin'],
+      notes: ['Ideal op-amp. Input current is zero and the differential input is zero.', 'The non-inverting input is grounded.', 'Past the swing limit, the node shows the clip and the ideal value stays in the table.'],
+      warning: clipWarn(sw, 'Ideal gain exceeds the swing limit. The output node is clipped.') });
+  };
+  SOLVERS.nonInvertingAmp = (unknown, inp) => {
+    const vin = finite(inp, 'vin', 'Vin'), vsat = pos(inp, 'vsat', 'Swing limit');
+    let rg = 0, rf = 0;
+    if (unknown === 'gain') { rg = pos(inp, 'rg', 'Rg'); rf = pos(inp, 'rf', 'Rf'); }
+    else if (unknown === 'rf') { rg = pos(inp, 'rg', 'Rg'); const av = pos(inp, 'av', 'Av'); if (!(av > 1)) throw outOfRange('A non-inverting gain with this divider is greater than 1.'); rf = rg * (av - 1); }
+    else if (unknown === 'rg') { rf = pos(inp, 'rf', 'Rf'); const av = pos(inp, 'av', 'Av'); if (!(av > 1)) throw outOfRange('A non-inverting gain with this divider is greater than 1.'); rg = rf / (av - 1); }
+    else throw badUnknown();
+    const av = 1 + rf / rg, ideal = av * vin, sw = clampSwing(ideal, vsat);
+    return pack('nonInvertingAmp', { headline: 'Vout = ' + eng(sw.shown) + ' V',
+      elements: [src('vin', 'Vin', eng(vin) + ' V', 14, 62, 14, 36.8), wire('p', 14, 36.8, 53, 36.8), opAmpPart('oa', 60, 40, false), wire('m', 53, 43.2, 40, 43.2), wire('m2', 40, 43.2, 40, 54), res('rg', 'Rg', eng(rg) + ' Ω', 40, 54, 40, 70), gnd('g', 40, 70), res('rf', 'Rf', eng(rf) + ' Ω', 40, 54, 78, 54), wire('fb', 78, 54, 78, 40), wire('o', 69, 40, 92, 40), gnd('g0', 14, 62)],
+      nodes: [node('in', 'V+', vin, 'V', 14, 36.8), node('fb', 'V−', vin, 'V', 40, 43.2), node('out', 'Vout', sw.shown, 'V', 92, 40), node('gnd', 'GND', 0, 'V', 40, 70)],
+      branches: [branch('i', 'If', (sw.shown - vin) / rf, 'A', 66, 54, 56, 54)],
+      quantities: [q('vout', 'Vout', sw.shown, 'V', true), q('av', 'Av', av, '', unknown !== 'gain'), q('rf', 'Rf', rf, 'Ω', unknown === 'rf'), q('rg', 'Rg', rg, 'Ω', unknown === 'rg'), q('vin', 'Vin', vin, 'V')],
+      steps: ['Av = 1 + Rf/Rg = ' + av.toFixed(3), 'V+ = V− = Vin'],
+      notes: ['Ideal non-inverting stage. Both inputs sit at Vin.', 'Rg is from the inverting input to ground. Rf is the feedback.', 'Output current into a load is not included on this screen.'],
+      warning: clipWarn(sw, 'Ideal gain exceeds the swing limit. The output node is clipped.') });
+  };
+  SOLVERS.summingAmp = (unknown, inp) => {
+    const v1 = finite(inp, 'v1', 'V1'), r1 = pos(inp, 'r1', 'R1'), v2 = finite(inp, 'v2', 'V2'), r2 = pos(inp, 'r2', 'R2'), vsat = pos(inp, 'vsat', 'Swing limit');
+    let rf;
+    if (unknown === 'rf') {
+      const mag = pos(inp, 'vout', '|Vout|'), sum = v1 / r1 + v2 / r2;
+      if (!(Math.abs(sum) > 1e-15)) throw outOfRange('Both input currents are zero, so Rf is not determined.');
+      rf = mag / Math.abs(sum);
+    } else if (unknown === 'output') rf = pos(inp, 'rf', 'Rf'); else throw badUnknown();
+    const ideal = -rf * (v1 / r1 + v2 / r2), sw = clampSwing(ideal, vsat);
+    return pack('summingAmp', { headline: 'Vout = ' + eng(sw.shown) + ' V', elements: [src('v1', 'V1', eng(v1) + ' V', 2, 12, 20, 12), res('r1', 'R1', eng(r1) + ' Ω', 20, 12, 38, 12), wire('a1', 38, 12, 44, 12), src('v2', 'V2', eng(v2) + ' V', 2, 26, 20, 26), res('r2', 'R2', eng(r2) + ' Ω', 20, 26, 38, 26), wire('a2', 38, 26, 44, 26), wire('bus', 44, 12, 44, 36.8), wire('w1', 44, 36.8, 53, 36.8), opAmpPart('oa', 60, 40, true), wire('fa', 48, 36.8, 48, 4), res('rf', 'Rf', eng(rf) + ' Ω', 48, 4, 78, 4), wire('fb', 78, 4, 78, 40), wire('o', 69, 40, 92, 40), wire('pa', 53, 43.2, 50, 43.2), wire('pb', 50, 43.2, 50, 54), gnd('g', 50, 54), gnd('g1', 2, 12), gnd('g2', 2, 26)],
+      nodes: [node('v1', 'V1', v1, 'V', 20, 12), node('v2', 'V2', v2, 'V', 20, 26), node('sum', 'V−', 0, 'V', 44, 36.8), node('out', 'Vout', sw.shown, 'V', 92, 40)],
+      branches: [branch('i1', 'I1', v1 / r1, 'A', 26, 12, 33, 12), branch('i2', 'I2', v2 / r2, 'A', 26, 26, 33, 26)],
+      quantities: [q('vout', 'Vout', sw.shown, 'V', true), q('rf', 'Rf', rf, 'Ω', unknown === 'rf'), q('i1', 'I1', v1 / r1, 'A'), q('i2', 'I2', v2 / r2, 'A'), q('v1', 'V1', v1, 'V'), q('r1', 'R1', r1, 'Ω'), q('v2', 'V2', v2, 'V'), q('r2', 'R2', r2, 'Ω')],
+      steps: ['Vout = −Rf · (V1/R1 + V2/R2)', 'The summing node is a virtual ground.'],
+      notes: ['Two-input inverting summer. More inputs add the same way.', 'Each input current is V/R and does not depend on the other input.', 'Ideal op-amp. The swing limit clips the drawn output.'],
+      warning: clipWarn(sw, 'Ideal sum exceeds the swing limit. The output node is clipped.') });
+  };
+  SOLVERS.diffAmp = (unknown, inp) => {
+    const v1 = finite(inp, 'v1', 'V1'), v2 = finite(inp, 'v2', 'V2'), r1 = pos(inp, 'r1', 'Rin'), vsat = pos(inp, 'vsat', 'Swing limit');
+    let rf;
+    if (unknown === 'rf') rf = pos(inp, 'gain', 'Gain') * r1; else if (unknown === 'output') rf = pos(inp, 'rf', 'Rf'); else throw badUnknown();
+    const ideal = (rf / r1) * (v2 - v1), sw = clampSwing(ideal, vsat), vp = v2 * rf / (r1 + rf);
+    return pack('diffAmp', { headline: 'Vout = ' + eng(sw.shown) + ' V',
+      elements: [src('v1', 'V1', eng(v1) + ' V', 2, 12, 20, 12), res('r1', 'R1', eng(r1) + ' Ω', 20, 12, 38, 12), wire('a1', 38, 12, 44, 12), wire('bus', 44, 12, 44, 36.8), wire('w1', 44, 36.8, 53, 36.8), opAmpPart('oa', 60, 40, true), wire('fa', 48, 36.8, 48, 4), res('rf', 'Rf', eng(rf) + ' Ω', 48, 4, 78, 4), wire('fb', 78, 4, 78, 40), wire('o', 69, 40, 92, 40),
+        src('v2', 'V2', eng(v2) + ' V', 2, 60, 20, 60), res('r2', 'R2', eng(r1) + ' Ω', 20, 60, 38, 60), wire('b2', 38, 60, 46, 60), wire('p1', 53, 43.2, 46, 43.2), wire('p2', 46, 43.2, 46, 60), res('rg', 'Rf', eng(rf) + ' Ω', 46, 60, 46, 74), gnd('g', 46, 74), gnd('g1', 2, 12), gnd('g2', 2, 60)],
+      nodes: [node('v1', 'V1', v1, 'V', 20, 12), node('v2', 'V2', v2, 'V', 20, 60), node('p', 'V+', vp, 'V', 46, 43.2), node('out', 'Vout', sw.shown, 'V', 92, 40)],
+      branches: [branch('i', 'I through R1', (v1 - sw.shown) / (r1 + rf), 'A', 26, 12, 33, 12)],
+      quantities: [q('vout', 'Vout', sw.shown, 'V', true), q('gain', 'Gain', rf / r1, '', unknown === 'rf'), q('rf', 'Rf', rf, 'Ω', unknown === 'rf'), q('vp', 'V+', vp, 'V'), q('v1', 'V1', v1, 'V'), q('v2', 'V2', v2, 'V'), q('r1', 'Rin', r1, 'Ω')],
+      steps: ['Matched pairs: Vout = (Rf/Rin)·(V2 − V1)', 'V+ = V2 · Rf / (Rin + Rf)'],
+      notes: ['All four resistors use two values: both inputs see Rin, both feedbacks are Rf.', 'A mismatch would add a common-mode term. This screen assumes a match.', 'Ideal op-amp. Not an instrumentation amplifier.'],
+      warning: clipWarn(sw, 'Ideal difference exceeds the swing limit. The output node is clipped.') });
+  };
+  SOLVERS.integrator = (unknown, inp) => {
+    const r = pos(inp, 'r', 'R'), vin = finite(inp, 'vin', 'Vin'), v0 = finite(inp, 'v0', 'v(0)'), vsat = pos(inp, 'vsat', 'Swing limit');
+    let c = 0, t = 0, vt = 0;
+    if (unknown === 'ramp') { c = pos(inp, 'c', 'C'); t = pos(inp, 't', 't'); vt = v0 - (vin / (r * c)) * t; }
+    else if (unknown === 'time') {
+      c = pos(inp, 'c', 'C'); vt = finite(inp, 'vt', 'v');
+      if (!(Math.abs(vin) > 1e-15)) throw outOfRange('Vin is zero, so the ramp never reaches a new voltage.');
+      t = (v0 - vt) * r * c / vin;
+      if (!(t > 0)) throw outOfRange('That target is behind the ramp direction. Time would not be positive.');
+    } else if (unknown === 'c') {
+      t = pos(inp, 't', 't'); vt = finite(inp, 'vt', 'v'); const delta = v0 - vt;
+      if (!(Math.abs(vin) > 1e-15 && Math.abs(delta) > 1e-15)) throw outOfRange('Need a nonzero Vin and a voltage change to solve C.');
+      c = vin * t / (r * delta);
+      if (!(c > 0)) throw outOfRange('C would not be positive for that ramp direction.');
+    } else throw badUnknown();
+    const sw = clampSwing(vt, vsat);
+    return pack('integrator', { headline: 'v(t) = ' + eng(sw.shown) + ' V',
+      elements: [src('in', 'Vin', eng(vin) + ' V', 14, 62, 14, 36.8), res('r', 'R', eng(r) + ' Ω', 14, 36.8, 34, 36.8), wire('w1', 34, 36.8, 53, 36.8), opAmpPart('oa', 60, 40, true), wire('fa', 44, 36.8, 44, 20), cap('c', 'C', eng(c) + ' F', 44, 20, 78, 20), wire('fb', 78, 20, 78, 40), wire('o', 69, 40, 92, 40), wire('pa', 53, 43.2, 48, 43.2), wire('pb', 48, 43.2, 48, 54), gnd('g', 48, 54), gnd('g0', 14, 62)],
+      nodes: [node('in', 'Vin', vin, 'V', 14, 36.8), node('sum', 'V−', 0, 'V', 44, 36.8), node('out', 'Vout', sw.shown, 'V', 92, 40), node('gnd', 'GND', 0, 'V', 48, 54)],
+      branches: [branch('i', 'I', vin / r, 'A', 20, 36.8, 28, 36.8)],
+      quantities: [q('vt', 'v(t)', sw.shown, 'V', unknown === 'ramp'), q('ideal', 'Ideal v(t)', vt, 'V'), q('time', 't', t, 's', unknown === 'time'), q('c', 'C', c, 'F', unknown === 'c'), q('unity', 'Unity f', 1 / (2 * Math.PI * r * c), 'Hz'), q('vin', 'Vin', vin, 'V'), q('v0', 'v(0)', v0, 'V'), q('r', 'R', r, 'Ω')],
+      steps: ['v(t) = v(0) − (Vin /(RC)) · t', 'I = Vin / R is constant while Vin is constant.'],
+      notes: ['Ideal integrator. There is no reset resistor, so DC error integrates forever.', 'The non-inverting input is grounded.', 'Unity-gain frequency is 1/(2πRC), where |Av| = 1 for a sine.'],
+      warning: clipWarn(sw, 'The ramp passed the swing limit. The output node is clipped.') });
+  };
+  SOLVERS.differentiator = (unknown, inp) => {
+    const slope = finite(inp, 'slope', 'Slope'), vsat = pos(inp, 'vsat', 'Swing limit');
+    let r = 0, c = 0;
+    if (unknown === 'output') { r = pos(inp, 'r', 'R'); c = pos(inp, 'c', 'C'); }
+    else if (unknown === 'r') {
+      c = pos(inp, 'c', 'C'); const target = finite(inp, 'vout', 'Vout');
+      if (!(Math.abs(slope) > 1e-15 && Math.abs(c * slope) > 1e-18)) throw outOfRange('Slope is zero, so R is not set by Vout.');
+      r = -target / (c * slope);
+      if (!(r > 0)) throw outOfRange('R would not be positive. Check the sign of Vout against the slope.');
+    } else if (unknown === 'c') {
+      r = pos(inp, 'r', 'R'); const target = finite(inp, 'vout', 'Vout');
+      if (!(Math.abs(slope) > 1e-15)) throw outOfRange('Slope is zero, so C is not set by Vout.');
+      c = -target / (r * slope);
+      if (!(c > 0)) throw outOfRange('C would not be positive. Check the sign of Vout against the slope.');
+    } else throw badUnknown();
+    const ideal = -r * c * slope, sw = clampSwing(ideal, vsat);
+    return pack('differentiator', { headline: 'Vout = ' + eng(sw.shown) + ' V',
+      elements: [src('in', 'Vin', eng(slope) + ' V/s', 14, 62, 14, 36.8), cap('c', 'C', eng(c) + ' F', 14, 36.8, 34, 36.8), wire('w1', 34, 36.8, 53, 36.8), opAmpPart('oa', 60, 40, true), wire('fa', 44, 36.8, 44, 20), res('r', 'R', eng(r) + ' Ω', 44, 20, 78, 20), wire('fb', 78, 20, 78, 40), wire('o', 69, 40, 92, 40), wire('pa', 53, 43.2, 48, 43.2), wire('pb', 48, 43.2, 48, 54), gnd('g', 48, 54), gnd('g0', 14, 62)],
+      nodes: [node('in', 'Slope', slope, 'V/s', 14, 36.8), node('sum', 'V−', 0, 'V', 44, 36.8), node('out', 'Vout', sw.shown, 'V', 92, 40), node('gnd', 'GND', 0, 'V', 48, 54)],
+      branches: [branch('i', 'I', c * slope, 'A', 20, 36.8, 28, 36.8)],
+      quantities: [q('vout', 'Vout', sw.shown, 'V', true), q('ideal', 'Ideal Vout', ideal, 'V'), q('r', 'R', r, 'Ω', unknown === 'r'), q('c', 'C', c, 'F', unknown === 'c'), q('slope', 'Slope', slope, 'V/s')],
+      steps: ['Vout = −RC · (dv/dt)', 'I = C · slope'],
+      notes: ['A constant slope in gives a constant voltage out.', 'Ideal differentiator. Real ones add a series resistor so they do not gain noise forever.', 'The non-inverting input is grounded.'],
+      warning: clipWarn(sw, 'Ideal output exceeds the swing limit. The node is clipped.') });
+  };
+  SOLVERS.comparator = (unknown, inp) => {
+    if (unknown !== 'output') throw badUnknown();
+    const vin = finite(inp, 'vin', 'Vin'), vref = finite(inp, 'vref', 'Vref'), voh = finite(inp, 'voh', 'High rail'), vol = finite(inp, 'vol', 'Low rail');
+    const high = vin >= vref, vout = high ? voh : vol;
+    return pack('comparator', { headline: high ? 'Output high' : 'Output low',
+      elements: [src('vin', 'Vin', eng(vin) + ' V', 14, 62, 14, 36.8), wire('p', 14, 36.8, 53, 36.8), src('vr', 'Vref', eng(vref) + ' V', 32, 66, 32, 43.2), wire('m', 32, 43.2, 53, 43.2), opAmpPart('oa', 60, 40, false), wire('o', 69, 40, 92, 40), gnd('g0', 14, 62), gnd('g1', 32, 66)],
+      nodes: [node('in', 'Vin', vin, 'V', 14, 36.8), node('ref', 'Vref', vref, 'V', 32, 43.2), node('out', 'Vout', vout, 'V', 92, 40)],
+      branches: [branch('i', 'Iin', 0, 'A', 30, 36.8, 40, 36.8)],
+      quantities: [q('vout', 'Vout', vout, 'V', true), q('high', high ? 'High' : 'Low', high ? 1 : 0, ''), q('vin', 'Vin', vin, 'V'), q('vref', 'Vref', vref, 'V'), q('voh', 'High rail', voh, 'V'), q('vol', 'Low rail', vol, 'V')],
+      steps: ['No feedback. If Vin ≥ Vref, Vout = high rail.', 'Otherwise Vout = low rail.'],
+      notes: ['Open-loop comparator. There is no linear gain to solve.', 'The threshold is the reference you enter. Hysteresis is not added.', 'Input current is taken as zero.'] });
+  };
+
   function solve(circuit, unknown, inputs) {
     const s = specOf(circuit);
     if (!s.unknowns.some((x) => x.id === unknown)) throw outOfRange('That unknown is not on this circuit.');
@@ -984,6 +1151,22 @@
       this.jumper('tie+', positive, 30, 'topPlus', 30, 'botPlus', 'red');
       this.jumper('tie-', negative, 29, 'topMinus', 29, 'botMinus', 'black');
       this.railLabels = [{ row: 'topPlus', text: positive }, { row: 'botPlus', text: positive }, { row: 'topMinus', text: negative }, { row: 'botMinus', text: negative }];
+    }
+    dualSupply() {
+      this.supplies.push({ id: 'ps', label: '±V', leads: [this.hole(2, 'topPlus', '+V'), this.hole(2, 'topMinus', 'GND'), this.hole(3, 'botMinus', '−V')] });
+      this.jumper('tie+', '+V', 30, 'topPlus', 30, 'botPlus', 'red');
+      this.railLabels = [{ row: 'topPlus', text: '+V' }, { row: 'botPlus', text: '+V' }, { row: 'topMinus', text: 'GND' }, { row: 'botMinus', text: '−V' }];
+    }
+    dip(id, name, origin, pins) {
+      const half = pins.length / 2, leads = [];
+      for (let k = 0; k < half; k++) leads.push(this.hole(origin + k, 'e', pins[k][1]));
+      for (let k = 0; k < half; k++) leads.push(this.hole(origin + half - 1 - k, 'f', pins[half + k][1]));
+      this.components.push({ id, part: { type: pins.length === 14 ? 'dip14' : 'dip8', name, label: name, pins: pins.map((p) => p[0]) }, leads });
+    }
+    placeOpAmp(sumNet, plusNet) {
+      this.dip('u', '741', 12, [['OA1', 'NC1'], ['−', sumNet], ['+', plusNet], ['V−', '−V'], ['OA5', 'NC5'], ['OUT', 'Vout'], ['V+', '+V'], ['NC', 'NC8']]);
+      this.jumper('vplus', '+V', 13, 'j', 13, 'botPlus', 'red'); this.jumper('vminusA', '−V', 15, 'b', 20, 'b', 'blue');
+      this.jumper('vminusB', '−V', 20, 'e', 20, 'f', 'blue'); this.jumper('vminusC', '−V', 20, 'j', 20, 'botMinus', 'blue');
     }
     caption(specific) { return specific + ' ' + DISCLOSURE + ' Color bands are the nearest 5% code. The part label is the solved value.'; }
     finish(caption) {
@@ -1290,6 +1473,67 @@
     b.jumper('ps', 'Vdd', 18, 'a', 18, 'topPlus', 'red'); b.jumper('ns', 'GND', 14, 'j', 14, 'botMinus', 'black'); b.jumper('srcg', 'GND', 6, 'j', 6, 'botMinus', 'black');
     b.jumper('probe', 'Vout', 16, 'b', 24, 'b', 'green'); b.jumper('pgnd', 'GND', 24, 'j', 24, 'botMinus', 'black');
     return b.finish(b.caption('CMOS inverter sketch: discrete PMOS (rows a–e) and NMOS (rows f–j) sharing Vin and Vout across the gutter. Ideal rail-to-rail logic — static current is zero in the solve. Not a matched IC process or a SPICE deck.'));
+  };
+
+  const srcPart = (id, label, a, b) => ({ id, part: { type: 'source', label }, leads: [a, b] });
+  const feedbackTie = (b) => { b.jumper('plus', 'GND', 14, 'c', 14, 'topMinus', 'black'); b.jumper('cross', 'Vout', 9, 'e', 9, 'f', 'green'); b.jumper('fb', 'Vout', 9, 'j', 14, 'i', 'green'); };
+  LAYOUTS.invertingAmp = (b) => {
+    const rin = b.qty('rin'), rf = b.qty('rf');
+    b.placeOpAmp('SUM', 'GND'); b.dualSupply();
+    b.components.push(srcPart('vin', 'Vin', b.hole(7, 'd', 'Vin'), b.hole(4, 'd', 'GND')));
+    b.resistor('rin', 'Rin', rin, b.hole(7, 'b', 'Vin'), b.hole(13, 'b', 'SUM')); b.resistor('rf', 'Rf', rf, b.hole(13, 'a', 'SUM'), b.hole(9, 'a', 'Vout'));
+    b.jumper('gndsrc', 'GND', 4, 'b', 4, 'topMinus', 'black'); feedbackTie(b);
+    return b.finish(b.caption('741 in the DIP-8 straddling the gutter, notch to the left, pin 1 at the lower left. Rin and Rf meet at pin 2. Pin 3 is the blue ground rail. Pin 7 is +V and pin 4 is −V. The ideal model does not solve supply current.'));
+  };
+  LAYOUTS.nonInvertingAmp = (b) => {
+    const rg = b.qty('rg'), rf = b.qty('rf');
+    b.placeOpAmp('SUM', 'Vin'); b.dualSupply();
+    b.components.push(srcPart('vin', 'Vin', b.hole(7, 'd', 'Vin'), b.hole(4, 'd', 'GND')));
+    b.resistor('rg', 'Rg', rg, b.hole(13, 'c', 'SUM'), b.hole(9, 'c', 'GND')); b.resistor('rf', 'Rf', rf, b.hole(13, 'a', 'SUM'), b.hole(18, 'a', 'Vout'));
+    b.jumper('gndsrc', 'GND', 4, 'b', 4, 'topMinus', 'black'); b.jumper('in', 'Vin', 7, 'b', 14, 'b', 'yellow'); b.jumper('rgg', 'GND', 9, 'a', 9, 'topMinus', 'black');
+    b.jumper('cross', 'Vout', 18, 'e', 18, 'f', 'green'); b.jumper('fb', 'Vout', 18, 'j', 14, 'i', 'green');
+    return b.finish(b.caption('741 pinout. Vin drives pin 3. Rg returns pin 2 to the blue rail and Rf feeds back from pin 6. Pin 7 is +V and pin 4 is −V. Supply current is not in the ideal model.'));
+  };
+  LAYOUTS.summingAmp = (b) => {
+    const r1 = b.qty('r1'), r2 = b.qty('r2'), rf = b.qty('rf');
+    b.placeOpAmp('SUM', 'GND'); b.dualSupply();
+    b.components.push(srcPart('v1', 'V1', b.hole(5, 'd', 'V1'), b.hole(3, 'd', 'GND')), srcPart('v2', 'V2', b.hole(7, 'd', 'V2'), b.hole(3, 'e', 'GND')));
+    b.resistor('r1', 'R1', r1, b.hole(5, 'b', 'V1'), b.hole(13, 'b', 'SUM')); b.resistor('r2', 'R2', r2, b.hole(7, 'a', 'V2'), b.hole(13, 'a', 'SUM')); b.resistor('rf', 'Rf', rf, b.hole(13, 'c', 'SUM'), b.hole(9, 'c', 'Vout'));
+    b.jumper('gndsrc', 'GND', 3, 'b', 3, 'topMinus', 'black'); feedbackTie(b);
+    return b.finish(b.caption('741 summing amp. R1 and R2 meet Rin at pin 2 (virtual ground). Rf feeds back from pin 6. Pin 3 is on the blue rail.'));
+  };
+  LAYOUTS.diffAmp = (b) => {
+    const r1 = b.qty('r1'), rf = b.qty('rf');
+    b.placeOpAmp('SUM', 'PLUS'); b.dualSupply();
+    b.components.push(srcPart('v1', 'V1', b.hole(5, 'd', 'V1'), b.hole(3, 'd', 'GND')), srcPart('v2', 'V2', b.hole(7, 'd', 'V2'), b.hole(3, 'e', 'GND')));
+    b.resistor('r1a', 'R1', r1, b.hole(5, 'b', 'V1'), b.hole(13, 'b', 'SUM')); b.resistor('rf', 'Rf', rf, b.hole(13, 'a', 'SUM'), b.hole(9, 'a', 'Vout'));
+    b.resistor('r1b', 'R1', r1, b.hole(7, 'c', 'V2'), b.hole(14, 'c', 'PLUS')); b.resistor('rg', 'Rf', rf, b.hole(14, 'b', 'PLUS'), b.hole(18, 'b', 'GND'));
+    b.jumper('gndsrc', 'GND', 3, 'b', 3, 'topMinus', 'black'); b.jumper('rgnd', 'GND', 18, 'a', 18, 'topMinus', 'black');
+    b.jumper('cross', 'Vout', 9, 'e', 9, 'f', 'green'); b.jumper('fb', 'Vout', 9, 'j', 14, 'i', 'green');
+    return b.finish(b.caption('Matched difference amp on a 741. Rin/Rf pairs on both inputs. Ideal matched resistors — mismatch CMRR is not modeled.'));
+  };
+  LAYOUTS.integrator = (b) => {
+    const r = b.qty('r'), c = b.qty('c');
+    b.placeOpAmp('SUM', 'GND'); b.dualSupply();
+    b.components.push(srcPart('vin', 'Vin', b.hole(6, 'd', 'Vin'), b.hole(4, 'd', 'GND')));
+    b.resistor('r', 'R', r, b.hole(6, 'b', 'Vin'), b.hole(13, 'b', 'SUM')); b.capacitor('c', 'C', c, b.hole(13, 'a', 'SUM'), b.hole(9, 'a', 'Vout'));
+    b.jumper('gndsrc', 'GND', 4, 'b', 4, 'topMinus', 'black'); feedbackTie(b);
+    return b.finish(b.caption('Ideal integrator: R into pin 2, C in the feedback. No reset resistor is drawn — DC error integrates forever in the model.'));
+  };
+  LAYOUTS.differentiator = (b) => {
+    const r = b.qty('r'), c = b.qty('c');
+    b.placeOpAmp('SUM', 'GND'); b.dualSupply();
+    b.components.push(srcPart('vin', 'Vin', b.hole(6, 'd', 'Vin'), b.hole(4, 'd', 'GND')));
+    b.capacitor('c', 'C', c, b.hole(6, 'b', 'Vin'), b.hole(13, 'b', 'SUM')); b.resistor('r', 'R', r, b.hole(13, 'a', 'SUM'), b.hole(9, 'a', 'Vout'));
+    b.jumper('gndsrc', 'GND', 4, 'b', 4, 'topMinus', 'black'); feedbackTie(b);
+    return b.finish(b.caption('Ideal differentiator: C into pin 2, R in the feedback. No high-frequency roll-off is modeled.'));
+  };
+  LAYOUTS.comparator = (b) => {
+    b.placeOpAmp('Vin', 'Vref'); b.dualSupply();
+    b.components.push(srcPart('vin', 'Vin', b.hole(6, 'd', 'Vin'), b.hole(4, 'd', 'GND')), srcPart('vref', 'Vref', b.hole(8, 'd', 'Vref'), b.hole(4, 'e', 'GND')));
+    b.jumper('gndsrc', 'GND', 4, 'b', 4, 'topMinus', 'black'); b.jumper('in', 'Vin', 6, 'b', 13, 'b', 'yellow'); b.jumper('ref', 'Vref', 8, 'c', 14, 'c', 'orange');
+    b.jumper('out', 'Vout', 14, 'i', 24, 'i', 'green'); b.jumper('cross', 'Vout', 24, 'e', 24, 'f', 'green');
+    return b.finish(b.caption('Open-loop 741 as a comparator. Yellow is Vin on pin 2, orange is Vref on pin 3. Output sits on a rail — no feedback.'));
   };
 
   global.BeckifyBenchEngine = {
