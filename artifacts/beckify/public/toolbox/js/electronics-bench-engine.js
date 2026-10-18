@@ -1334,6 +1334,9 @@
     const s = specOf(circuit);
     if (!s.unknowns.some((x) => x.id === unknown)) throw outOfRange('That unknown is not on this circuit.');
     const sol = SOLVERS[circuit](unknown, inputs || {});
+    // Absurd magnitudes can overflow to NaN or Infinity inside a solver. Refuse those instead of drawing them.
+    const shown = [sol.headline].concat(sol.steps || [], sol.notes || []).join(' ');
+    if (/NaN|Infinity/.test(shown) || sol.nodes.some((n) => !isFinite(n.value)) || sol.branches.some((b) => !isFinite(b.value))) throw outOfRange('These values are too extreme to solve. Check the units and magnitudes.');
     sol.layout = makeBreadboard(sol);
     return sol;
   }
