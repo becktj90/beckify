@@ -168,6 +168,11 @@
           '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y - h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '−' : '+') + '</text>' +
           '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y + h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '+' : '−') + '</text>';
       }
+      case 'zBlock': {
+        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, len = Math.hypot(b.x - a.x, b.y - a.y), w = Math.max(28, len * 0.55), h = 22, ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+        return '<g transform="rotate(' + f2(ang) + ' ' + f2(mid.x) + ' ' + f2(mid.y) + ')"><rect x="' + f2(mid.x - w / 2) + '" y="' + f2(mid.y - h / 2) + '" width="' + f2(w) + '" height="' + h + '" rx="4" fill="none" stroke="' + C.accent + '" stroke-width="1.6"/></g>' +
+          path(M(a) + Lx({ x: mid.x - w / 2 * Math.cos(ang * Math.PI / 180), y: mid.y - w / 2 * Math.sin(ang * Math.PI / 180) }), C.fg, 1.7) + path(M(b) + Lx({ x: mid.x + w / 2 * Math.cos(ang * Math.PI / 180), y: mid.y + w / 2 * Math.sin(ang * Math.PI / 180) }), C.fg, 1.7);
+      }
       case 'timer555': {
         const w = Math.min(SW * 0.28, 78), h = Math.min(SH * 0.46, 92);
         return '<rect x="' + f2(a.x - w / 2) + '" y="' + f2(a.y - h / 2) + '" width="' + f2(w) + '" height="' + f2(h) + '" rx="6" fill="none" stroke="' + C.accent + '" stroke-width="1.7"/>' +
