@@ -176,6 +176,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Circular Mils", "sec-cm"),
       t("Photometrics", "sec-photometrics"),
       t("Electronics Bench & Breadboard Generator", "sec-electronics-bench"),
+      t("Cable Tray Fill", "sec-cable-tray"),
       t("Flexible Cable Ampacity", "sec-flexible-cable"),
       t("Solenoid Design", "sec-solenoid-design"),
       t("Lightning Protection (NFPA 780)", "sec-lightning-protection"),
