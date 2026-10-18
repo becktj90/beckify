@@ -255,6 +255,38 @@ for (const id of E.circuits()) {
   }
 }
 
+/* complex and matching */
+{
+  const get = (sol, id) => sol.quantities.find((x) => x.id === id).value;
+  const cp = E.solve('complexConvert', 'polar', D('complexConvert'));
+  near(get(cp, 'magnitude'), 5, 1e-12); near(get(cp, 'angleDeg'), Math.atan2(4, 3) * 180 / Math.PI, 1e-9);
+  const cr = E.solve('complexConvert', 'rect', D('complexConvert'));
+  near(get(cr, 'x'), 3, 1e-4); near(get(cr, 'y'), 4, 1e-4);
+  near(get(E.solve('complexConvert', 'polar', { x: '0', y: '0' }), 'angleDeg'), 0, 1e-12);
+  assert.throws(() => E.solve('complexConvert', 'rect', Object.assign({}, D('complexConvert'), { magnitude: '-1' })), /negative/);
+  const se = E.solve('impedanceCombo', 'result', D('impedanceCombo'));
+  near(get(se, 'r'), 60, 1e-12); near(get(se, 'x'), 15, 1e-12);
+  const pa = E.solve('impedanceCombo', 'result', Object.assign({}, D('impedanceCombo'), { combo: 'parallel', r1: '100', x1: '0', r2: '100', x2: '0' }));
+  near(get(pa, 'r'), 50, 1e-9); near(get(pa, 'x'), 0, 1e-9);
+  assert.throws(() => E.solve('impedanceCombo', 'result', Object.assign({}, D('impedanceCombo'), { combo: 'parallel', r1: '10', x1: '5', r2: '-10', x2: '-5' })), /cancel/);
+  const lm = E.solve('lMatch', 'parts', D('lMatch'));
+  near(get(lm, 'q'), Math.sqrt(3), 1e-12); near(get(lm, 'xs'), Math.sqrt(3) * 50, 1e-9); near(get(lm, 'l'), Math.sqrt(3) * 50 / (2 * Math.PI * 1e6), 1e-15); near(get(lm, 'c'), 1 / (2 * Math.PI * 1e6 * 200 / Math.sqrt(3)), 1e-18);
+  assert.throws(() => E.solve('lMatch', 'parts', Object.assign({}, D('lMatch'), { rl: '50.2' })), /already match/);
+  assert.ok(E.solve('lMatch', 'parts', Object.assign({}, D('lMatch'), { topology: 'highpass', rs: '200', rl: '50' })).headline.startsWith('Q = 1.732'));
+  const qw = E.solve('quarterWave', 'z0', D('quarterWave'));
+  near(get(qw, 'z0'), 100, 1e-9); near(get(qw, 'lengthM'), 299792458 / 4e8, 1e-9);
+  near(get(E.solve('quarterWave', 'zload', D('quarterWave')), 'zload'), 200, 1e-9);
+  assert.throws(() => E.solve('quarterWave', 'z0', Object.assign({}, D('quarterWave'), { vf: '1.5' })), /Velocity factor/);
+  const st = E.solve('stubCancel', 'length', D('stubCancel'));
+  near(get(st, 'fraction'), Math.atan(1) / (2 * Math.PI), 1e-12); near(get(st, 'lengthM'), 0.125 * 299792458 / 3e8, 1e-9);
+  near(get(E.solve('stubCancel', 'length', Object.assign({}, D('stubCancel'), { goal: 'cancel' })), 'fraction'), (Math.atan(-1) + Math.PI) / (2 * Math.PI), 1e-12);
+  assert.throws(() => E.solve('stubCancel', 'length', Object.assign({}, D('stubCancel'), { kind: 'open', x: '0' })), /open stub/);
+  for (const id of ['complexConvert', 'impedanceCombo', 'lMatch', 'quarterWave', 'stubCancel']) {
+    const sol = E.solve(id, E.SPECS.find((x) => x.id === id).defaultUnknown, D(id));
+    assert.ok(!sol.layout, id + ' no board'); assert.ok(R.renderSchematic(sol).includes('<svg'));
+  }
+}
+
 /* audit catches mistakes: a short, an off-board hole, and a split net */
 {
   const sol = E.solve('seriesResistors', 'current', D('seriesResistors'));
