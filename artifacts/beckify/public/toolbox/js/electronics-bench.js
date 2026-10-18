@@ -66,7 +66,9 @@
 
   function pitchFor(width) {
     const fit = (width - 16 - 92 - 16) / E.BB_COLUMNS;
-    return Math.max(4.5, Math.min(22, fit)) * state.zoom;
+    // Phones: keep parts legible (pitch >= 10.5) and let the board pan sideways; zoom-out still fits it whole.
+    const floor = width < 640 ? 10.5 : 4.5;
+    return Math.max(floor, Math.min(22, fit)) * state.zoom;
   }
 
   function pictureHtml(res) {
@@ -76,7 +78,7 @@
     if (!sol.layout) return '<div class="eb-empty">No breadboard hookup for this circuit yet. Use the schematic.</div>';
     const w = (root.querySelector('.eb-picture') || root).clientWidth || 360;
     const p = pitchFor(w);
-    return '<div class="eb-scroll">' + R.renderBreadboard(sol.layout, { pitch: p, layer: state.layer, selected: state.selected }) + '</div>';
+    return '<div class="eb-scroll" tabindex="0" aria-label="Breadboard, scrolls sideways">' + R.renderBreadboard(sol.layout, { pitch: p, layer: state.layer, selected: state.selected }) + '</div>' + (w < 640 ? '<div class="eb-pan-hint">Swipe to pan · − shrinks to fit the whole board · + zooms in</div>' : '');
   }
 
   function auditHtml(res) {
@@ -175,7 +177,7 @@
       if (act === 'example') { state.values = Object.assign({}, E.specOf(state.circuit).defaults); state.unknown = E.specOf(state.circuit).defaultUnknown; save(); return render(); }
       if (act === 'copy') { const done = () => { state.copied = true; render(); setTimeout(() => { state.copied = false; render(); }, 1500); }; if (navigator.clipboard) navigator.clipboard.writeText(copyText()).then(done, done); else done(); return; }
       if (act === 'zoomin') { state.zoom = Math.min(4, state.zoom * 1.25); return update(); }
-      if (act === 'zoomout') { state.zoom = Math.max(1, state.zoom / 1.25); return update(); }
+      if (act === 'zoomout') { state.zoom = Math.max(0.5, state.zoom / 1.25); return update(); }
       if (act === 'zoomreset') { state.zoom = 1; return update(); }
       if (act === 'png') return savePng();
     }

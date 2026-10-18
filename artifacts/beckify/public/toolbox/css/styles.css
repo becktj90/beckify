@@ -2581,7 +2581,8 @@ body.report-open { overflow: hidden; }
 .eb-tab { background: transparent; color: var(--fg-muted); border: 0; padding: 8px 16px; cursor: pointer; font: inherit; min-height: 40px; }
 .eb-tab.on { background: var(--bg-active); color: var(--fg); box-shadow: inset 0 -2px 0 #40BAD6; }
 .eb-picture { border: 1px solid var(--border); border-radius: 10px; background: #0E1118; padding: 6px; }
-.eb-scroll { overflow: auto; max-height: 70vh; -webkit-overflow-scrolling: touch; }
+.eb-scroll { overflow: auto; max-height: 70vh; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; border-radius: 8px; }
+.eb-pan-hint { color: #94a2b2; font-size: 0.72rem; margin: 6px 2px 0; }
 .eb-svg { display: block; max-width: 100%; height: auto; }
 .eb-breadboard { max-width: none; }
 .eb-audit { margin-top: 8px; font-size: 0.8rem; }
