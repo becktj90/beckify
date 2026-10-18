@@ -162,6 +162,12 @@
       case 'diode': return path(diodePath(a, b, false), C.fg, 1.7);
       case 'led': return path(diodePath(a, b, true), C.energized, 1.7);
       case 'ground': return path(groundPath(a), C.fg, 1.7);
+      case 'opAmp': {
+        const w = Math.min(SW, SH) * 0.16, h = w * 1.15;
+        return path(M({ x: a.x - w * 0.55, y: a.y - h * 0.55 }) + Lx({ x: a.x - w * 0.55, y: a.y + h * 0.55 }) + Lx({ x: a.x + w * 0.7, y: a.y }) + 'Z', C.accent, 1.7) +
+          '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y - h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '−' : '+') + '</text>' +
+          '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y + h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '+' : '−') + '</text>';
+      }
       case 'npn': return path(npnPath(a, el.scale), C.fg, 1.7);
       case 'nmos': return path(mosPath(a, false, el.scale), C.fg, 1.7);
       case 'pmos': return path(mosPath(a, true, el.scale), C.fg, 1.7);
@@ -185,7 +191,7 @@
       obstacles.push(rect(a, b, 12));
       const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dx = b.x - a.x, dy = b.y - a.y, len = Math.max(Math.hypot(dx, dy), 1);
       const anchor = { x: mid.x - dy / len * 12, y: mid.y + dx / len * 12 };
-      if (e.part === 'ground') return;
+      if (e.part === 'ground' || e.part === 'opAmp') return;
       const ref = e.label || e.id.toUpperCase();
       const text = layer === 'minimal' ? ref : (e.detail ? ref + ' ' + e.detail : ref);
       reqs.push({ text, x: anchor.x, y: anchor.y, size: 13, color: C.muted });
