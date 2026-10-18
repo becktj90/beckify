@@ -181,6 +181,7 @@ export const TOOLS = [
   ["lightning-protection", "Lightning Protection (NFPA 780)", "Strike-terminal and down-conductor counts, material class, rolling-sphere reach and separation distance.", "sec-lightning-protection"],
   ["solenoid-design", "Solenoid Design", "Center field, inductance, copper loss, packing and plunger force for an air-core or soft-iron solenoid.", "sec-solenoid-design"],
   ["flexible-cable", "Flexible Cable Ampacity", "Portable cord (SO, SJO, STO) and Type W ampacity from NEC Table 400.5 with ambient and bundling factors.", "sec-flexible-cable"],
+  ["cable-tray", "Cable Tray Fill", "NEC Article 392 fill, rung check, support stations and NEMA VE 1-style load class for cable tray.", "sec-cable-tray"],
   ["electronics-bench", "Electronics Bench & Breadboard Generator", "Pick a circuit, solve for any unknown, and see it as a schematic and a solderless breadboard hookup with color-banded resistors, jumpers, and live node readings. Ideal models, not SPICE.", "sec-electronics-bench"],
   ["semiconductor-iv", "Semiconductor Device I-V", "Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / saturation with a live I-V plot.", "sec-semiconductor-iv"],
   ["battery-build-designer", "Battery Build Designer", "Plan 18650 series-parallel battery packs, C-rate, grid or honeycomb layouts, and nickel-strip cross-section current estimates.", "sec-battery-build"],

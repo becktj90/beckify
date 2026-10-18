@@ -16,12 +16,12 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta property="og:site_name" content="Beckify">
   <meta property="og:title" content="Electrical engineering toolbox — Ohm's Law, voltage drop, ampacity, conduit fill">
-  <meta property="og:description" content="69 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta property="og:description" content="70 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <meta property="og:image" content="https://beckify.com/toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://beckify.com/toolbox/classic/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="description" content="69 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta name="description" content="70 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFZ9X595E"></script>
   <script>
@@ -252,6 +252,7 @@
       <button class="nav-btn" data-target="sec-lightning-protection" data-keywords="lightning protection nfpa 780 air terminals down conductors rolling sphere separation distance">Lightning Protection (NFPA 780)</button>
       <button class="nav-btn" data-target="sec-solenoid-design" data-keywords="solenoid coil design magnetic field inductance turns awg plunger force copper loss">Solenoid Design</button>
       <button class="nav-btn" data-target="sec-flexible-cable" data-keywords="flexible cable cord ampacity so soow sjo type w nec 400.5 portable power">Flexible Cable Ampacity</button>
+      <button class="nav-btn" data-target="sec-cable-tray" data-keywords="cable tray fill nec 392 ladder tray 392.22 cable ladder load class nema ve 1">Cable Tray Fill</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
@@ -308,7 +309,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">69 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">70 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <section class="home-featured" aria-labelledby="featured-tools-heading">
@@ -399,6 +400,7 @@
             <li><a class="home-tool-link" href="#sec-lightning-protection">Lightning Protection (NFPA 780)</a></li>
             <li><a class="home-tool-link" href="#sec-solenoid-design">Solenoid Design</a></li>
             <li><a class="home-tool-link" href="#sec-flexible-cable">Flexible Cable Ampacity</a></li>
+            <li><a class="home-tool-link" href="#sec-cable-tray">Cable Tray Fill</a></li>
             <li><a class="home-tool-link" href="#sec-circuit-sim">Circuit Simulator</a></li>
             <li><a class="home-tool-link" href="#sec-smith-chart">Smith Chart</a></li>
             <li><a class="home-tool-link" href="#sec-emp-emc">EMP / EMC Shielding</a></li>
@@ -6194,6 +6196,18 @@
       <div id="eb-root"></div>
     </section><!-- end sec-electronics-bench -->
 
+    <section id="sec-cable-tray" class="section">
+      <div class="section-header">
+        <h2>Cable Tray Fill</h2>
+        <p>NEC Article 392 fill, rung check, support stations and NEMA VE 1-style load class for cable tray.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Cable Tray Fill</summary>
+          <div class="section-info-body">Planning estimate. Verify the manufacturer load table and the AHJ.</div>
+        </details>
+      </div>
+      <div id="bk-tray-root"></div>
+    </section><!-- end sec-cable-tray -->
+
     <section id="sec-flexible-cable" class="section">
       <div class="section-header">
         <h2>Flexible Cable Ampacity</h2>
@@ -11818,6 +11832,7 @@
 <script src="js/electronics-bench.js"></script>
 <script src="js/bk-tool.js"></script>
 <script src="js/bk-tools-analog.js"></script>
+<script src="js/bk-tools-tray.js"></script>
 <script src="js/bk-tools-solenoid.js"></script>
 <script src="js/bk-tools-cable.js"></script>
 <script src="js/bk-tools-code.js"></script>
