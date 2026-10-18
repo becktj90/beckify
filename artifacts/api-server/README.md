@@ -173,3 +173,26 @@ If a Replit Autoscale service is still pointed at this package:
 4. Repeat the same `curl` checks.
 
 `.replit-artifact/artifact.toml` already builds this package and health-checks `/api/healthz`.
+
+## Build-page comments (`/api/comments`)
+
+Reader comments for the `/projects/*` build pages (`<BuildComments pageKey="slug" />` in the site).
+No accounts, cookies, emails or raw IPs. Comments are **pending until approved**.
+
+**Storage ($0):** one `comments.json` in a *private* GitHub repo through the contents API (git history is the
+backup). Fly volumes are not free ($0.15/GB-month, no free allowance for new orgs, verified against
+docs.fly.io/about/pricing), so SQLite-on-volume was rejected. Rate limits are in memory only.
+
+**Secrets (Fly):**
+- `COMMENTS_GH_TOKEN`: fine-grained PAT, only the comments repo, Contents: read/write.
+- `COMMENTS_ADMIN_TOKEN`: 16+ random characters; the moderation password.
+- `COMMENTS_GH_REPO` (optional, default `becktj90/beckify-comments`).
+
+`fly secrets set COMMENTS_GH_TOKEN=... COMMENTS_ADMIN_TOKEN=... -a beckify-api`
+
+**Moderation:** open `https://api.beckify.com/api/comments/admin`, enter the admin token (kept in that tab's
+sessionStorage only), tap Approve or Delete. There are no notification emails; check the page.
+
+**Spam defenses:** honeypot field, signed time-to-submit token (>= 4 s, <= 24 h), 1000/40 character caps, at
+most one link, URL-in-name rejected, profanity/spam word list, repeat-character and duplicate checks, 3
+comments per hashed IP per hour (daily-rotating salt, memory only), 300 pending cap, 25 page-key cap.

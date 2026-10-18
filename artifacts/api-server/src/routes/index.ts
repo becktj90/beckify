@@ -8,6 +8,7 @@ import translateRouter from "./translate.js";
 import shareRouter from "./share.js";
 import speakRouter from "./speak.js";
 import roomsRouter from "./rooms.js";
+import commentsRouter from "./comments.js";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(translateRouter);
 router.use(shareRouter);
 router.use(speakRouter);
 router.use(roomsRouter);
+router.use(commentsRouter);
 
 export default router;

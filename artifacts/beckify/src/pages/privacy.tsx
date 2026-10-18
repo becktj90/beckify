@@ -313,6 +313,30 @@ export default function PrivacyPage() {
             </p>
           </section>
 
+          <section className="space-y-3" id="website-comments">
+            <h2 className="font-display text-xl font-bold tracking-tight">Website build-page comments (beckify.com)</h2>
+            <p className="text-base leading-relaxed">
+              The project build pages under{" "}
+              <a className="text-[var(--accent)] underline-offset-4 hover:underline" href={`${SITE_URL}/projects/`}>
+                {SITE_URL}/projects/
+              </a>{" "}
+              have an optional comment box. No account is needed and no email address is asked for or stored.
+              If you post, the name you type (optional) and your comment text are sent to{" "}
+              <code className="font-mono text-[0.9em]">https://api.beckify.com/api/comments</code> and kept until
+              they are deleted. Comments are hidden until I approve them; I can delete any comment. Approved comments are public and show only the name and text you wrote, so please
+              don’t include personal information.
+            </p>
+            <p className="text-base leading-relaxed">
+              To limit spam, your IP address is turned into a one-way hash that lives only in server memory for
+              a short time to count how many comments one connection sends. The raw IP address is not stored in
+              the comment data. Comments are stored in a private GitHub repository that I control. Loading or
+              posting comments sets no cookies and adds no analytics or ad trackers of its own; the comment box
+              talks only to api.beckify.com. (Separately, the beckify.com website may use Google Analytics for
+              aggregate page statistics; that is independent of comments.) As with any web request, the hosting provider’s infrastructure sees the IP
+              address in transit. To have a comment removed, email the address below.
+            </p>
+          </section>
+
           <section className="space-y-3">
             <h2 className="font-display text-xl font-bold tracking-tight">Contact</h2>
             <p className="text-base leading-relaxed">

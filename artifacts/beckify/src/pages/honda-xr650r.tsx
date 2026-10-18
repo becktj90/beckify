@@ -1,6 +1,7 @@
 import { ArrowDown, BatteryCharging, Cable, Download, Gauge, Wrench } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { Layout } from "@/components/Layout";
+import { BuildComments } from "@/components/BuildComments";
 import { SchemaHead, breadcrumbListSchema, techArticleSchema } from "@/components/seo/SchemaHead";
 import { PAGE_SEO } from "@/data/seo-copy.mjs";
 
@@ -418,6 +419,8 @@ export default function HondaXR650RPage() {
         <h2>A living build record, not a finished specification.</h2>
         <p>Public workshop journal — BUILD IN PROGRESS. Claims wait on measured pack current, controller calibration, loaded rpm, finished mass, and road data. Concept renders are labeled. Receipts stay off this page.</p>
       </div>
+
+      <BuildComments pageKey="honda-xr650r" />
     </Layout>
   );
 }
