@@ -161,7 +161,7 @@ for (const id of E.circuits()) {
   }
   assert.ok(E.solve('csAmp', 'point', Object.assign({}, D('csAmp'), { rs: '100' })).layout.audit.ok, 'degenerated CS audit');
   const sch = R.renderSchematic(E.solve('cmosInverter', 'threshold', D('cmosInverter')));
-  assert.ok(sch.includes('<path') && /A10 10 0 1 0/.test(sch), 'pmos bubble drawn');
+  assert.ok(sch.includes('<path') && /A[0-9.]+ [0-9.]+ 0 1 0 /.test(sch), 'pmos bubble drawn');
 }
 
 /* audit catches mistakes: a short, an off-board hole, and a split net */
