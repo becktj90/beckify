@@ -2593,3 +2593,11 @@ body.report-open { overflow: hidden; }
 .eb-inspector td { padding: 4px 6px; border-bottom: 1px solid var(--border); }
 .eb-inspector td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .eb-empty { padding: 24px; color: var(--fg-muted); text-align: center; }
+
+/* ported tools (bk-tool.js) */
+.bkt .eb-cols { margin-top: 4px; }
+.bkt-alert { border-radius: 8px; padding: 9px 12px; margin: 8px 0; font-size: 0.85rem; border: 1px solid var(--border); background: var(--bg-card); }
+.bkt-bad { border-color: #f47078; color: #f9a8ad; }
+.bkt-warn { border-color: #f0bc48; color: #f5d487; }
+.bkt-fig { margin: 8px 0 12px; }
+.bkt-svg { display: block; width: 100%; height: auto; max-width: 560px; }

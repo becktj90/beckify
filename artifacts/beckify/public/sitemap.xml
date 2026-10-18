@@ -385,6 +385,30 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/noise-snr/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/linear-regulator/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/instrumentation-amp/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/adc-dac/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/electronics-bench/</loc>
     <lastmod>2026-10-17</lastmod>
     <changefreq>monthly</changefreq>
