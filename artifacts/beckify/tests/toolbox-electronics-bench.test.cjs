@@ -89,6 +89,35 @@ for (const id of E.circuits()) {
   }
 }
 
+/* diode family */
+{
+  const get = (sol, id) => sol.quantities.find((x) => x.id === id).value;
+  let h = E.solve('halfWave', 'report', D('halfWave'));
+  near(get(h, 'vpk'), 12 * Math.SQRT2 - 0.7, 1e-9, 'half-wave peak');
+  near(get(h, 'vdcAvg'), (12 * Math.SQRT2 - 0.7) / Math.PI, 1e-9);
+  near(get(h, 'ripple'), (get(h, 'vpk') / 100) / (60 * 1e-4), 1e-9, 'half-wave ripple');
+  const b = E.solve('fullBridge', 'report', D('fullBridge'));
+  near(get(b, 'vpk'), 12 * Math.SQRT2 - 1.4, 1e-9, 'bridge peak');
+  near(get(b, 'vdcAvg'), 2 * get(b, 'vpk') / Math.PI, 1e-9);
+  const bc = E.solve('fullBridge', 'c', D('fullBridge'));
+  near(get(bc, 'ripple'), 0.5, 1e-9, 'C sized for 0.5 V ripple');
+  const cl = E.solve('shuntClipper', 'report', D('shuntClipper'));
+  near(get(cl, 'vout'), 0.7, 1e-12); near(get(cl, 'ipeak'), 9.3 / 1000, 1e-12);
+  const cr = E.solve('shuntClipper', 'r', D('shuntClipper'));
+  near(get(cr, 'r'), 930, 1e-9);
+  const cp = E.solve('clamper', 'report', D('clamper'));
+  near(get(cp, 'vmax'), 19.3, 1e-12); near(get(cp, 'vmin'), -0.7, 1e-12);
+  assert.throws(() => E.solve('halfWave', 'c', Object.assign({}, D('halfWave'), { source: 'dc' })), /Ripple is zero/);
+  assert.throws(() => E.solve('halfWave', 'report', Object.assign({}, D('halfWave'), { vrms: '0.3' })), /clears the diode drop/);
+  for (const id of ['halfWave', 'fullBridge', 'shuntClipper']) {
+    const dc = E.solve(id, 'report', Object.assign({}, D(id), { source: 'dc' }));
+    assert.ok(dc.layout.audit.ok, id + ' DC audit ' + JSON.stringify(dc.layout.audit));
+  }
+  const biased = E.solve('shuntClipper', 'report', Object.assign({}, D('shuntClipper'), { vbias: '2' }));
+  assert.ok(biased.layout.audit.ok, 'biased clipper audit ' + JSON.stringify(biased.layout.audit));
+  near(get(biased, 'vout'), 2.7, 1e-12);
+}
+
 /* audit catches mistakes: a short, an off-board hole, and a split net */
 {
   const sol = E.solve('seriesResistors', 'current', D('seriesResistors'));

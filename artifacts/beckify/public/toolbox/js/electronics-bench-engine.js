@@ -187,6 +187,29 @@
     visible: { resistance: ['vs', 'vf', 'if'], current: ['vs', 'vf', 'r'], supply: ['vf', 'if', 'r'] },
     defaults: { vs: '5', vf: '2', if: '0.02', r: '150' } });
 
+  spec({ id: 'halfWave', family: 'diode', title: 'Half-wave rectifier', blurb: 'One diode. AC sine (RMS) or a steady DC source. Ripple sizing is for the sine.',
+    defaultUnknown: 'report', unknowns: [u('report', 'Readings'), u('c', 'C for ripple')],
+    fields: [sourceField(), n('vrms', 'Vrms', 'V', 'RMS of the sine. Peak is Vrms·√2, before diode drops.', 'ac'), n('vdc', 'Vdc', 'V', 'Steady volts, forward polarity. Not RMS.', 'dc'),
+      n('vf', 'Vf', 'V'), n('f', 'f', 'Hz', 'Line frequency of the sine.', 'ac'), n('c', 'C', 'F'), n('rload', 'Rload', 'Ω'), n('ripple', 'Ripple target', 'V')],
+    visible: { report: ['source', 'vrms', 'vdc', 'vf', 'f', 'c', 'rload'], c: ['source', 'vrms', 'vdc', 'vf', 'f', 'rload', 'ripple'] },
+    defaults: { source: 'ac', vrms: '12', vdc: '12', vf: '0.7', f: '60', c: '0.0001', rload: '100', ripple: '1' } });
+  spec({ id: 'fullBridge', family: 'diode', title: 'Full-wave bridge', blurb: 'Four diodes, two drops. AC uses 2/π and ripple at 2f. DC is a steady source.',
+    defaultUnknown: 'report', unknowns: [u('report', 'Readings'), u('c', 'C for ripple')],
+    fields: [sourceField(), n('vrms', 'Vrms', 'V', 'RMS of the sine. Peak is Vrms·√2, before diode drops.', 'ac'), n('vdc', 'Vdc', 'V', 'Steady volts, forward polarity. Not RMS.', 'dc'),
+      n('vf', 'Vf each', 'V'), n('f', 'Line f', 'Hz', 'Line frequency of the sine.', 'ac'), n('c', 'C', 'F'), n('rload', 'Rload', 'Ω'), n('ripple', 'Ripple target', 'V')],
+    visible: { report: ['source', 'vrms', 'vdc', 'vf', 'f', 'c', 'rload'], c: ['source', 'vrms', 'vdc', 'vf', 'f', 'rload', 'ripple'] },
+    defaults: { source: 'ac', vrms: '12', vdc: '12', vf: '0.7', f: '60', c: '0.0001', rload: '100', ripple: '0.5' } });
+  spec({ id: 'shuntClipper', family: 'diode', title: 'Shunt clipper', blurb: 'Series resistor, diode shunt. The source is a DC level or a sine peak.',
+    defaultUnknown: 'report', unknowns: [u('report', 'Clipped peak'), u('r', 'R for Ipeak')],
+    fields: [sourceField(), n('vp', 'Vp', 'V', 'Peak of the sine, not RMS.', 'ac'), n('vdc', 'Vdc', 'V', 'Steady volts. Not RMS.', 'dc'), n('f', 'f', 'Hz', 'Frequency of the sketch sine.', 'ac'),
+      n('r', 'R series', 'Ω'), n('vf', 'Vf', 'V'), n('vbias', 'Bias under diode', 'V', '0 V clips near Vf above ground.'), n('ipeak', 'Ipeak limit', 'A')],
+    visible: { report: ['source', 'vp', 'vdc', 'f', 'r', 'vf', 'vbias'], r: ['source', 'vp', 'vdc', 'f', 'vf', 'vbias', 'ipeak'] },
+    defaults: { source: 'ac', vp: '10', vdc: '10', f: '1000', r: '1000', vf: '0.7', vbias: '0', ipeak: '0.01' } });
+  spec({ id: 'clamper', family: 'diode', title: 'Diode clamper', blurb: 'Series capacitor and a diode to ground. The sine shifts; the swing stays.',
+    defaultUnknown: 'report', unknowns: [u('report', 'Shifted peaks')],
+    fields: [n('vp', 'Vp', 'V', 'Peak of the AC sine. This clamp is not a DC model.'), n('vf', 'Vf', 'V')],
+    visible: { report: ['vp', 'vf'] }, defaults: { vp: '10', vf: '0.7' } });
+
   function visibleFields(id, unknown, inputs) {
     const s = specOf(id);
     const ids = s.visible[unknown] || s.visible[s.defaultUnknown] || [];
@@ -513,6 +536,113 @@
     });
   };
 
+  function rectifier(unknown, inp, bridge) {
+    const ac = acSource(inp);
+    const vf = nonNeg(inp, 'vf', 'Vf');
+    const rload = pos(inp, 'rload', 'Rload');
+    const drops = bridge ? 2 : 1;
+    const k = bridge ? 2 : 1;
+    let vrms, vdcIn, f, vpk, vdcAvg, vdcCap, iCap, c, ripple;
+    if (ac) {
+      vrms = pos(inp, 'vrms', 'Vrms'); vdcIn = 0; f = pos(inp, 'f', 'f');
+      const peak = vrms * Math.SQRT2 - drops * vf;
+      if (!(peak > 0)) throw outOfRange('The peak never clears the diode drop. Raise Vrms or lower Vf.');
+      vpk = peak; vdcAvg = k * vpk / Math.PI; vdcCap = vpk; iCap = vdcCap / rload;
+      if (unknown === 'c') { const target = pos(inp, 'ripple', 'Ripple'); c = iCap / (k * f * target); }
+      else if (unknown === 'report') c = pos(inp, 'c', 'C');
+      else throw badUnknown();
+      ripple = iCap / (k * f * c);
+    } else {
+      if (unknown === 'c') throw outOfRange('Ripple is zero on a DC source, so C is not set by a ripple target. Switch the source to AC sine to size C.');
+      if (unknown !== 'report') throw badUnknown();
+      vdcIn = posIfPresent(inp, 'vdc', 'Vdc', 12); vrms = 0; f = 0;
+      const held = Math.max(vdcIn - drops * vf, 0);
+      vpk = held; vdcAvg = held; vdcCap = held; iCap = held / rload; c = pos(inp, 'c', 'C'); ripple = 0;
+    }
+    const sourceName = ac ? 'Vac' : 'Vdc';
+    const sourceDetail = ac ? eng(vrms) + ' Vrms' : eng(vdcIn) + ' Vdc';
+    const elements = [src('ac', sourceName, sourceDetail, 14, 58, 14, 24, ac ? AC_FLAG : 0)];
+    if (bridge) {
+      elements.push(wire('a', 14, 24, 36, 24), dio('d1', 'D1', eng(vf) + ' V', 36, 24, 52, 16), dio('d2', 'D2', eng(vf) + ' V', 52, 16, 68, 24),
+        dio('d3', 'D3', eng(vf) + ' V', 36, 48, 52, 36), dio('d4', 'D4', eng(vf) + ' V', 52, 36, 68, 48),
+        wire('m1', 36, 24, 36, 48), wire('m2', 68, 24, 68, 48), wire('out', 52, 16, 84, 16),
+        cap('c', 'C', eng(c) + ' F', 84, 16, 84, 62), res('rl', 'RL', eng(rload) + ' Ω', 72, 16, 72, 62), wire('bot', 14, 62, 84, 62), gnd('g', 84, 62));
+    } else {
+      elements.push(wire('a', 14, 24, 36, 24), dio('d', 'D', eng(vf) + ' V', 36, 24, 58, 24), wire('b', 58, 24, 78, 24),
+        cap('c', 'C', eng(c) + ' F', 78, 24, 78, 64), res('rl', 'RL', eng(rload) + ' Ω', 64, 24, 64, 64), wire('bot', 14, 64, 78, 64), gnd('g', 78, 64));
+    }
+    const quantities = [q('vpk', ac ? 'Vpeak out' : 'Vout', vpk, 'V'), q('vdcAvg', ac ? 'Vdc average' : 'Vdc out', vdcAvg, 'V'), q('vdcCap', 'Vdc with C', vdcCap, 'V'),
+      q('ripple', 'Ripple', ripple, 'V', unknown === 'c'), q('c', 'C', c, 'F', unknown === 'c'), q('iload', 'Iload', iCap, 'A'), q('rload', 'Rload', rload, 'Ω'),
+      q('vf', 'Vf', vf, 'V'), q('ac', 'AC sine', ac ? 1 : 0, ''), q('bridge', 'Bridge', bridge ? 1 : 0, '')];
+    if (ac) quantities.push(q('f', 'f', f, 'Hz'), q('vrms', 'Vrms', vrms, 'V'), q('vsrcpk', 'Source peak', vrms * Math.SQRT2, 'V'));
+    else quantities.push(q('vdc', 'Vdc', vdcIn, 'V'));
+    const steps = ac
+      ? ['Vp = Vrms·√2 − ' + drops + '·Vf = ' + eng(vpk) + ' V', bridge ? 'No-cap average = 2·Vp/π' : 'No-cap average = Vp/π', 'Cap-input ripple ≈ I / (' + (bridge ? '2f' : 'f') + '·C) = ' + eng(ripple) + ' V']
+      : ['Vout = Vdc − ' + drops + '·Vf = ' + eng(vpk) + ' V', 'Forward polarity. This model does not conduct a reverse DC source.', 'Ripple is 0. The capacitor does not set the DC level.'];
+    const notes = ac
+      ? [bridge ? 'Bridge: two diodes conduct each half cycle.' : 'Half-wave: the diode conducts on one half cycle.', 'The capacitor estimate assumes light load and a peak near Vp minus the drops.', 'Ripple is the ideal I/(fC) sketch, not a simulated waveform.']
+      : [bridge ? 'Bridge: two diode drops in series with the DC source.' : 'Half-wave: one diode drop in series with the DC source.', 'Steady DC, forward polarity. Not an RMS or peak sine.', 'Ripple is zero. Switch to AC sine to size C from a ripple target.'];
+    return pack(bridge ? 'fullBridge' : 'halfWave', {
+      headline: (ac ? 'Vpeak out = ' : 'Vout = ') + eng(vpk) + ' V', elements,
+      nodes: [node('ac', ac ? 'Vrms' : 'Vdc', ac ? vrms : vdcIn, 'V', 14, 24), node('out', ac ? 'Vpeak' : 'Vout', vpk, 'V', bridge ? 84 : 78, bridge ? 16 : 24), node('gnd', 'GND', 0, 'V', bridge ? 84 : 78, bridge ? 62 : 64)],
+      branches: [branch('i', 'Iload (cap)', iCap, 'A', bridge ? 72 : 64, 28, bridge ? 72 : 64, 56)],
+      quantities, steps, notes,
+    });
+  }
+  SOLVERS.halfWave = (u2, inp) => rectifier(u2, inp, false);
+  SOLVERS.fullBridge = (u2, inp) => rectifier(u2, inp, true);
+
+  SOLVERS.shuntClipper = (unknown, inp) => {
+    const ac = acSource(inp);
+    const drive = ac ? pos(inp, 'vp', 'Vp') : posIfPresent(inp, 'vdc', 'Vdc', 10);
+    const f = ac ? posIfPresent(inp, 'f', 'f', 1000) : 0;
+    const vf = nonNeg(inp, 'vf', 'Vf');
+    const vbias = finite(inp, 'vbias', 'Bias');
+    const vclip = vbias + vf;
+    let r, ipeak;
+    if (unknown === 'r') {
+      ipeak = pos(inp, 'ipeak', 'Ipeak');
+      if (!(drive > vclip)) throw outOfRange('The source never reaches the clip level, so R is not set by that current.');
+      r = (drive - vclip) / ipeak;
+    } else if (unknown === 'report') {
+      r = pos(inp, 'r', 'R'); ipeak = drive > vclip ? (drive - vclip) / r : 0;
+    } else throw badUnknown();
+    const vout = Math.min(drive, vclip);
+    const sourceName = ac ? 'Vp' : 'Vdc';
+    const quantities = [q('vout', ac ? 'Vout peak' : 'Vout', vout, 'V'), q('vclip', 'Clip level', vclip, 'V'), q('ipeak', ac ? 'Ipeak' : 'I', ipeak, 'A'),
+      q('r', 'R', r, 'Ω', unknown === 'r'), q('vf', 'Vf', vf, 'V'), q('vbias', 'Vbias', vbias, 'V'), q('ac', 'AC sine', ac ? 1 : 0, '')];
+    if (ac) quantities.push(q('vp', 'Vp', drive, 'V'), q('f', 'f', f, 'Hz')); else quantities.push(q('vdc', 'Vdc', drive, 'V'));
+    return pack('shuntClipper', {
+      headline: (ac ? 'Vout peak = ' : 'Vout = ') + eng(vout) + ' V',
+      elements: [src('vs', sourceName, eng(drive) + (ac ? ' Vpk' : ' Vdc'), 16, 60, 16, 22, ac ? AC_FLAG : 0), wire('a', 16, 22, 40, 22), res('r', 'R', eng(r) + ' Ω', 40, 22, 64, 22),
+        wire('b', 64, 22, 82, 22), dio('d', 'D', eng(vf) + ' V', 70, 22, 70, 64), src('vb', 'Vb', eng(vbias) + ' V', 70, 64, 70, 72), wire('g', 16, 72, 70, 72), gnd('gnd', 82, 72)],
+      nodes: [node('in', sourceName, drive, 'V', 16, 22), node('out', 'Vout', vout, 'V', 82, 22), node('gnd', 'GND', 0, 'V', 82, 72)],
+      branches: [branch('i', ac ? 'Ipeak' : 'I', ipeak, 'A', 44, 22, 60, 22)], quantities,
+      steps: ['Clip level = Vbias + Vf = ' + eng(vclip) + ' V',
+        drive > vclip ? (ac ? 'Ipeak = (Vp − Vclip) / R' : 'I = (Vdc − Vclip) / R') : (ac ? 'Peak stays under the clip. Diode current is 0.' : 'DC stays under the clip. Diode current is 0.')],
+      notes: ['Shunt clipper. The diode conducts only after the output tries to pass the clip level.',
+        ac ? 'Below the clip, this ideal model ignores the diode and passes the peak.' : 'On DC the output is Vdc until that level passes the clip, then it holds.',
+        'A real diode is not a perfect threshold. Softness is not modeled.'],
+    });
+  };
+
+  SOLVERS.clamper = (unknown, inp) => {
+    if (unknown !== 'report') throw badUnknown();
+    const vp = pos(inp, 'vp', 'Vp');
+    const vf = nonNeg(inp, 'vf', 'Vf');
+    const vmin = -vf, vmax = 2 * vp - vf;
+    return pack('clamper', {
+      headline: 'Vmax = ' + eng(vmax) + ' V',
+      elements: [src('vs', 'Vp', eng(vp) + ' Vpk', 16, 58, 16, 28, AC_FLAG), wire('a', 16, 28, 36, 28), cap('c', 'C', 'DC block', 36, 28, 58, 28), wire('b', 58, 28, 84, 28),
+        dio('d', 'D', eng(vf) + ' V', 68, 28, 68, 64), gnd('g', 68, 64)],
+      nodes: [node('in', 'Vp', vp, 'V', 16, 28), node('hi', 'Vmax', vmax, 'V', 84, 28), node('lo', 'Vmin', vmin, 'V', 84, 48), node('gnd', 'GND', 0, 'V', 68, 64)],
+      branches: [branch('i', 'Steady current', 0, 'A', 40, 28, 54, 28)],
+      quantities: [q('vmax', 'Vmax', vmax, 'V'), q('vmin', 'Vmin', vmin, 'V'), q('swing', 'Swing', vmax - vmin, 'V'), q('vp', 'Vp', vp, 'V'), q('vf', 'Vf', vf, 'V')],
+      steps: ['Negative peak clamps near −Vf.', 'Positive peak ≈ 2·Vp − Vf.', 'Peak-to-peak swing stays about 2·Vp.'],
+      notes: ['Series capacitor, diode cathode toward the output, anode at ground.', 'After a few cycles the capacitor holds a DC shift. This is that steady picture.', 'Ideal diode and a stiff source. Load bleed is not included.'],
+    });
+  };
+
   function solve(circuit, unknown, inputs) {
     const s = specOf(circuit);
     if (!s.unknowns.some((x) => x.id === unknown)) throw outOfRange('That unknown is not on this circuit.');
@@ -815,6 +945,81 @@
     b.jumper('vs', 'Vs', 6, 'a', 6, 'topPlus', 'red'); b.jumper('anode', 'Van', 16, 'b', 22, 'b', 'orange');
     b.jumper('gnd', 'GND', 16, 'j', 16, 'botMinus', 'black'); b.jumper('gndb', 'GND', 22, 'j', 22, 'botMinus', 'black');
     return b.finish(b.caption('The flat side of the LED is the cathode, on the ground side of the gutter. Orange marks the anode node after the series resistor.'));
+  };
+
+  function acNet(b, vKey) {
+    const ac = (b.qty('ac') === undefined ? 1 : b.qty('ac')) >= 0.5;
+    if (ac) { const v = b.qty(vKey); return { ac, label: trim(v) + (vKey === 'vrms' ? ' Vrms' : ' Vpk'), net: vKey === 'vrms' ? 'Vac' : 'Vp' }; }
+    return { ac, label: trim(b.qty('vdc')) + ' Vdc', net: 'Vdc' };
+  }
+  LAYOUTS.halfWave = (b) => {
+    const c = b.qty('c'), rload = b.qty('rload');
+    const s = acNet(b, 'vrms');
+    b.singleSupply(s.label, s.net, 'GND');
+    b.diode('d', 'D', b.hole(8, 'c', s.net), b.hole(16, 'c', 'Vpk'));
+    b.resistor('rl', 'RL', rload, b.hole(16, 'e', 'Vpk'), b.hole(16, 'f', 'GND'));
+    b.capacitor('c', 'C', c, b.hole(22, 'e', 'Vpk'), b.hole(22, 'f', 'GND'));
+    b.jumper('ac', s.net, 8, 'a', 8, 'topPlus', 'red'); b.jumper('out', 'Vpk', 16, 'b', 22, 'b', 'yellow');
+    b.jumper('g1', 'GND', 16, 'j', 16, 'botMinus', 'black'); b.jumper('g2', 'GND', 22, 'j', 22, 'botMinus', 'black');
+    return b.finish(b.caption(s.ac
+      ? 'Half-wave: diode anode on the red rail (AC source stand-in), cathode to the filter node. RL and C share Vpeak across the gutter. Banded end is the cathode.'
+      : 'Half-wave on a DC source: diode anode on the red rail, cathode to the filter node. RL and C share that node. Banded end is the cathode.'));
+  };
+  LAYOUTS.shuntClipper = (b) => {
+    const r = b.qty('r');
+    const ac = (b.qty('ac') === undefined ? 1 : b.qty('ac')) >= 0.5;
+    const label = ac ? trim(b.qty('vp')) + ' Vpk' : trim(b.qty('vdc')) + ' Vdc';
+    const net = ac ? 'Vp' : 'Vdc';
+    const vbias = b.qty('vbias') || 0;
+    b.singleSupply(label, net, 'GND');
+    b.resistor('r', 'R', r, b.hole(6, 'c', net), b.hole(16, 'c', 'Vout'));
+    if (Math.abs(vbias) < 1e-12) {
+      b.diode('d', 'D', b.hole(16, 'e', 'Vout'), b.hole(16, 'f', 'GND'));
+      b.jumper('dk', 'GND', 16, 'j', 16, 'botMinus', 'black');
+    } else {
+      b.diode('d', 'D', b.hole(16, 'e', 'Vout'), b.hole(16, 'f', 'Vb'));
+      b.components.push({ id: 'vb', part: { type: 'source', label: 'Vb ' + trim(vbias) + ' V' }, leads: [b.hole(22, 'f', 'Vb'), b.hole(22, 'e', 'GND')] });
+      b.jumper('bias', 'Vb', 16, 'i', 22, 'i', 'blue'); b.jumper('bg', 'GND', 22, 'a', 22, 'topMinus', 'black');
+    }
+    b.jumper('src', net, 6, 'a', 6, 'topPlus', 'red'); b.jumper('tap', 'Vout', 16, 'b', 24, 'b', 'yellow'); b.jumper('gnd', 'GND', 24, 'j', 24, 'botMinus', 'black');
+    return b.finish(b.caption('Series R into a shunt diode. The banded cathode sits toward the bias/ground side. Yellow is the clipped output node.'));
+  };
+  LAYOUTS.clamper = (b) => {
+    const vp = b.qty('vp');
+    b.singleSupply(trim(vp) + ' Vpk', 'Vp', 'GND');
+    b.capacitor('c', 'C', 1e-6, b.hole(8, 'c', 'Vp'), b.hole(16, 'c', 'Vout'));
+    b.diode('d', 'D', b.hole(16, 'f', 'GND'), b.hole(16, 'e', 'Vout'));
+    b.jumper('src', 'Vp', 8, 'a', 8, 'topPlus', 'red'); b.jumper('out', 'Vout', 16, 'b', 24, 'b', 'yellow');
+    b.jumper('gnd', 'GND', 16, 'j', 16, 'botMinus', 'black'); b.jumper('gndb', 'GND', 24, 'j', 24, 'botMinus', 'black');
+    return b.finish(b.caption('Series C with a diode to the blue rail. Banded cathode is on the output node (positive clamp). C is illustrative — the solve only shifts the peaks.'));
+  };
+  LAYOUTS.fullBridge = (b) => {
+    const c = b.qty('c'), rload = b.qty('rload');
+    const ac = (b.qty('ac') === undefined ? 1 : b.qty('ac')) >= 0.5;
+    if (ac) {
+      b.singleSupply('Vpk', 'Vpk', 'GND');
+      b.components.push({ id: 'ac', part: { type: 'source', label: trim(b.qty('vrms')) + ' Vrms' }, leads: [b.hole(5, 'e', 'VacA'), b.hole(5, 'f', 'VacB')] });
+      b.diode('d1', 'D1', b.hole(8, 'c', 'VacA'), b.hole(14, 'c', 'Vpk'));
+      b.diode('d2', 'D2', b.hole(10, 'j', 'VacB'), b.hole(14, 'j', 'Vpk'));
+      b.diode('d3', 'D3', b.hole(7, 'f', 'GND'), b.hole(8, 'i', 'VacA'));
+      b.diode('d4', 'D4', b.hole(9, 'f', 'GND'), b.hole(10, 'h', 'VacB'));
+      b.jumper('aBus', 'VacA', 5, 'c', 8, 'a', 'yellow'); b.jumper('aCross', 'VacA', 8, 'e', 8, 'f', 'yellow');
+      b.jumper('bBus', 'VacB', 5, 'j', 10, 'g', 'violet'); b.jumper('vpkCross', 'Vpk', 14, 'e', 14, 'f', 'red');
+      b.jumper('plus', 'Vpk', 14, 'a', 14, 'topPlus', 'red'); b.jumper('plusb', 'Vpk', 14, 'd', 20, 'd', 'red');
+      b.jumper('g3', 'GND', 7, 'j', 7, 'botMinus', 'black'); b.jumper('g4', 'GND', 9, 'j', 9, 'botMinus', 'black');
+      b.resistor('rl', 'RL', rload, b.hole(20, 'e', 'Vpk'), b.hole(20, 'f', 'GND'));
+      b.capacitor('c', 'C', c, b.hole(24, 'e', 'Vpk'), b.hole(24, 'f', 'GND'));
+      b.jumper('out', 'Vpk', 20, 'b', 24, 'b', 'red'); b.jumper('lg', 'GND', 20, 'j', 20, 'botMinus', 'black'); b.jumper('cg', 'GND', 24, 'j', 24, 'botMinus', 'black');
+      return b.finish(b.caption('Full-wave bridge: AC secondary between VacA and VacB (not the DC rails). D1/D2 cathodes feed Vpk on the red rail; D3/D4 anodes sit on the blue rail. RL and C share Vpeak. Banded ends are cathodes. Illustrative — not a transformer pinout.'));
+    }
+    b.singleSupply(trim(b.qty('vdc')) + ' Vdc', 'Vdc', 'GND');
+    b.diode('d1', 'D1', b.hole(6, 'c', 'Vdc'), b.hole(12, 'c', 'Mid'));
+    b.diode('d2', 'D2', b.hole(12, 'a', 'Mid'), b.hole(18, 'a', 'Vpk'));
+    b.resistor('rl', 'RL', rload, b.hole(18, 'e', 'Vpk'), b.hole(18, 'f', 'GND'));
+    b.capacitor('c', 'C', c, b.hole(24, 'e', 'Vpk'), b.hole(24, 'f', 'GND'));
+    b.jumper('src', 'Vdc', 6, 'a', 6, 'topPlus', 'red'); b.jumper('mid', 'Mid', 12, 'b', 12, 'e', 'orange');
+    b.jumper('out', 'Vpk', 18, 'b', 24, 'b', 'yellow'); b.jumper('g1', 'GND', 18, 'j', 18, 'botMinus', 'black'); b.jumper('g2', 'GND', 24, 'j', 24, 'botMinus', 'black');
+    return b.finish(b.caption('Bridge on a DC source is two forward drops in series (D1 then D2) into RL || C. Ripple is zero on DC — switch to AC sine to size C from a ripple target.'));
   };
 
   global.BeckifyBenchEngine = {
