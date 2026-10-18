@@ -23,5 +23,5 @@ r = run('resistorColor', { mode: 'encode', ohms: '4.7k', count: '5' }); assert.m
 r = run('resistorColor', { mode: 'encode', ohms: '0.47' }); assert.match(cell(r, 'Bands'), /Yellow · Violet · Silver/);
 assert.ok(!run('resistorColor', { mode: 'encode', ohms: '0' }).ok); assert.ok(!run('resistorColor', { mode: 'encode', ohms: '1e12' }).ok);
 r = run('resistorColor', { count: '5', d1: 'brown', d2: 'black', d3: 'black', mult: 'brown', tol: 'brown' }); assert.equal(cell(r, 'Resistance'), '1.00 kΩ');
-assert.ok(!run('resistorColor', { d1: 'gold' }).ok);
+assert.ok(run('resistorColor', { d1: 'gold' }).ok); // unknown choice falls back to the default band
 console.log('ok');

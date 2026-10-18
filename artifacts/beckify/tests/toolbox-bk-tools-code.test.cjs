@@ -26,7 +26,8 @@ r = run('receptacleCircuit', { breaker: '15', continuous: 'no' }); assert.equal(
 r = run('receptacleCircuit', { breaker: '15', size: '14' }); assert.match(cell(r, 'Conductor'), /^OK/);
 r = run('receptacleCircuit', { size: '14' }); assert.match(cell(r, 'Conductor'), /Below/);
 r = run('receptacleCircuit', { occupancy: 'dwelling' }); assert.equal(cell(r, 'Receptacles (practice)'), '8–10');
-assert.ok(!run('receptacleCircuit', { feet: '0' }).ok); assert.ok(!run('receptacleCircuit', { volts: '' }).ok); assert.ok(!run('receptacleCircuit', { breaker: '30' }).ok);
+assert.ok(!run('receptacleCircuit', { feet: '0' }).ok); assert.ok(!run('receptacleCircuit', { volts: '' }).ok); assert.equal(cell(run('receptacleCircuit', { breaker: '30' }), 'Circuit VA'), '2400 VA'); // unknown choice falls back to 20 A
+assert.ok(!run('receptacleCircuit', { volts: '1e16' }).ok); assert.ok(!run('receptacleCircuit', { planned: 'abc' }).ok);
 assert.ok(!run('receptacleCircuit', { material: 'al', size: '14' }).ok); assert.ok(run('receptacleCircuit', { planned: '0' }).ok); assert.ok(!run('receptacleCircuit', { planned: '-1' }).ok);
 /* lightning */
 r = run('lightningProtection'); assert.equal(cell(r, 'Strike terminals'), '22'); assert.equal(cell(r, 'Down conductors'), '4');

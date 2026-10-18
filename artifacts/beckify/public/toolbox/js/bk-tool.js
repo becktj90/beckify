@@ -4,6 +4,7 @@
 (function (global) {
   'use strict';
   const registry = {};
+  const RANGE = 1e15;
   const PREFIX = { '-12': 'p', '-9': 'n', '-6': 'µ', '-3': 'm', '0': '', '3': 'k', '6': 'M', '9': 'G', '12': 'T' };
   const MULT = { k: 1e3, K: 1e3, M: 1e6, G: 1e9, T: 1e12 }, DIV = { p: 1e12, n: 1e9, u: 1e6, 'µ': 1e6, 'μ': 1e6, m: 1e3 };
 
@@ -24,20 +25,32 @@
     if (value === 0) return '0' + (unit ? ' ' + unit : '');
     const mag = Math.abs(value), dec = Math.min(12, Math.max(-12, Math.floor(Math.log10(mag) / 3) * 3));
     const sc = mag / Math.pow(10, dec), d = digits != null ? digits : (sc >= 100 ? 0 : sc >= 10 ? 1 : 2);
-    return (value < 0 ? '-' : '') + sc.toFixed(d) + ' ' + PREFIX[String(dec)] + unit;
+    const body = sc.toFixed(d);
+    return (value < 0 && /[1-9]/.test(body) ? '-' : '') + body + ' ' + PREFIX[String(dec)] + unit;
   }
-  const fixed = (v, d, unit) => (v == null || !isFinite(v) ? '—' : v.toFixed(d) + (unit ? ' ' + unit : ''));
+  const fixed = (v, d, unit) => {
+    if (v == null || !isFinite(v)) return '—';
+    let t = v.toFixed(d); if (/^-0(\.0*)?$/.test(t)) t = t.slice(1); // never print "-0.0"
+    return t + (unit ? ' ' + unit : '');
+  };
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   /** Read a numeric field. Throws with the field label for blank / bad input. */
   function need(v, id, label) {
     const x = parse(v[id]);
     if (x === null) throw new Error((label || id) + ' is missing or not a number.');
+    if (Math.abs(x) > RANGE) throw new Error((label || id) + ' is out of range (limit ±1e15).');
     return x;
   }
   function positive(v, id, label) { const x = need(v, id, label); if (!(x > 0)) throw new Error((label || id) + ' must be above zero.'); return x; }
   function nonNeg(v, id, label) { const x = need(v, id, label); if (x < 0) throw new Error((label || id) + ' cannot be negative.'); return x; }
-  const optional = (v, id) => (String(v[id] == null ? '' : v[id]).trim() === '' ? null : parse(v[id]));
+  const optional = (v, id) => {
+    if (String(v[id] == null ? '' : v[id]).trim() === '') return null;
+    const x = parse(v[id]);
+    if (x === null) throw new Error('An optional value is not a number. Clear it or enter a number.');
+    if (Math.abs(x) > RANGE) throw new Error('An optional value is out of range (limit ±1e15).');
+    return x;
+  };
 
   function define(def) {
     registry[def.id] = def;
@@ -46,7 +59,15 @@
   }
   function defaults(def) { const o = {}; def.fields.forEach((f) => { o[f.id] = f.def == null ? '' : String(f.def); }); return o; }
   function run(def, values) {
-    try { return { ok: true, r: def.compute(values) }; } catch (e) { return { ok: false, error: e && e.message ? e.message : String(e) }; }
+    // A choice that is blank or unknown falls back to the field default, so a stale saved value can never crash a tool.
+    const v = Object.assign({}, values);
+    def.fields.forEach((f) => { if (f.choices && !f.choices.some((c) => String(c[0]) === String(v[f.id]))) v[f.id] = f.def; });
+    try {
+      const r = def.compute(v);
+      const shown = [r.headline].concat((r.rows || []).map((x) => x[0] + ' ' + x[1]), r.steps || []).join(' ');
+      if (/NaN|Infinity|undefined|e\+\d/.test(shown)) return { ok: false, error: 'The result is out of range for this tool. Check the units and magnitudes of the inputs.' };
+      return { ok: true, r };
+    } catch (e) { return { ok: false, error: e && e.message ? e.message : String(e) }; }
   }
 
   function mount(def) {
