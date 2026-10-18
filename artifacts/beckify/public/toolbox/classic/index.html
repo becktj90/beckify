@@ -16,12 +16,12 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta property="og:site_name" content="Beckify">
   <meta property="og:title" content="Electrical engineering toolbox — Ohm's Law, voltage drop, ampacity, conduit fill">
-  <meta property="og:description" content="57 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta property="og:description" content="58 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <meta property="og:image" content="https://beckify.com/toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://beckify.com/toolbox/classic/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="description" content="57 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
+  <meta name="description" content="58 free electrical calculators: voltage drop, conduit fill, wire ampacity, motor FLA, transformer sizing. Browser-based, no account. Start calculating.">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFZ9X595E"></script>
   <script>
@@ -240,6 +240,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">05 · Test &amp; analysis</div>
       <button class="nav-btn" data-target="sec-tdr" data-keywords="megger tdr trace analyzer tdr500 open short pulse reflection distance vf velocity factor fault locating cable test">Megger TDR Trace Analyzer</button>
+      <button class="nav-btn" data-target="sec-electronics-bench" data-keywords="electronics bench lab breadboard generator schematic solderless resistor capacitor inductor led rc rl rlc filter divider thevenin norton kirchhoff series parallel hookup jumper wires rails">Electronics Bench &amp; Breadboard</button>
       <button class="nav-btn" data-target="sec-circuit-sim" data-keywords="circuit simulator MNA nodal analysis resistor capacitor inductor voltage source current source DC AC frequency sweep bode plot">Circuit Simulator</button>
       <button class="nav-btn" data-target="sec-smith-chart" data-keywords="smith chart impedance matching reflection coefficient gamma VSWR return loss transmission line RF microwave">Smith Chart</button>
       <button class="nav-btn" data-target="sec-emp-emc" data-keywords="emp emc hemp faraday cage shielding effectiveness skin depth aperture slot leakage induced voltage faraday law iec 61000 62305 esd surge solar gmd protection spd cable entry">EMP / EMC Shielding</button>
@@ -296,7 +297,7 @@
     <section id="sec-home" class="section">
       <div class="home-header">
         <h1 class="home-title">EE Toolbox</h1>
-        <p class="home-subtitle">57 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
+        <p class="home-subtitle">58 calculators plus reference tables, analyzers, and field tools for electrical engineering, commissioning, and maintenance. Start with a task group or use <kbd>/</kbd> to search.</p>
       </div>
 
       <section class="home-featured" aria-labelledby="featured-tools-heading">
@@ -375,6 +376,7 @@
           <div class="home-cat-header"><span class="home-cat-icon">🧪</span><span class="home-cat-name">05 · Test &amp; analysis</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-tdr">Megger TDR Trace Analyzer</a></li>
+            <li><a class="home-tool-link" href="#sec-electronics-bench">Electronics Bench &amp; Breadboard</a></li>
             <li><a class="home-tool-link" href="#sec-circuit-sim">Circuit Simulator</a></li>
             <li><a class="home-tool-link" href="#sec-smith-chart">Smith Chart</a></li>
             <li><a class="home-tool-link" href="#sec-emp-emc">EMP / EMC Shielding</a></li>
@@ -6153,6 +6155,24 @@
 
 
     <!-- ════════════════════════════════════════
+         ELECTRONICS BENCH + BREADBOARD GENERATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-electronics-bench" class="section">
+      <div class="section-header">
+        <h2>Electronics Bench &amp; Breadboard Generator</h2>
+        <p>Pick a circuit, choose what to solve for, and see the same circuit as a schematic and as a solderless breadboard hookup with color-banded resistors, jumpers, and live readings. Ported from the Beckify iOS Electronics Lab.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Electronics Bench</summary>
+          <div class="section-info-body">
+            Ideal lumped models, not SPICE. DC results are sequential; AC uses phasors. Rows a–e in one column are one node, f–j are the other, and each power rail is one node along the board. Every generated board is audited for shorts, opens, and clashing holes.<br><br>
+            <strong>Not a fabrication drawing.</strong> Verify part ratings and pinouts against the datasheet before building.
+          </div>
+        </details>
+      </div>
+      <div id="eb-root"></div>
+    </section><!-- end sec-electronics-bench -->
+
+    <!-- ════════════════════════════════════════
          CIRCUIT SIMULATOR
          ════════════════════════════════════════ -->
     <section id="sec-circuit-sim" class="section">
@@ -11634,6 +11654,9 @@
 <script src="js/mv-cable.js"></script>
 <script src="js/heater-wizard.js"></script>
 <script src="js/solar-wizard.js"></script>
+<script src="js/electronics-bench-engine.js"></script>
+<script src="js/electronics-bench-render.js"></script>
+<script src="js/electronics-bench.js"></script>
 <script src="js/circuit-sim.js"></script>
 <script src="js/smith-chart.js"></script>
 <script src="js/emp-emc.js"></script>

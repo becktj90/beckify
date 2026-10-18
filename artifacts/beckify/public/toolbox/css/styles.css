@@ -2538,3 +2538,47 @@ body.report-open { overflow: hidden; }
 }
 .solar-match-ok { color: #34d399 !important; }
 .solar-match-off { color: var(--fg-muted); }
+
+/* ── Electronics Bench (port of the iOS Electronics Lab) ── */
+.eb-lede { color: var(--fg-muted); margin: 0 0 12px; max-width: 70ch; }
+.eb-family { margin: 14px 0; }
+.eb-family-title { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 6px; }
+.eb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.eb-circuit { text-align: left; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; color: var(--fg); cursor: pointer; display: flex; flex-direction: column; gap: 3px; font: inherit; min-height: 44px; }
+.eb-circuit:hover, .eb-circuit:focus-visible { border-color: var(--border-hover); }
+.eb-circuit span { font-size: 0.78rem; color: var(--fg-muted); }
+.eb-title { margin: 8px 0 4px; font-size: 1.15rem; }
+.eb-cols { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .eb-cols { grid-template-columns: minmax(0, 1fr); } }
+.eb-field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+.eb-field label { font-size: 0.8rem; color: var(--fg-muted); }
+.eb-unit { color: var(--fg-dim); }
+.eb-field input, .eb-field select, .eb-bar select, .eb-inspector input { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); padding: 9px 10px; font: inherit; min-height: 40px; width: 100%; box-sizing: border-box; }
+.eb-bar select { width: auto; min-height: 34px; padding: 4px 8px; }
+.eb-help { color: var(--fg-dim); font-size: 0.74rem; }
+.eb-actions, .eb-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+.eb-bar { justify-content: space-between; }
+.eb-zoom { display: inline-flex; gap: 4px; }
+.eb-headline { font-size: 1.35rem; font-weight: 700; color: #56D6A4; margin: 6px 0 10px; font-variant-numeric: tabular-nums; }
+.eb-qty { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.eb-q { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; }
+.eb-q span { font-size: 0.7rem; color: var(--fg-muted); }
+.eb-q-hot { border-color: #56D6A4; }
+.eb-work, .eb-inspector { margin-top: 10px; }
+.eb-work summary, .eb-inspector summary { cursor: pointer; color: var(--fg-muted); font-size: 0.85rem; }
+.eb-notes { color: var(--fg-muted); font-size: 0.8rem; padding-left: 18px; }
+.eb-tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.eb-tab { background: transparent; color: var(--fg-muted); border: 0; padding: 8px 16px; cursor: pointer; font: inherit; min-height: 40px; }
+.eb-tab.on { background: var(--bg-active); color: var(--fg); box-shadow: inset 0 -2px 0 #40BAD6; }
+.eb-picture { border: 1px solid var(--border); border-radius: 10px; background: #0E1118; padding: 6px; }
+.eb-scroll { overflow: auto; max-height: 70vh; -webkit-overflow-scrolling: touch; }
+.eb-svg { display: block; max-width: 100%; height: auto; }
+.eb-breadboard { max-width: none; }
+.eb-audit { margin-top: 8px; font-size: 0.8rem; }
+.eb-audit.ok { color: #56D6A4; } .eb-audit.bad { color: #f5c451; }
+.eb-meters { margin-top: 6px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+.eb-caption, .eb-foot { color: var(--fg-muted); font-size: 0.78rem; }
+.eb-inspector table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.8rem; }
+.eb-inspector td { padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.eb-inspector td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.eb-empty { padding: 24px; color: var(--fg-muted); text-align: center; }
