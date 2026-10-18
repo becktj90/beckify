@@ -1,11 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "echo Vercel uses src/index.ts — registers /api/healthz /api/analyze-nameplate /api/analyze-panel /api/analyze-tdr",
+  "buildCommand": "echo Vercel uses src/index.ts \u2014 registers /api/healthz /api/analyze-nameplate /api/analyze-panel /api/analyze-tdr",
   "functions": {
     "src/index.ts": {
       "maxDuration": 60,
       "memory": 1024
     }
-  }
+  },
+  "ignoreCommand": "[[ \"$VERCEL_GIT_COMMIT_REF\" == kestrel-web-sync-* || \"$VERCEL_GIT_COMMIT_MESSAGE\" == \"Update Kestrel Heavy web build\"* ]] && exit 0 || exit 1"
 }

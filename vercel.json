@@ -3,5 +3,6 @@
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/beckify run typecheck && pnpm --filter @workspace/beckify run build",
-  "outputDirectory": "artifacts/beckify/dist/public"
+  "outputDirectory": "artifacts/beckify/dist/public",
+  "ignoreCommand": "[[ \"$VERCEL_GIT_COMMIT_REF\" == kestrel-web-sync-* || \"$VERCEL_GIT_COMMIT_MESSAGE\" == \"Update Kestrel Heavy web build\"* ]] && exit 0 || exit 1"
 }
