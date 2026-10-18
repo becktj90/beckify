@@ -1,6 +1,7 @@
 import { ArrowDown, Download } from "lucide-react";
 import { Link } from "wouter";
 import { Layout } from "@/components/Layout";
+import { BuildComments } from "@/components/BuildComments";
 import { FadeIn } from "@/components/FadeIn";
 import { SchemaHead, breadcrumbListSchema, techArticleSchema, toCanonicalUrl } from "@/components/seo/SchemaHead";
 import { PAGE_SEO, VESPA_RELATED_TOOLS, toolboxPermalink } from "@/data/seo-copy.mjs";
@@ -756,6 +757,8 @@ export default function VespaP200EPage() {
           </section>
         </FadeIn>
       </div>
+
+      <BuildComments pageKey="vespa-p200e" />
     </Layout>
   );
 }
