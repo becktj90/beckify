@@ -64,6 +64,7 @@
       else load = fx(lb, 2) + ' lb/ft fits a class ' + letter + ' working load (' + { A: 50, B: 75, C: 100 }[letter] + ' lb/ft)' + (pub ? ' at ' + pub + ' ft: NEMA VE 1 class ' + pub + letter + '.' : ', but ' + fx(span, 1) + ' ft is not a NEMA VE 1 span (8, 12, 16 or 20 ft).') + ' Planning check, not the maker’s table.';
     }
     if (status === 'pass') reasons.push('Within the cited fill limit.');
+    if (Math.floor(len / span + 1e-9) > 500) throw new Error('Support span is very short for this run. Use a longer span.');
     let stations = 1, sx = span; while (sx < len - 1e-6) { stations++; sx += span; } stations++;
     const bendMult = v.shielded === 'yes' ? 12 : 8, bend = maxOD * bendMult;
     notes.push('Minimum bend ' + fx(bend, 2) + ' in is ' + bendMult + '× the largest OD (manufacturer / ICEA planning note, not an NEC 392 rule).', 'Metal cable tray must be grounded and bonded (NEC 392.60). Size a separate EGC with the Equipment Grounding tool.', 'Planning estimate. Verify the manufacturer load table and the AHJ. Not a PE stamp.');
