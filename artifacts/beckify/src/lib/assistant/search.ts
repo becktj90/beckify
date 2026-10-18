@@ -35,6 +35,7 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "heater-wizard": ["nichrome", "kanthal", "resistance wire", "wye", "delta", "industrial heater", "duct heater", "immersion heater", "coil", "awg"],
   "solar-wizard": ["solar", "photovoltaic", "pv", "panel tilt", "azimuth", "peak sun hours", "battery storage", "bess", "array sizing", "orientation"],
   "analog-design-workbench": ["op amp", "lead network", "lead compensator", "sallen key", "analog computer"],
+  "electronics-bench": ["breadboard", "breadboard generator", "electronics lab", "electronics bench", "schematic", "solderless", "jumper", "resistor color band", "thevenin", "norton", "rc step", "rl step", "kirchhoff", "series rlc"],
   "semiconductor-iv": ["shockley", "diode iv", "bjt", "mosfet", "nmos", "q-point", "square law", "device physics"],
   "fiber-link": ["numerical aperture", "fiber optic", "acceptance angle", "link budget", "palais"],
   "gaussian-beam": ["gaussian beam", "rayleigh range", "beam waist", "confocal", "saleh teich"],

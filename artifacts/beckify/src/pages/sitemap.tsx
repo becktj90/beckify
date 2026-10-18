@@ -175,6 +175,7 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Number-Base Converter", "sec-base-converter"),
       t("Circular Mils", "sec-cm"),
       t("Photometrics", "sec-photometrics"),
+      t("Electronics Bench & Breadboard Generator", "sec-electronics-bench"),
       t("Semiconductor Device I-V", "sec-semiconductor-iv"),
       t("Fiber Link / NA", "sec-fiber-link"),
       t("Gaussian Beam", "sec-gaussian-beam"),
