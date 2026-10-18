@@ -319,6 +319,28 @@
     fields: [n('vin', 'Vin', 'V'), n('vout', 'Vout', 'V'), n('iout', 'Iout', 'A'), n('duty', 'Duty', '')],
     visible: { duty: ['vin', 'vout', 'iout'], vout: ['vin', 'duty', 'iout'], iin: ['vin', 'vout', 'iout'] }, defaults: { vin: '12', vout: '5', iout: '2', duty: '0.4167' } });
 
+  spec({ id: 'complexConvert', family: 'mathTools', title: 'Complex convert', blurb: 'Rectangular, polar, and exponential forms of one complex value.',
+    defaultUnknown: 'polar', unknowns: [u('polar', 'To polar'), u('rect', 'To rectangular')],
+    fields: [n('x', 'Real', ''), n('y', 'Imag', ''), n('magnitude', 'Magnitude', ''), n('angleDeg', 'Angle', '°')],
+    visible: { polar: ['x', 'y'], rect: ['magnitude', 'angleDeg'] }, defaults: { x: '3', y: '4', magnitude: '5', angleDeg: '53.1301' } });
+  spec({ id: 'impedanceCombo', family: 'mathTools', title: 'Series / parallel Z', blurb: 'Two impedances, each R + jX, combined in series or in parallel.',
+    defaultUnknown: 'result', unknowns: [u('result', 'Combined Z')],
+    fields: [ch('combo', 'Connection', [['series', 'Series'], ['parallel', 'Parallel']]), n('r1', 'R1', 'Ω'), n('x1', 'X1', 'Ω'), n('r2', 'R2', 'Ω'), n('x2', 'X2', 'Ω')],
+    visible: { result: ['combo', 'r1', 'x1', 'r2', 'x2'] }, defaults: { combo: 'series', r1: '50', x1: '20', r2: '10', x2: '-5' } });
+  spec({ id: 'lMatch', family: 'mathTools', title: 'L-section match', blurb: 'Lossless L-network between two real resistances at one frequency.',
+    defaultUnknown: 'parts', unknowns: [u('parts', 'L and C')],
+    fields: [n('rs', 'Rs', 'Ω'), n('rl', 'RL', 'Ω'), n('f', 'f', 'Hz'), ch('topology', 'Shape', [['lowpass', 'Low-pass'], ['highpass', 'High-pass']])],
+    visible: { parts: ['rs', 'rl', 'f', 'topology'] }, defaults: { rs: '50', rl: '200', f: '1000000', topology: 'lowpass' } });
+  spec({ id: 'quarterWave', family: 'mathTools', title: 'Quarter-wave match', blurb: 'Real Z0 = √(Zin·Zload). Length is λ/4 on an ideal line.',
+    defaultUnknown: 'z0', unknowns: [u('z0', 'Line Z0'), u('zload', 'Load')],
+    fields: [n('zLoad', 'Zload', 'Ω'), n('zIn', 'Zin wanted', 'Ω'), n('z0', 'Z0', 'Ω'), n('f', 'f', 'Hz'), n('vf', 'Velocity factor', '')],
+    visible: { z0: ['zLoad', 'zIn', 'f', 'vf'], zload: ['z0', 'zIn', 'f', 'vf'] }, defaults: { zLoad: '200', zIn: '50', z0: '100', f: '100000000', vf: '1' } });
+  spec({ id: 'stubCancel', family: 'mathTools', title: 'Stub length', blurb: 'Shorted or open ideal stub that presents a reactance, or cancels one.',
+    defaultUnknown: 'length', unknowns: [u('length', 'Length')],
+    fields: [n('x', 'Reactance', 'Ω', 'Ohms of X. Cancel mode builds the stub for the opposite sign.'), n('z0', 'Z0', 'Ω'), n('f', 'f', 'Hz'), n('vf', 'Velocity factor', ''),
+      ch('kind', 'Stub', [['shorted', 'Shorted'], ['open', 'Open']]), ch('goal', 'Goal', [['present', 'Present this X'], ['cancel', 'Cancel this X']])],
+    visible: { length: ['x', 'z0', 'f', 'vf', 'kind', 'goal'] }, defaults: { x: '50', z0: '50', f: '300000000', vf: '1', kind: 'shorted', goal: 'present' } });
+
   function visibleFields(id, unknown, inputs) {
     const s = specOf(id);
     const ids = s.visible[unknown] || s.visible[s.defaultUnknown] || [];
@@ -1217,6 +1239,95 @@
       quantities: [q('duty', 'Duty', duty, '', unknown === 'duty'), q('vout', 'Vout', vout, 'V', unknown === 'vout'), q('iin', 'Iin', iin, 'A', unknown === 'iin'), q('pout', 'Pout', vout * iout, 'W')],
       steps: ['D = Vout / Vin', 'Iin = Iout · D  (lossless power balance)'],
       notes: ['Ideal continuous buck. Efficiency is 100% in this sketch.', 'Switch-node average equals Vout. Ripple current is not computed.', 'Not a controller design. No diode drop, no MOSFET, no compensation.'] });
+  };
+
+  const C_LIGHT = 299792458;
+  const cx = (r, i) => ({ r, i, mag: Math.hypot(r, i), rad: Math.atan2(i, r), deg: Math.atan2(i, r) * 180 / Math.PI });
+  const cmul = (a, b) => cx(a.r * b.r - a.i * b.i, a.r * b.i + a.i * b.r);
+  const cdiv = (a, b) => { const d = b.r * b.r + b.i * b.i; return cx((a.r * b.r + a.i * b.i) / d, (a.i * b.r - a.r * b.i) / d); };
+  const phasorTip = (x, y) => { const mag = Math.hypot(x, y); if (mag < 1e-15) return { x: 52, y: 58 }; const k = 24 / mag; return { x: 52 + x * k, y: 58 - y * k }; };
+  const linePart = (id, l, d, x1, y1, x2, y2) => part(id, 'line', l, d, x1, y1, x2, y2);
+  const f2s = (v, d) => v.toFixed(d);
+  function stubFraction(x, z0, shorted) {
+    if (Math.abs(x) < 1e-9) { if (shorted) return 0; throw outOfRange('An open stub cannot present 0 Ω. Use a shorted stub for a short.'); }
+    const th = shorted ? Math.atan(x / z0) : Math.atan(-z0 / x), w = th <= 0 ? th + Math.PI : th;
+    return w / (2 * Math.PI);
+  }
+  SOLVERS.complexConvert = (unknown, inp) => {
+    let x, y;
+    if (unknown === 'polar') { x = finite(inp, 'x', 'Real'); y = finite(inp, 'y', 'Imag'); }
+    else if (unknown === 'rect') { const mag = nonNeg(inp, 'magnitude', 'Magnitude'), rad = finite(inp, 'angleDeg', 'Angle') * Math.PI / 180; x = mag * Math.cos(rad); y = mag * Math.sin(rad); }
+    else throw badUnknown();
+    const z = cx(x, y), tip = phasorTip(x, y);
+    return pack('complexConvert', { headline: eng(z.mag) + ' ∠ ' + f2s(z.deg, 2) + '°',
+      elements: [wire('re', 18, 58, 86, 58), wire('im', 52, 70, 52, 16), wire('ph', 52, 58, tip.x, tip.y)],
+      nodes: [node('origin', '0', 0, '', 52, 58), node('tip', 'Tip', z.mag, '∠', tip.x, tip.y)],
+      branches: [branch('phasor', 'Phasor', z.mag, '', 52, 58, tip.x, tip.y)],
+      quantities: [q('x', 'Real', z.r, '', unknown === 'rect'), q('y', 'Imag', z.i, '', unknown === 'rect'), q('magnitude', 'Magnitude', z.mag, '', unknown === 'polar'), q('angleDeg', 'Angle', z.deg, '°', unknown === 'polar'), q('angleRad', 'Radians', z.rad, 'rad')],
+      steps: ['r = √(x² + y²),  θ = atan2(y, x)', 'x = r cos θ,  y = r sin θ', 'Exponential: ' + eng(z.mag) + ' e^(j ' + f2s(z.rad, 4) + ' rad)'],
+      notes: ['Angle is measured from the positive real axis, counter-clockwise.', 'Polar, rectangular, and exponential forms are the same value.', 'A magnitude of zero has angle 0 by convention.'] });
+  };
+  SOLVERS.impedanceCombo = (unknown, inp) => {
+    if (unknown !== 'result') throw badUnknown();
+    const combo = choice(inp, 'combo', ['series', 'parallel'], 'series', 'Connection');
+    const z1 = cx(finite(inp, 'r1', 'R1'), finite(inp, 'x1', 'X1')), z2 = cx(finite(inp, 'r2', 'R2'), finite(inp, 'x2', 'X2'));
+    let z;
+    if (combo === 'series') z = cx(z1.r + z2.r, z1.i + z2.i);
+    else { const den = cx(z1.r + z2.r, z1.i + z2.i); if (!(den.mag > 1e-12)) throw outOfRange('The two impedances cancel. Parallel combination is not finite.'); z = cdiv(cmul(z1, z2), den); }
+    return pack('impedanceCombo', { headline: eng(z.r) + ' + j' + eng(z.i) + ' Ω',
+      elements: [zBlock('z1', 'Z1', eng(z1.r) + '+j' + eng(z1.i), 22, 28, 46, 28), zBlock('z2', 'Z2', eng(z2.r) + '+j' + eng(z2.i), 58, 28, 82, 28), wire('join', 46, 28, 58, 28)],
+      nodes: [node('a', 'Zin', z.mag, 'Ω', 22, 28), node('b', 'Right', 0, 'Ω', 82, 28)],
+      branches: [branch('i', '|I| for 1 V', 1 / Math.max(z.mag, 1e-12), 'A', 30, 28, 74, 28)],
+      quantities: [q('r', 'R', z.r, 'Ω', true), q('x', 'X', z.i, 'Ω', true), q('mag', '|Z|', z.mag, 'Ω'), q('ang', '∠Z', z.deg, '°')],
+      steps: [combo === 'series' ? 'Z = Z1 + Z2' : 'Z = Z1·Z2 / (Z1 + Z2)', 'Rectangular ' + eng(z.r) + ' + j' + eng(z.i) + ',  polar ' + eng(z.mag) + ' ∠ ' + f2s(z.deg, 2) + '°'],
+      notes: ['Each block is R + jX. Positive X is inductive, negative X is capacitive.', 'Series adds. Parallel uses the product over the sum.', 'The current arrow is |1 V / Z|.'] });
+  };
+  SOLVERS.lMatch = (unknown, inp) => {
+    if (unknown !== 'parts') throw badUnknown();
+    const rs = pos(inp, 'rs', 'Rs'), rl = pos(inp, 'rl', 'RL'), f = pos(inp, 'f', 'f'), top = choice(inp, 'topology', ['lowpass', 'highpass'], 'lowpass', 'Shape');
+    if (!(Math.abs(rs - rl) / Math.max(rs, rl) > 0.01)) throw outOfRange('The two resistances already match within 1%. An L-section is not required.');
+    const rHi = Math.max(rs, rl), rLo = Math.min(rs, rl), Q = Math.sqrt(rHi / rLo - 1), xs = Q * rLo, xp = rHi / Q, w = 2 * Math.PI * f;
+    const l = (top === 'lowpass' ? xs : xp) / w, c = 1 / (w * (top === 'lowpass' ? xp : xs)), sOnS = rs < rl;
+    const sx1 = sOnS ? 36 : 58, sx2 = sOnS ? 54 : 76, px = sOnS ? 70 : 40;
+    return pack('lMatch', { headline: 'Q = ' + f2s(Q, 3),
+      elements: [res('rs', 'Rs', eng(rs) + ' Ω', 12, 36, 28, 36), top === 'lowpass' ? ind('xs', 'L', eng(l) + ' H', sx1, 36, sx2, 36) : cap('xs', 'C', eng(c) + ' F', sx1, 36, sx2, 36),
+        top === 'lowpass' ? cap('xp', 'C', eng(c) + ' F', px, 36, px, 64) : ind('xp', 'L', eng(l) + ' H', px, 36, px, 64), res('rl', 'RL', eng(rl) + ' Ω', 78, 36, 92, 36), wire('w1', 28, 36, sx1, 36), wire('w2', sx2, 36, 78, 36), gnd('g', px, 64)],
+      nodes: [node('s', 'Rs', rs, 'Ω', 12, 36), node('l', 'RL', rl, 'Ω', 92, 36), node('mid', 'Q node', Q, '', 54, 36)],
+      branches: [branch('i', 'Match', 1, 'A', 16, 36, 84, 36)],
+      quantities: [q('q', 'Q', Q, '', true), q('xs', 'Series |X|', xs, 'Ω'), q('xp', 'Shunt |X|', xp, 'Ω'), q('l', 'L', l, 'H'), q('c', 'C', c, 'F'), q('f', 'f', f, 'Hz'), q('lowpass', 'Low-pass', top === 'lowpass' ? 1 : 0, '')],
+      steps: ['Q = √(Rhi/Rlo − 1) = ' + f2s(Q, 4), 'Series |X| = Q·Rlo,  shunt |X| = Rhi/Q', top === 'lowpass' ? 'Low-pass: series L, shunt C.' : 'High-pass: series C, shunt L.'],
+      notes: ['Lossless L-section between two real resistances.', 'The series arm sits with the smaller resistance. The shunt arm sits across the larger one.', 'One frequency. A different f needs different L and C.'] });
+  };
+  SOLVERS.quarterWave = (unknown, inp) => {
+    const f = pos(inp, 'f', 'f'), vf = pos(inp, 'vf', 'Velocity factor');
+    if (!(vf <= 1)) throw outOfRange('Velocity factor is from just above 0 to 1.');
+    const zIn = pos(inp, 'zIn', 'Zin');
+    let z0, zLoad;
+    if (unknown === 'z0') { zLoad = pos(inp, 'zLoad', 'Zload'); z0 = Math.sqrt(zIn * zLoad); }
+    else if (unknown === 'zload') { z0 = pos(inp, 'z0', 'Z0'); zLoad = z0 * z0 / zIn; }
+    else throw badUnknown();
+    const len = vf * C_LIGHT / (4 * f);
+    return pack('quarterWave', { headline: 'Z0 = ' + eng(z0) + ' Ω',
+      elements: [res('zin', 'Zin', eng(zIn) + ' Ω', 10, 36, 28, 36), linePart('line', 'λ/4', eng(z0) + ' Ω', 32, 36, 72, 36), res('zl', 'ZL', eng(zLoad) + ' Ω', 76, 36, 92, 36)],
+      nodes: [node('in', 'Zin', zIn, 'Ω', 10, 36), node('load', 'Zload', zLoad, 'Ω', 92, 36)],
+      branches: [branch('i', 'Forward', 1, 'A', 36, 36, 68, 36)],
+      quantities: [q('z0', 'Z0', z0, 'Ω', unknown === 'z0'), q('zload', 'Zload', zLoad, 'Ω', unknown === 'zload'), q('lengthM', 'Length', len, 'm'), q('lengthMm', 'Length', len * 1000, 'mm'), q('f', 'f', f, 'Hz'), q('vf', 'vf', vf, '')],
+      steps: ['Z0 = √(Zin · Zload)', 'Length = vf · c / (4f) = ' + eng(len) + ' m'],
+      notes: ['Both ends are real resistances. A reactive load is a different problem.', 'The line is ideal and exactly 90° long at this frequency.', 'Velocity factor scales the physical length. 1 is free space.'] });
+  };
+  SOLVERS.stubCancel = (unknown, inp) => {
+    if (unknown !== 'length') throw badUnknown();
+    const xIn = finite(inp, 'x', 'Reactance'), z0 = pos(inp, 'z0', 'Z0'), f = pos(inp, 'f', 'f'), vf = pos(inp, 'vf', 'Velocity factor');
+    if (!(vf <= 1)) throw outOfRange('Velocity factor is from just above 0 to 1.');
+    const kind = choice(inp, 'kind', ['shorted', 'open'], 'shorted', 'Stub'), goal = choice(inp, 'goal', ['present', 'cancel'], 'present', 'Goal');
+    const xs = goal === 'cancel' ? -xIn : xIn, frac = stubFraction(xs, z0, kind === 'shorted'), lambda = vf * C_LIGHT / f, len = frac * lambda, deg = frac * 360;
+    return pack('stubCancel', { headline: 'l = ' + eng(len) + ' m',
+      elements: [linePart('line', 'Z0', eng(z0) + ' Ω', 16, 28, 78, 28), wire('tee', 52, 28, 52, 46), linePart('stub', kind === 'shorted' ? 'Short' : 'Open', f2s(deg, 2) + '°', 52, 46, 52, 68), kind === 'shorted' ? wire('end', 44, 68, 60, 68) : wire('end', 48, 68, 56, 68)],
+      nodes: [node('tee', 'Stub X', xs, 'Ω', 52, 28), node('end', kind === 'shorted' ? 'Short' : 'Open', 0, 'Ω', 52, 68)],
+      branches: [branch('i', 'On the stub', 1, 'A', 52, 32, 52, 60)],
+      quantities: [q('lengthM', 'Length', len, 'm', true), q('fraction', 'l/λ', frac, ''), q('degrees', 'Electrical', deg, '°'), q('xStub', 'Stub X', xs, 'Ω'), q('lambda', 'λ', lambda, 'm'), q('f', 'f', f, 'Hz'), q('z0', 'Z0', z0, 'Ω'), q('vf', 'vf', vf, ''), q('shorted', 'Shorted', kind === 'shorted' ? 1 : 0, '')],
+      steps: [kind === 'shorted' ? 'Shorted: jX = j Z0 tan(βl)' : 'Open: jX = −j Z0 cot(βl)', 'Shortest positive length is ' + f2s(frac, 4) + ' λ', 'Physical length = (l/λ) · vf · c / f'],
+      notes: ['Ideal lossless line. The length is the shortest positive stub.', 'Cancel mode asks the stub for the opposite reactance.', 'This does not place the stub along a mismatched line. It only builds the X.'] });
   };
 
   function solve(circuit, unknown, inputs) {

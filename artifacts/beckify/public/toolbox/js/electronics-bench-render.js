@@ -15,7 +15,7 @@
   };
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const f2 = (x) => (Math.round(x * 100) / 100);
-  const reading = (v, unit) => E.si(v, unit || 'A');
+  const reading = (v, unit) => E.si(v, unit == null ? 'A' : unit);
 
   /* ---------- label placement (greedy, avoids parts and other labels) ---------- */
   function textWidth(text, size) { return String(text).length * size * 0.6 + 10; }
@@ -168,6 +168,10 @@
           '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y - h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '−' : '+') + '</text>' +
           '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y + h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '+' : '−') + '</text>';
       }
+      case 'line': {
+        const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1, nx = -dy / L * 3.5, ny = dx / L * 3.5;
+        return path(M({ x: a.x + nx, y: a.y + ny }) + Lx({ x: b.x + nx, y: b.y + ny }) + M({ x: a.x - nx, y: a.y - ny }) + Lx({ x: b.x - nx, y: b.y - ny }), C.accent, 1.6);
+      }
       case 'zBlock': {
         const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, len = Math.hypot(b.x - a.x, b.y - a.y), w = Math.max(28, len * 0.55), h = 22, ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
         return '<g transform="rotate(' + f2(ang) + ' ' + f2(mid.x) + ' ' + f2(mid.y) + ')"><rect x="' + f2(mid.x - w / 2) + '" y="' + f2(mid.y - h / 2) + '" width="' + f2(w) + '" height="' + h + '" rx="4" fill="none" stroke="' + C.accent + '" stroke-width="1.6"/></g>' +
@@ -217,14 +221,14 @@
       const c = mp(nd.at);
       obstacles.push({ x: c.x - 10, y: c.y - 10, w: 20, h: 20 });
       if (layer === 'minimal') return;
-      nreq.push({ text: nd.name + ' ' + E.si(nd.value, nd.unit || 'V'), x: c.x, y: c.y, size: 14, color: opts.pickedNode === nd.id ? C.good : C.fg });
+      nreq.push({ text: nd.name + ' ' + E.si(nd.value, nd.unit == null ? 'V' : nd.unit), x: c.x, y: c.y, size: 14, color: opts.pickedNode === nd.id ? C.good : C.fg });
     });
     const breq = [];
     sol.branches.forEach((br) => {
       const a = mp(br.a), b = mp(br.b), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       obstacles.push({ x: a.x + (b.x - a.x) * 0.72 - 9, y: a.y + (b.y - a.y) * 0.72 - 9, w: 18, h: 18 });
       if (layer === 'minimal') return;
-      breq.push({ text: br.name + ' ' + reading(Math.abs(br.value), br.unit || 'A'), x: mid.x, y: mid.y, size: 14, color: C.energized });
+      breq.push({ text: br.name + ' ' + reading(Math.abs(br.value), br.unit == null ? 'A' : br.unit), x: mid.x, y: mid.y, size: 14, color: C.energized });
     });
     const all = nreq.concat(breq, reqs);
     if (all.length > 10) all.forEach((r) => { r.size = Math.max(10, r.size - (all.length > 13 ? 3 : 2)); });
@@ -250,7 +254,7 @@
   }
   function schematicSummary(sol) {
     const nodes = sol.nodes.map((n) => n.name + ' ' + E.si(n.value, n.unit)).join(', ');
-    const branches = sol.branches.map((b) => b.name + ' ' + E.si(b.value, b.unit || 'A')).join(', ');
+    const branches = sol.branches.map((b) => b.name + ' ' + E.si(b.value, b.unit == null ? 'A' : b.unit)).join(', ');
     const sources = sol.elements.filter((e) => e.part === 'voltageSource').map((e) => ((e.flags & 1) ? 'AC sine' : 'DC') + ' source, ' + e.label + ' ' + e.detail).join('. ');
     return 'Schematic. ' + (sources ? sources + '. ' : '') + 'Nodes: ' + nodes + '. Branches: ' + branches + '.';
   }
@@ -502,8 +506,8 @@
   function inspectorRows(sol) {
     const rows = [];
     sol.quantities.forEach((qq) => rows.push({ kind: 'Quantity', name: qq.name, value: E.si(qq.value, qq.unit), emphasis: qq.emphasis }));
-    sol.nodes.forEach((nd) => rows.push({ kind: 'Node', name: nd.name, value: E.si(nd.value, nd.unit || 'V') }));
-    sol.branches.forEach((b) => rows.push({ kind: 'Branch', name: b.name, value: E.si(b.value, b.unit || 'A') }));
+    sol.nodes.forEach((nd) => rows.push({ kind: 'Node', name: nd.name, value: E.si(nd.value, nd.unit == null ? 'V' : nd.unit) }));
+    sol.branches.forEach((b) => rows.push({ kind: 'Branch', name: b.name, value: E.si(b.value, b.unit == null ? 'A' : b.unit) }));
     sol.elements.filter((e) => e.part !== 'wire' && e.part !== 'ground').forEach((e) => rows.push({ kind: 'Part', name: e.label || e.id, value: e.detail }));
     return rows;
   }
