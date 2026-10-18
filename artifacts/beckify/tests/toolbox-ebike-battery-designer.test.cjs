@@ -102,9 +102,21 @@ assert.ok(Number.isFinite(projected.x));
 assert.ok(Number.isFinite(projected.y));
 assert.ok(projected.z > 0);
 
+const isoGrid = api.autoFillColumns(16, 12, 14, 10).grid;
+const isoModel = api.packModelFromGrid(isoGrid, { cellD: 18.5, cellL: 65.2, honeycomb: false });
+assert.equal(isoModel.cells.length, 140);
+assert.equal(isoModel.order.length, 14);
+assert.ok(isoModel.heightMM > 65.2 && isoModel.lengthMM > 0 && isoModel.widthMM > 0);
+assert.equal(api.packModelFromGrid(api.emptyGrid(4, 4), {}), null);
+const gfx = {};
+vm.runInContext(fs.readFileSync(path.join(root, 'bk-graphics.js'), 'utf8'), vm.createContext({ globalThis: gfx, window: undefined }));
+assert.ok(gfx.BeckifyGfx.seriesColor(1) === '#40bad6');
+assert.notEqual(gfx.BeckifyGfx.seriesColor(1), gfx.BeckifyGfx.seriesColor(9));
 const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'toolbox', 'classic', 'index.html'), 'utf8');
 assert.match(html, /id="ebd_canvas"/);
 assert.match(html, /id="ebd_canvas_3d"/);
+assert.match(html, /id="ebd_iso"/);
+assert.match(html, /bk-graphics\.js/);
 assert.match(html, /ebike-battery-designer\.js/);
 assert.doesNotMatch(html, /href="https:\/\/batterydesigner\.com"/);
 
