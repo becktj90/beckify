@@ -36,7 +36,7 @@
    returning visitors keep the old shell until the browser evicts it.
    ============================================================================ */
 
-const CACHE_VERSION = 'v62';
+const CACHE_VERSION = 'v63';
 const SHELL_CACHE = 'toolbox-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'toolbox-runtime-' + CACHE_VERSION;
 const RUNTIME_HOST_ALLOWLIST = [
@@ -84,6 +84,7 @@ const SHELL = [
   './js/electronics-bench-engine.js',
   './js/electronics-bench-render.js',
   './js/electronics-bench.js',
+  './js/bk-tools-motor.js',
   './js/bk-tools-analog.js',
   './js/bk-tool.js',
   './js/circuit-sim.js',

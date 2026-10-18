@@ -176,6 +176,8 @@ const TOOLBOX_CATEGORIES: ToolboxCategory[] = [
       t("Circular Mils", "sec-cm"),
       t("Photometrics", "sec-photometrics"),
       t("Electronics Bench & Breadboard Generator", "sec-electronics-bench"),
+      t("Resistor Color Code", "sec-resistor-color-code"),
+      t("Motor Speed, Slip & Torque", "sec-motor-speed"),
       t("ADC / DAC", "sec-adc-dac"),
       t("Instrumentation Amp", "sec-instrumentation-amp"),
       t("Linear / LDO Regulator", "sec-linear-regulator"),

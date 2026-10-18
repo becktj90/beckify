@@ -409,6 +409,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/motor-speed/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/resistor-color-code/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/electronics-bench/</loc>
     <lastmod>2026-10-17</lastmod>
     <changefreq>monthly</changefreq>

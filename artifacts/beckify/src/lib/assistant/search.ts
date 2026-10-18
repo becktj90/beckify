@@ -39,6 +39,8 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "linear-regulator": ["lm317", "ldo", "dropout", "heatsink", "junction temperature"],
   "instrumentation-amp": ["inamp", "instrumentation amplifier", "difference amplifier", "cmrr"],
   "adc-dac": ["adc", "dac", "lsb", "nyquist", "quantization"],
+  "motor-speed": ["motor", "slip", "synchronous speed", "torque", "rpm", "poles"],
+  "resistor-color-code": ["resistor", "color code", "bands", "tolerance"],
   "electronics-bench": ["breadboard", "breadboard generator", "electronics lab", "electronics bench", "schematic", "solderless", "jumper", "resistor color band", "thevenin", "norton", "rc step", "rl step", "kirchhoff", "series rlc"],
   "semiconductor-iv": ["shockley", "diode iv", "bjt", "mosfet", "nmos", "q-point", "square law", "device physics"],
   "fiber-link": ["numerical aperture", "fiber optic", "acceptance angle", "link budget", "palais"],
