@@ -9,6 +9,13 @@ const classicHtml = fs.readFileSync(path.join(root, "public/toolbox/classic/inde
 
 const IOS_ONLY = [
   "wifiStatus",
+  "setupCheck",
+  "bubbleLevel",
+  "stillnessWatch",
+  "motionSnapshot",
+  "coupledVibration",
+  "fieldPosition",
+  "spanishTranslator",
   "cellularStatus",
   "bluetoothScan",
   "acousticImager",
@@ -89,7 +96,7 @@ async function main() {
 
   assert.equal(registry.TOOL_REGISTRY, home.TOOL_REGISTRY);
   assert.ok(registry.PUBLIC_CALCULATOR_COUNT > 50);
-  assert.match(fs.readFileSync(path.join(root, "public/toolbox/sw.js"), "utf8"), /CACHE_VERSION = 'v67'/);
+  assert.match(fs.readFileSync(path.join(root, "public/toolbox/sw.js"), "utf8"), /CACHE_VERSION = 'v68'/);
   assert.match(classicHtml, /<base href="\/toolbox\/">/);
   assert.match(classicHtml, /register\('\/toolbox\/sw\.js'/);
   assert.equal(seo.seoForStaticRoute("toolbox")?.title, seo.PAGE_SEO["/toolbox/"].title);
