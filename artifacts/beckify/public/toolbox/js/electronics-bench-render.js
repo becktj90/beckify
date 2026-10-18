@@ -168,6 +168,17 @@
           '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y - h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '−' : '+') + '</text>' +
           '<text x="' + f2(a.x - w * 0.28) + '" y="' + f2(a.y + h * 0.22) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="' + C.accent + '">' + (el.flags & 1 ? '+' : '−') + '</text>';
       }
+      case 'timer555': {
+        const w = Math.min(SW * 0.28, 78), h = Math.min(SH * 0.46, 92);
+        return '<rect x="' + f2(a.x - w / 2) + '" y="' + f2(a.y - h / 2) + '" width="' + f2(w) + '" height="' + f2(h) + '" rx="6" fill="none" stroke="' + C.accent + '" stroke-width="1.7"/>' +
+          '<text x="' + f2(a.x) + '" y="' + f2(a.y) + '" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="' + C.fg + '">555</text>';
+      }
+      case 'sevenSegment': {
+        const s = Math.min(SW, SH) * 0.16, t = Math.max(3, s * 0.16), m = el.flags | 0;
+        const seg = (on, x, y, w, h) => '<rect x="' + f2(x) + '" y="' + f2(y) + '" width="' + f2(w) + '" height="' + f2(h) + '" rx="' + f2(t / 2) + '" fill="' + (on ? C.energized : 'rgba(255,255,255,0.10)') + '"/>';
+        return seg(m & 1, a.x - s * 0.35, a.y - s * 0.95, s * 0.7, t) + seg(m & 2, a.x + s * 0.35, a.y - s * 0.85, t, s * 0.75) + seg(m & 4, a.x + s * 0.35, a.y + s * 0.1, t, s * 0.75) +
+          seg(m & 8, a.x - s * 0.35, a.y + s * 0.8, s * 0.7, t) + seg(m & 16, a.x - s * 0.5, a.y + s * 0.1, t, s * 0.75) + seg(m & 32, a.x - s * 0.5, a.y - s * 0.85, t, s * 0.75) + seg(m & 64, a.x - s * 0.35, a.y - t / 2, s * 0.7, t);
+      }
       case 'npn': return path(npnPath(a, el.scale), C.fg, 1.7);
       case 'nmos': return path(mosPath(a, false, el.scale), C.fg, 1.7);
       case 'pmos': return path(mosPath(a, true, el.scale), C.fg, 1.7);
@@ -191,7 +202,7 @@
       obstacles.push(rect(a, b, 12));
       const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dx = b.x - a.x, dy = b.y - a.y, len = Math.max(Math.hypot(dx, dy), 1);
       const anchor = { x: mid.x - dy / len * 12, y: mid.y + dx / len * 12 };
-      if (e.part === 'ground' || e.part === 'opAmp') return;
+      if (e.part === 'ground' || e.part === 'opAmp' || e.part === 'timer555' || e.part === 'sevenSegment') return;
       const ref = e.label || e.id.toUpperCase();
       const text = layer === 'minimal' ? ref : (e.detail ? ref + ' ' + e.detail : ref);
       reqs.push({ text, x: anchor.x, y: anchor.y, size: 13, color: C.muted });
@@ -454,6 +465,18 @@
       A('<path d="M' + f2(bx) + ' ' + f2(by + r) + 'A' + f2(r) + ' ' + f2(r) + ' 0 0 1 ' + f2(bx + bw) + ' ' + f2(by + r) + 'L' + f2(bx + bw) + ' ' + f2(by + bh) + 'L' + f2(bx) + ' ' + f2(by + bh) + 'Z" fill="#1A1A1A" stroke="#0A0A0A" stroke-width="0.8"/>');
       A('<text x="' + f2(bx + bw / 2) + '" y="' + f2(by + bh / 2 - 1) + '" text-anchor="middle" dominant-baseline="central" font-size="' + f2(Math.max(6, Math.min(9, p * 0.48))) + '" font-weight="700" fill="#fff">' + (t === 'npn' ? 'Q' : 'M') + '</text>');
       L.forEach((pin, i) => A('<text x="' + f2(pin.x) + '" y="' + f2(pin.y + p * 0.38) + '" text-anchor="middle" dominant-baseline="hanging" font-size="' + f2(Math.max(7, p * 0.32)) + '" font-weight="700" fill="#3E3A34">' + marks[i] + '</text>'));
+    } else if (t === 'display' && L.length >= 10) {
+      const xs = L.map((q) => q.x), ys = L.map((q) => q.y), lx = Math.min.apply(null, xs), rx = Math.max.apply(null, xs), ty = Math.min.apply(null, ys), by = Math.max.apply(null, ys);
+      const body = { x: lx - p * 0.35, y: ty + p * 0.22, w: rx - lx + p * 0.7, h: Math.max(p * 2.1, by - ty - p * 0.44) };
+      L.forEach((pin, i) => { A('<line x1="' + f2(pin.x) + '" y1="' + f2(pin.y) + '" x2="' + f2(pin.x) + '" y2="' + f2(i < 5 ? body.y + body.h : body.y) + '" stroke="#C5CCD2" stroke-width="' + f2(Math.max(1.3, p * 0.08)) + '"/>'); plug(A, pin, '#9AA3AB', p * 0.7); });
+      A('<rect x="' + f2(body.x) + '" y="' + f2(body.y) + '" width="' + f2(body.w) + '" height="' + f2(body.h) + '" rx="4" fill="#1A1A1A"/>');
+      const fx = body.x + p * 0.28, fy = body.y + p * 0.22, fw = body.w - p * 0.56, fh = body.h - p * 0.44, tt = Math.max(2.2, p * 0.13), ins = tt * 0.8, mid = fy + fh / 2, m = c.part.mask | 0;
+      A('<rect x="' + f2(fx) + '" y="' + f2(fy) + '" width="' + f2(fw) + '" height="' + f2(fh) + '" rx="3" fill="#120806"/>');
+      const sg = (bit, x, y, w, h) => { const on = m & (1 << bit); if (on) A('<rect x="' + f2(x - 1.5) + '" y="' + f2(y - 1.5) + '" width="' + f2(w + 3) + '" height="' + f2(h + 3) + '" rx="' + f2(tt) + '" fill="#FF2A1A" fill-opacity="0.45"/>'); A('<rect x="' + f2(x) + '" y="' + f2(y) + '" width="' + f2(w) + '" height="' + f2(h) + '" rx="' + f2(tt / 2) + '" fill="' + (on ? '#FF2D1F' : '#3A1412') + '"/>'); };
+      const up = mid - fy - tt - 2, lo = fy + fh - mid - tt - 2;
+      sg(0, fx + ins, fy + 1, fw - ins * 2, tt); sg(6, fx + ins, mid - tt / 2, fw - ins * 2, tt); sg(3, fx + ins, fy + fh - tt - 1, fw - ins * 2, tt);
+      sg(5, fx + 1, fy + tt + 1, tt, up); sg(1, fx + fw - tt - 1, fy + tt + 1, tt, up); sg(4, fx + 1, mid + 2, tt, lo); sg(2, fx + fw - tt - 1, mid + 2, tt, lo);
+      A('<text x="' + f2(body.x + body.w / 2) + '" y="' + f2(body.y + body.h + p * 0.08) + '" text-anchor="middle" dominant-baseline="hanging" font-size="' + f2(Math.max(8, p * 0.36)) + '" font-weight="700" fill="#E7E2D8">' + c.part.digit + '</text>');
     } else if ((t === 'dip8' || t === 'dip14') && L.length >= 8) {
       const per = L.length / 2, xs = L.map((q) => q.x), ys = L.map((q) => q.y);
       const lx = Math.min.apply(null, xs), rx = Math.max.apply(null, xs), ty = Math.min.apply(null, ys), by = Math.max.apply(null, ys);

@@ -277,6 +277,27 @@
     fields: [n('vin', 'Vin', 'V'), n('vref', 'Vref', 'V'), n('voh', 'High rail', 'V'), n('vol', 'Low rail', 'V')],
     visible: { output: ['vin', 'vref', 'voh', 'vol'] }, defaults: { vin: '2', vref: '1.5', voh: '5', vol: '0' } });
 
+  spec({ id: 'astable555', family: 'timer', title: '555 astable', blurb: 'Free-running timer. Duty of a plain astable stays above 50%.',
+    defaultUnknown: 'frequency', unknowns: [u('frequency', 'Frequency'), u('c', 'C'), u('r1', 'R1'), u('r2', 'R2'), u('resistors', 'R1 and R2')],
+    fields: [n('vcc', 'Vcc', 'V'), n('r1', 'R1 (Vcc side)', 'Ω'), n('r2', 'R2 (cap side)', 'Ω'), n('c', 'C', 'F'), n('frequency', 'f', 'Hz'), n('duty', 'Duty', '%')],
+    visible: { frequency: ['vcc', 'r1', 'r2', 'c'], c: ['vcc', 'r1', 'r2', 'frequency'], r1: ['vcc', 'r2', 'c', 'frequency'], r2: ['vcc', 'r1', 'c', 'frequency'], resistors: ['vcc', 'c', 'frequency', 'duty'] },
+    defaults: { vcc: '5', r1: '1000', r2: '1000', c: '0.000001', frequency: '481', duty: '67' } });
+  spec({ id: 'monostable555', family: 'timer', title: '555 monostable', blurb: 'One-shot. Pulse width is ln(3)·R·C.',
+    defaultUnknown: 'width', unknowns: [u('width', 'Pulse width'), u('r', 'R'), u('c', 'C')],
+    fields: [n('vcc', 'Vcc', 'V'), n('r', 'R', 'Ω'), n('c', 'C', 'F'), n('width', 't', 's')],
+    visible: { width: ['vcc', 'r', 'c'], r: ['vcc', 'c', 'width'], c: ['vcc', 'r', 'width'] },
+    defaults: { vcc: '5', r: '10000', c: '0.000001', width: '0.011' } });
+  spec({ id: 'ledFlasher', family: 'digital', title: 'LED flasher', blurb: '555 astable with an LED and its resistor on the output.',
+    defaultUnknown: 'rate', unknowns: [u('rate', 'Flash rate'), u('c', 'C'), u('rled', 'LED resistor')],
+    fields: [n('vcc', 'Vcc', 'V'), n('r1', 'R1', 'Ω'), n('r2', 'R2', 'Ω'), n('c', 'C', 'F'), n('vf', 'LED Vf', 'V'), n('rled', 'Rled', 'Ω'), n('frequency', 'f', 'Hz'), n('iled', 'LED current', 'A')],
+    visible: { rate: ['vcc', 'r1', 'r2', 'c', 'vf', 'rled'], c: ['vcc', 'r1', 'r2', 'frequency', 'vf', 'rled'], rled: ['vcc', 'r1', 'r2', 'c', 'vf', 'iled'] },
+    defaults: { vcc: '5', r1: '10000', r2: '100000', c: '0.000001', vf: '2', rled: '330', frequency: '6.86', iled: '0.009' } });
+  spec({ id: 'sevenSegment', family: 'digital', title: '7-segment drive', blurb: 'Common-cathode digit. One resistor per lit segment. BCD pattern is the usual map.',
+    defaultUnknown: 'map', unknowns: [u('map', 'Segments and current'), u('r', 'R per segment')],
+    fields: [ch('digit', 'Digit', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => [String(d), String(d)])), n('vcc', 'Vcc', 'V'), n('vf', 'Vf', 'V'), n('r', 'R each', 'Ω'), n('iseg', 'I per segment', 'A')],
+    visible: { map: ['digit', 'vcc', 'vf', 'r'], r: ['digit', 'vcc', 'vf', 'iseg'] },
+    defaults: { digit: '8', vcc: '5', vf: '2', r: '330', iseg: '0.009' } });
+
   function visibleFields(id, unknown, inputs) {
     const s = specOf(id);
     const ids = s.visible[unknown] || s.visible[s.defaultUnknown] || [];
@@ -1014,6 +1035,96 @@
       notes: ['Open-loop comparator. There is no linear gain to solve.', 'The threshold is the reference you enter. Hysteresis is not added.', 'Input current is taken as zero.'] });
   };
 
+  const LN2 = Math.LN2, LN3 = Math.log(3);
+  function astableTiming(r1, r2, c) {
+    const th = LN2 * (r1 + r2) * c, tl = LN2 * r2 * c, per = th + tl;
+    return { th, tl, per, freq: 1 / per, duty: th / per * 100 };
+  }
+  const SEG_MASK = [0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f];
+  const segNames = (mask) => ['a', 'b', 'c', 'd', 'e', 'f', 'g'].filter((_, i) => mask & (1 << i)).join(' ');
+  const timerPart = (id, x, y) => part(id, 'timer555', '555', '', x, y, x, y);
+  const timerBox = (vcc, r1, r2, c) => [timerPart('u', 70, 42), src('vcc', 'Vcc', eng(vcc) + ' V', 48, 74, 48, 14), wire('rail', 48, 14, 78, 14),
+    res('r1', 'R1', eng(r1) + ' Ω', 62, 14, 62, 32), res('r2', 'R2', eng(r2) + ' Ω', 62, 32, 62, 50), cap('c', 'C', eng(c) + ' F', 48, 50, 48, 74), wire('th', 62, 50, 48, 50), gnd('g', 48, 74)];
+
+  SOLVERS.astable555 = (unknown, inp) => {
+    const vcc = pos(inp, 'vcc', 'Vcc');
+    let r1 = 0, r2 = 0, c = 0;
+    if (unknown === 'frequency') { r1 = pos(inp, 'r1', 'R1'); r2 = pos(inp, 'r2', 'R2'); c = pos(inp, 'c', 'C'); }
+    else if (unknown === 'c') { r1 = pos(inp, 'r1', 'R1'); r2 = pos(inp, 'r2', 'R2'); c = 1 / (pos(inp, 'frequency', 'f') * LN2 * (r1 + 2 * r2)); }
+    else if (unknown === 'r1') {
+      r2 = pos(inp, 'r2', 'R2'); c = pos(inp, 'c', 'C'); r1 = 1 / (pos(inp, 'frequency', 'f') * LN2 * c) - 2 * r2;
+      if (!(r1 > 0)) throw outOfRange('R1 would not be positive. Frequency is too low for R2 and C.');
+    } else if (unknown === 'r2') {
+      r1 = pos(inp, 'r1', 'R1'); c = pos(inp, 'c', 'C'); r2 = (1 / (pos(inp, 'frequency', 'f') * LN2 * c) - r1) / 2;
+      if (!(r2 > 0)) throw outOfRange('R2 would not be positive. Frequency is too low for R1 and C.');
+    } else if (unknown === 'resistors') {
+      c = pos(inp, 'c', 'C'); const f = pos(inp, 'frequency', 'f'), duty = pos(inp, 'duty', 'Duty') / 100;
+      if (!(duty > 0.5 && duty < 1)) throw outOfRange('A plain 555 astable duty is above 50% and below 100%. A steering diode is a different circuit.');
+      const k = (1 - duty) / (2 * duty - 1), sum = 1 / (f * LN2 * c);
+      r1 = sum / (1 + 2 * k); r2 = k * r1;
+    } else throw badUnknown();
+    const t = astableTiming(r1, r2, c), iCharge = (vcc - vcc / 3) / (r1 + r2), iDis = (2 * vcc / 3) / r2;
+    return pack('astable555', { headline: 'f = ' + eng(t.freq) + ' Hz', elements: timerBox(vcc, r1, r2, c),
+      nodes: [node('vcc', 'Vcc', vcc, 'V', 70, 14), node('ctrl', 'CTRL', 2 * vcc / 3, 'V', 78, 36), node('cap', 'C trip', vcc / 3, 'V', 48, 62), node('out', 'OUT high', vcc, 'V', 88, 40), node('gnd', 'GND', 0, 'V', 48, 74)],
+      branches: [branch('chg', 'Charge @ 1/3', iCharge, 'A', 62, 18, 62, 34), branch('dis', 'Discharge @ 2/3', iDis, 'A', 48, 40, 48, 56)],
+      quantities: [q('frequency', 'f', t.freq, 'Hz', unknown === 'frequency'), q('duty', 'Duty', t.duty, '%', unknown === 'resistors'), q('thigh', 't high', t.th, 's'), q('tlow', 't low', t.tl, 's'),
+        q('r1', 'R1', r1, 'Ω', unknown === 'r1' || unknown === 'resistors'), q('r2', 'R2', r2, 'Ω', unknown === 'r2' || unknown === 'resistors'), q('c', 'C', c, 'F', unknown === 'c'), q('vcc', 'Vcc', vcc, 'V')],
+      steps: ['tH = ln(2)·(R1+R2)·C,  tL = ln(2)·R2·C', 'f = 1 / (ln(2)·(R1+2·R2)·C) = ' + eng(t.freq) + ' Hz', 'Duty = (R1+R2)/(R1+2·R2) = ' + t.duty.toFixed(2) + '%'],
+      notes: ['Plain astable: output high while C charges through R1+R2, low while it discharges through R2.', 'CTRL is the internal 2/3 Vcc tap. Threshold trips are 1/3 and 2/3 Vcc.', 'Ideal pins. A real 555 output high is about 1.5 V under Vcc and is not modeled.', 'OUT is drawn at the high rail. It spends the low time near ground.'] });
+  };
+  SOLVERS.monostable555 = (unknown, inp) => {
+    const vcc = pos(inp, 'vcc', 'Vcc');
+    let r = 0, c = 0;
+    if (unknown === 'width') { r = pos(inp, 'r', 'R'); c = pos(inp, 'c', 'C'); }
+    else if (unknown === 'r') { c = pos(inp, 'c', 'C'); r = pos(inp, 'width', 't') / (LN3 * c); }
+    else if (unknown === 'c') { r = pos(inp, 'r', 'R'); c = pos(inp, 'width', 't') / (LN3 * r); }
+    else throw badUnknown();
+    const w = LN3 * r * c;
+    return pack('monostable555', { headline: 't = ' + eng(w) + ' s',
+      elements: [timerPart('u', 58, 40), res('r', 'R', eng(r) + ' Ω', 36, 16, 36, 36), cap('c', 'C', eng(c) + ' F', 36, 36, 36, 68), src('vcc', 'Vcc', eng(vcc) + ' V', 78, 68, 78, 14), wire('t', 36, 16, 78, 16), gnd('g', 36, 68)],
+      nodes: [node('vcc', 'Vcc', vcc, 'V', 78, 14), node('out', 'OUT', vcc, 'V', 86, 40), node('cap', 'C end', 2 * vcc / 3, 'V', 36, 36), node('gnd', 'GND', 0, 'V', 36, 68)],
+      branches: [branch('i', 'I at start', vcc / r, 'A', 36, 20, 36, 32)],
+      quantities: [q('width', 't', w, 's', unknown === 'width'), q('r', 'R', r, 'Ω', unknown === 'r'), q('c', 'C', c, 'F', unknown === 'c'), q('retrigger', 'Max rate', 1 / w, 'Hz'), q('vcc', 'Vcc', vcc, 'V')],
+      steps: ['t = ln(3)·R·C ≈ 1.1·R·C', 'The cap charges from 0 toward Vcc and the pulse ends at 2/3 Vcc.'],
+      notes: ['One-shot. Trigger is a brief low. Retriggering during the pulse is not modeled.', 'Initial timing current is about Vcc/R, then it falls.', 'Ideal 555. Output high during the pulse is drawn at Vcc.'] });
+  };
+  SOLVERS.ledFlasher = (unknown, inp) => {
+    const vcc = pos(inp, 'vcc', 'Vcc'), r1 = pos(inp, 'r1', 'R1'), r2 = pos(inp, 'r2', 'R2'), vf = nonNeg(inp, 'vf', 'Vf');
+    if (!(vcc > vf)) throw outOfRange('Vcc must be above the LED Vf.');
+    let c = 0, rled = 0;
+    if (unknown === 'rate') { c = pos(inp, 'c', 'C'); rled = pos(inp, 'rled', 'Rled'); }
+    else if (unknown === 'c') { rled = pos(inp, 'rled', 'Rled'); c = 1 / (pos(inp, 'frequency', 'f') * LN2 * (r1 + 2 * r2)); }
+    else if (unknown === 'rled') { c = pos(inp, 'c', 'C'); rled = (vcc - vf) / pos(inp, 'iled', 'LED current'); }
+    else throw badUnknown();
+    const t = astableTiming(r1, r2, c), iled = (vcc - vf) / rled;
+    return pack('ledFlasher', { headline: 'f = ' + eng(t.freq) + ' Hz',
+      elements: timerBox(vcc, r1, r2, c).concat([res('rled', 'Rled', eng(rled) + ' Ω', 88, 40, 88, 56), ledPart('led', 'LED', eng(vf) + ' V', 88, 56, 88, 70)]),
+      nodes: [node('vcc', 'Vcc', vcc, 'V', 70, 14), node('out', 'OUT high', vcc, 'V', 88, 40), node('led', 'LED', vf, 'V', 88, 56), node('gnd', 'GND', 0, 'V', 48, 74)],
+      branches: [branch('led', 'ILED high', iled, 'A', 88, 44, 88, 66)],
+      quantities: [q('frequency', 'f', t.freq, 'Hz', unknown === 'rate'), q('duty', 'Duty', t.duty, '%'), q('c', 'C', c, 'F', unknown === 'c'), q('rled', 'Rled', rled, 'Ω', unknown === 'rled'), q('r1', 'R1', r1, 'Ω'), q('r2', 'R2', r2, 'Ω'), q('vcc', 'Vcc', vcc, 'V'), q('iled', 'ILED high', iled, 'A'), q('iavg', 'ILED average', iled * t.duty / 100, 'A')],
+      steps: ['Flash rate uses the same astable identity as the 555 screen.', 'While OUT is high, ILED = (Vcc − Vf) / Rled.'],
+      notes: ['The LED is on during the output-high time. Average current is duty times that.', 'Ideal rail-to-rail output. A real 555 high is lower, so the LED current is a bit less.', 'R1 and R2 set the rate. Rled sets the brightness, not the rate.'] });
+  };
+  SOLVERS.sevenSegment = (unknown, inp) => {
+    const digit = parseInt(choice(inp, 'digit', ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], '8', 'Digit'), 10);
+    const vcc = pos(inp, 'vcc', 'Vcc'), vf = nonNeg(inp, 'vf', 'Vf');
+    if (!(vcc > vf)) throw outOfRange('Vcc must be above the segment Vf.');
+    const mask = SEG_MASK[digit];
+    let count = 0; for (let i = 0; i < 7; i++) if (mask & (1 << i)) count++;
+    let r, iseg;
+    if (unknown === 'r') { iseg = pos(inp, 'iseg', 'I per segment'); r = (vcc - vf) / iseg; }
+    else if (unknown === 'map') { r = pos(inp, 'r', 'R'); iseg = (vcc - vf) / r; }
+    else throw badUnknown();
+    const total = count * iseg;
+    return pack('sevenSegment', { headline: 'Digit ' + digit + ': ' + segNames(mask),
+      elements: [src('vcc', 'Vcc', eng(vcc) + ' V', 16, 64, 16, 18), res('r', 'R×' + count, eng(r) + ' Ω', 16, 18, 40, 18), part('seg', 'sevenSegment', String(digit), segNames(mask), 62, 40, 62, 40, mask), gnd('g', 62, 70)],
+      nodes: [node('vcc', 'Vcc', vcc, 'V', 16, 18), node('seg', 'Segment', vf, 'V', 46, 40), node('gnd', 'Cathode', 0, 'V', 62, 70)],
+      branches: [branch('it', 'Itotal', total, 'A', 20, 18, 36, 18)],
+      quantities: [q('count', 'Segments on', count, ''), q('iseg', 'I each', iseg, 'A'), q('itotal', 'I total', total, 'A'), q('r', 'R each', r, 'Ω', unknown === 'r'), q('digit', 'Digit', digit, ''), q('vcc', 'Vcc', vcc, 'V')],
+      steps: ['Common cathode. Each lit segment has its own resistor.', 'I = (Vcc − Vf) / R,  total = (segments on) · I'],
+      notes: ['Segment map is the usual common-cathode pattern: 0 lights a–f, 1 lights b and c, 8 lights all.', 'Blank segments draw no current in this model.', 'A decoder chip is not simulated. You pick the digit and the map is shown.'] });
+  };
+
   function solve(circuit, unknown, inputs) {
     const s = specOf(circuit);
     if (!s.unknowns.some((x) => x.id === unknown)) throw outOfRange('That unknown is not on this circuit.');
@@ -1534,6 +1645,52 @@
     b.jumper('gndsrc', 'GND', 4, 'b', 4, 'topMinus', 'black'); b.jumper('in', 'Vin', 6, 'b', 13, 'b', 'yellow'); b.jumper('ref', 'Vref', 8, 'c', 14, 'c', 'orange');
     b.jumper('out', 'Vout', 14, 'i', 24, 'i', 'green'); b.jumper('cross', 'Vout', 24, 'e', 24, 'f', 'green');
     return b.finish(b.caption('Open-loop 741 as a comparator. Yellow is Vin on pin 2, orange is Vref on pin 3. Output sits on a rail — no feedback.'));
+  };
+
+  function astableBoard(b, withLed) {
+    const r1 = b.qty('r1'), r2 = b.qty('r2'), c = b.qty('c'), vcc = b.qty('vcc');
+    b.singleSupply(trim(vcc) + ' V', 'Vcc', 'GND');
+    b.dip('u', '555', 11, [['GND', 'GND'], ['TRIG', 'TIME'], ['OUT', 'OUT'], ['RST', 'Vcc'], ['CTRL', 'CTRL'], ['THR', 'TIME'], ['DIS', 'DIS'], ['VCC', 'Vcc']]);
+    b.jumper('gnd', 'GND', 11, 'a', 11, 'topMinus', 'black'); b.jumper('vcc', 'Vcc', 11, 'j', 11, 'botPlus', 'red'); b.jumper('rst', 'Vcc', 14, 'b', 14, 'topPlus', 'red');
+    b.resistor('r1', 'R1', r1, b.hole(12, 'j', 'DIS'), b.hole(18, 'j', 'Vcc')); b.jumper('r1v', 'Vcc', 18, 'h', 18, 'botPlus', 'red');
+    b.resistor('r2', 'R2', r2, b.hole(12, 'h', 'DIS'), b.hole(20, 'h', 'TIME'));
+    b.jumper('thr', 'TIME', 13, 'i', 20, 'i', 'yellow'); b.jumper('bridge', 'TIME', 20, 'e', 20, 'f', 'yellow'); b.jumper('trig', 'TIME', 12, 'b', 20, 'b', 'yellow'); b.jumper('capj', 'TIME', 20, 'c', 22, 'c', 'yellow');
+    b.capacitor('c', 'C', c, b.hole(22, 'e', 'TIME'), b.hole(22, 'f', 'GND')); b.jumper('cg', 'GND', 22, 'j', 22, 'botMinus', 'black');
+    if (withLed) {
+      b.resistor('rled', 'Rled', b.qty('rled'), b.hole(13, 'c', 'OUT'), b.hole(8, 'c', 'LED'));
+      b.components.push({ id: 'led', part: { type: 'led', label: 'LED' }, leads: [b.hole(8, 'e', 'LED'), b.hole(8, 'f', 'GND')] });
+      b.jumper('ledk', 'GND', 8, 'j', 8, 'botMinus', 'black');
+    } else b.jumper('out', 'OUT', 13, 'c', 8, 'c', 'green');
+    const extra = withLed ? 'The LED and Rled hang on pin 3 and return to the blue rail, so the LED is on while the output is high.' : 'Pin 3 is brought out on the green jumper. No load is added.';
+    return b.finish(b.caption('NE555, notch to the left and pin 1 at the lower left, counting counter-clockwise like the real package. Reset is held on the red rail. R1 feeds discharge, R2 feeds the timing node, and pins 2 and 6 share the capacitor. Pin 5 is open. ' + extra));
+  }
+  LAYOUTS.astable555 = (b) => astableBoard(b, false);
+  LAYOUTS.ledFlasher = (b) => astableBoard(b, true);
+  LAYOUTS.monostable555 = (b) => {
+    const r = b.qty('r'), c = b.qty('c'), vcc = b.qty('vcc');
+    b.singleSupply(trim(vcc) + ' V', 'Vcc', 'GND');
+    b.dip('u', '555', 11, [['GND', 'GND'], ['TRIG', 'TRIG'], ['OUT', 'OUT'], ['RST', 'Vcc'], ['CTRL', 'CTRL'], ['THR', 'RC'], ['DIS', 'RC'], ['VCC', 'Vcc']]);
+    b.jumper('gnd', 'GND', 11, 'a', 11, 'topMinus', 'black'); b.jumper('vcc', 'Vcc', 11, 'j', 11, 'botPlus', 'red'); b.jumper('rst', 'Vcc', 14, 'b', 14, 'topPlus', 'red');
+    b.resistor('r', 'R', r, b.hole(12, 'j', 'RC'), b.hole(18, 'j', 'Vcc')); b.jumper('rv', 'Vcc', 18, 'h', 18, 'botPlus', 'red');
+    b.jumper('tie67', 'RC', 13, 'i', 12, 'i', 'orange'); b.jumper('torow', 'RC', 12, 'g', 16, 'g', 'orange'); b.jumper('bridge', 'RC', 16, 'e', 16, 'f', 'orange'); b.jumper('tocap', 'RC', 16, 'c', 20, 'c', 'orange');
+    b.capacitor('c', 'C', c, b.hole(20, 'e', 'RC'), b.hole(20, 'f', 'GND')); b.jumper('cg', 'GND', 20, 'j', 20, 'botMinus', 'black');
+    b.jumper('trig', 'TRIG', 12, 'b', 8, 'b', 'violet'); b.jumper('out', 'OUT', 13, 'c', 9, 'c', 'green');
+    return b.finish(b.caption('NE555 one-shot. R and C set the width, with threshold and discharge tied. The violet jumper is the trigger input. A brief low there starts the pulse. No extra trigger network is drawn. Pin 5 is open.'));
+  };
+  LAYOUTS.sevenSegment = (b) => {
+    const r = b.qty('r'), digit = Math.round(b.qty('digit')), vcc = b.qty('vcc'), mask = SEG_MASK[digit];
+    b.singleSupply(trim(vcc) + ' V', 'Vcc', 'GND');
+    const pins = ['e', 'd', 'CC', 'c', 'DP', 'b', 'a', 'CC', 'f', 'g'], nets = ['Se', 'Sd', 'GND', 'Sc', 'DP', 'Sb', 'Sa', 'GND', 'Sf', 'Sg'], leads = [], origin = 20;
+    for (let i = 0; i < 5; i++) leads.push(b.hole(origin + i, 'e', nets[i]));
+    for (let i = 0; i < 5; i++) leads.push(b.hole(origin + 4 - i, 'f', nets[5 + i]));
+    b.components.push({ id: 'seg', part: { type: 'display', name: '5161AS', digit, mask, pins }, leads });
+    b.jumper('cc1', 'GND', 22, 'b', 22, 'topMinus', 'black'); b.jumper('cc2', 'GND', 22, 'j', 22, 'botMinus', 'black');
+    [[0, 'Sa', 14, 23, 'i', false], [1, 'Sb', 15, 24, 'g', false], [2, 'Sc', 12, 23, 'c', true], [3, 'Sd', 9, 21, 'b', true], [4, 'Se', 8, 20, 'd', true], [5, 'Sf', 11, 21, 'h', false], [6, 'Sg', 10, 20, 'j', false]].forEach((p) => {
+      if (!(mask & (1 << p[0]))) return;
+      b.resistor('r' + p[1], 'R' + p[1].slice(1), r, b.hole(p[2], p[4], 'Vcc'), b.hole(p[3], p[4], p[1]));
+      if (p[5]) b.jumper('v' + p[1], 'Vcc', p[2], 'a', p[2], 'topPlus', 'red'); else b.jumper('v' + p[1], 'Vcc', p[2], p[4] === 'j' ? 'g' : 'j', p[2], 'botPlus', 'red');
+    });
+    return b.finish(b.caption('Common-cathode 5161AS. Pins 3 and 8 are the cathode, on the blue rail. Each lit segment has its own resistor from the red rail. Dark segments are open. DP is unused.'));
   };
 
   global.BeckifyBenchEngine = {
