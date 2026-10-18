@@ -139,6 +139,8 @@
 
   function text(svg, x, y, value, attrs) {
     const node = svgElement('text', Object.assign({ x, y, fill: PALETTE.text, 'font-size': 13, 'font-family': 'IBM Plex Mono, ui-monospace, monospace' }, attrs || {}));
+    // The 640-unit plot is shown at 300 to 600 px, so label sizes are scaled up to stay readable at that width.
+    node.setAttribute('font-size', String(Math.round(Math.max(14, Number(node.getAttribute('font-size')) * 1.5) * 10) / 10));
     node.textContent = value;
     svg.appendChild(node);
   }
