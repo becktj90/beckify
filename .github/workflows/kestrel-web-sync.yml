@@ -1,0 +1,50 @@
+name: Sync Kestrel Heavy web build
+
+# Keeps beckify.com/arcade/kestrel-heavy equal to the newest successful "WebGL build" on kestrel-heavy main.
+# Triggers: cron every 30 min (works with no secrets), manual, or repository_dispatch (type kestrel-webgl-built)
+# sent by kestrel-heavy. Opens a PR, squash-merges it, deletes the branch, then dispatches the Pages deploy.
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [kestrel-webgl-built]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: kestrel-web-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.KESTREL_SYNC_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Vendor latest build
+        id: sync
+        run: tools/sync-kestrel-web.sh
+      - name: Open PR and squash-merge
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          B="kestrel-web-sync-${{ steps.sync.outputs.run }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$B"
+          git add -A artifacts/beckify
+          git commit -m "Update Kestrel Heavy web build (main ${{ steps.sync.outputs.sha }})"
+          git push origin "$B"
+          gh pr create --base main --head "$B" \
+            --title "Update Kestrel Heavy web build (main ${{ steps.sync.outputs.sha }})" \
+            --body "Automatic sync of artifact webgl-build, kestrel-heavy run ${{ steps.sync.outputs.run }} (main ${{ steps.sync.outputs.sha }}). Replaces Build/ and StreamingAssets/, updates hashed filenames in index.html, bumps the cache token."
+          gh pr merge "$B" --squash --delete-branch
+      - name: Deploy Pages
+        if: steps.sync.outputs.changed == 'true'
+        run: gh workflow run deploy.yml --ref main
