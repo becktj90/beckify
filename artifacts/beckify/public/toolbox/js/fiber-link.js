@@ -202,8 +202,8 @@
     clad.textContent = 'cladding n2'; svg.appendChild(clad);
     const core = svgEl('text', { x: 250, y: 114, fill: '#79c0ff', 'font-size': '11' });
     core.textContent = 'core n1'; svg.appendChild(core);
-    const na = isFinite(result && result.NA) ? result.NA : 0.2;
-    const ang = isFinite(result && result.thetaA) ? result.thetaA : Math.asin(Math.min(na, 0.99));
+    const na = result && isFinite(result.NA) ? result.NA : 0.2;
+    const ang = result && isFinite(result.thetaA) ? result.thetaA : Math.asin(Math.min(na, 0.99));
     const cx = 200, cy = 110;
     const reach = 150;
     const dy = reach * Math.tan(Math.min(ang, 0.9));
