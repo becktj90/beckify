@@ -174,6 +174,8 @@ export const TOOLS = [
   ["linear-regulator", "Linear / LDO Regulator", "LM317-style Vout from R1 and R2, dropout margin, pass-element power, and a junction-temperature estimate.", "sec-linear-regulator"],
   ["instrumentation-amp", "Instrumentation Amp", "Three-op-amp InAmp gain from Rg, or a matched four-resistor difference amp, with output swing and common-mode checks.", "sec-instrumentation-amp"],
   ["adc-dac", "ADC / DAC", "LSB, code count, ideal quantization SNR, Nyquist, and an optional DAC code-to-voltage.", "sec-adc-dac"],
+  ["motor-speed", "Motor Speed, Slip & Torque", "Synchronous speed, slip, rotor slip frequency and shaft torque for an induction motor.", "sec-motor-speed"],
+  ["resistor-color-code", "Resistor Color Code", "Decode 4- and 5-band resistors, or find the color bands for a value, with tolerance range.", "sec-resistor-color-code"],
   ["electronics-bench", "Electronics Bench & Breadboard Generator", "Pick a circuit, solve for any unknown, and see it as a schematic and a solderless breadboard hookup with color-banded resistors, jumpers, and live node readings. Ideal models, not SPICE.", "sec-electronics-bench"],
   ["semiconductor-iv", "Semiconductor Device I-V", "Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / saturation with a live I-V plot.", "sec-semiconductor-iv"],
   ["battery-build-designer", "Battery Build Designer", "Plan 18650 series-parallel battery packs, C-rate, grid or honeycomb layouts, and nickel-strip cross-section current estimates.", "sec-battery-build"],
