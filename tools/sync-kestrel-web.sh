@@ -18,6 +18,7 @@ if [ -f "$STAMP" ] && [ "$RUN" -le "$(cat "$STAMP")" ]; then echo "run $RUN olde
 
 T=$(mktemp -d)
 gh run download "$RUN" -R $SRC -n webgl-build -D "$T"
+[ -d "$T/WebGL" ] && T="$T/WebGL"
 for k in loader.js framework.js.unityweb wasm.unityweb data.unityweb; do
   ls "$T"/Build/*."$k" >/dev/null || { echo "artifact missing *.$k"; exit 1; }
 done
