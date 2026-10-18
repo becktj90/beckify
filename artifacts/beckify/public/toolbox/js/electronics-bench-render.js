@@ -20,21 +20,30 @@
   /* ---------- label placement (greedy, avoids parts and other labels) ---------- */
   function textWidth(text, size) { return String(text).length * size * 0.6 + 10; }
   function overlap(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+  function overlapArea(a, b) { const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x), h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y); return w > 0 && h > 0 ? w * h : 0; }
   function placeLabels(requests, obstacles, canvas) {
-    const placed = [];
+    const placed = [], seen = {};
     requests.forEach((r) => {
+      const key = r.text.replace(/\s+/g, ' ').trim(); if (seen[key]) return; seen[key] = true;
       const w = textWidth(r.text, r.size), h = r.size + 8;
-      const offs = [[0, -1], [0, 1], [1, 0], [-1, 0], [1, -1], [-1, -1], [1, 1], [-1, 1], [0, -2], [0, 2], [2, 0], [-2, 0], [2, -1], [-2, -1], [2, 1], [-2, 1]];
-      let best = null;
-      for (let k = 0; k < offs.length && !best; k++) {
-        const dx = offs[k][0] * (w / 2 + 8), dy = offs[k][1] * (h + 6);
+      // rings of candidate spots around the anchor: close first, then wider; the first collision-free spot wins.
+      const cands = [[0, -1, 1], [0, 1, 1], [1, 0, 1], [-1, 0, 1], [0.8, -0.8, 1], [-0.8, -0.8, 1], [0.8, 0.8, 1], [-0.8, 0.8, 1]];
+      for (let ring = 2; ring <= 5; ring++) for (let k = 0; k < 12; k++) { const ang = k / 12 * Math.PI * 2 - Math.PI / 2; cands.push([Math.cos(ang), Math.sin(ang), ring]); }
+      let best = null, fallback = null, fallbackScore = Infinity;
+      for (let k = 0; k < cands.length && !best; k++) {
+        const c = cands[k], ring = c[2];
+        const dx = c[0] * (w / 2 + 8 + (ring - 1) * 12), dy = c[1] * (h / 2 + 6 + (ring - 1) * (h * 0.55));
         const box = { x: r.x + dx - w / 2, y: r.y + dy - h / 2, w, h };
         box.x = Math.max(2, Math.min(canvas.w - w - 2, box.x));
         box.y = Math.max(2, Math.min(canvas.h - h - 2, box.y));
-        if (obstacles.some((o) => overlap(box, o)) || placed.some((p) => overlap(box, p.box))) continue;
-        best = { box, leader: k > 3 };
+        let score = 0;
+        obstacles.forEach((o) => { score += overlapArea(box, o); });
+        placed.forEach((q) => { score += overlapArea(box, q.box) * 3; });
+        if (score === 0) { best = { box, leader: ring > 1 || k > 3 }; break; }
+        score += ring * 4;
+        if (score < fallbackScore) { fallbackScore = score; fallback = { box, leader: true }; }
       }
-      if (!best) best = { box: { x: Math.max(2, Math.min(canvas.w - w - 2, r.x - w / 2)), y: Math.max(2, r.y - h - 8), w, h }, leader: true };
+      if (!best) best = fallback;
       placed.push({ r, box: best.box, leader: best.leader });
     });
     return placed;
@@ -228,7 +237,7 @@
       const a = mp(br.a), b = mp(br.b), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       obstacles.push({ x: a.x + (b.x - a.x) * 0.72 - 9, y: a.y + (b.y - a.y) * 0.72 - 9, w: 18, h: 18 });
       if (layer === 'minimal') return;
-      breq.push({ text: br.name + ' ' + reading(Math.abs(br.value), br.unit == null ? 'A' : br.unit), x: mid.x, y: mid.y, size: 14, color: C.energized });
+      breq.push({ text: br.name.replace(/^I through (\S+)$/, 'I($1)') + ' ' + reading(Math.abs(br.value), br.unit == null ? 'A' : br.unit), x: mid.x, y: mid.y, size: 14, color: C.energized });
     });
     const all = nreq.concat(breq, reqs);
     if (all.length > 10) all.forEach((r) => { r.size = Math.max(10, r.size - (all.length > 13 ? 3 : 2)); });
@@ -364,7 +373,8 @@
     });
     // meters
     const showMeters = layer === 'measurements' || layer === 'all' || (layer === 'values' && p >= 12);
-    if (showMeters) layout.meters.slice(0, layer === 'values' ? 4 : layout.meters.length).forEach((m) => drawMeter(A, m, map));
+    const meterBoxes = showMeters ? layoutMeters(layout.meters, map) : [];
+    if (showMeters) meterBoxes.slice(0, layer === 'values' ? 4 : meterBoxes.length).forEach((mb) => drawMeter(A, mb, map));
     // labels
     const obstacles = [], reqs = [];
     layout.components.forEach((c) => {
@@ -382,7 +392,7 @@
       const ys = s.leads.map((l) => map.c(l.hole).y);
       obstacles.push({ x: 8, y: Math.min.apply(null, ys) - 16, w: 52, h: Math.max.apply(null, ys) - Math.min.apply(null, ys) + 36 });
     });
-    if (showMeters) layout.meters.forEach((m) => { const a = map.c(m.hole), w = textWidth(m.title + ' ' + m.reading, 13); obstacles.push({ x: a.x - w / 2 - 6, y: a.y - p * 0.95 - 12, w: w + 12, h: 24 }); });
+    if (showMeters) meterBoxes.forEach((mb) => obstacles.push({ x: mb.box.x - 3, y: mb.box.y - 3, w: mb.box.w + 6, h: mb.box.h + 6 }));
     placeLabels(reqs, obstacles, { w: size.w, h: size.h }).forEach((pl) => {
       const b = pl.box;
       if (pl.leader) A('<line x1="' + f2(pl.r.x) + '" y1="' + f2(pl.r.y) + '" x2="' + f2(b.x + b.w / 2) + '" y2="' + f2(b.y + b.h / 2) + '" stroke="#6E675C" stroke-width="0.8"/>');
@@ -403,12 +413,30 @@
   function lead(A, a, b, p) {
     A('<line x1="' + f2(a.x) + '" y1="' + f2(a.y) + '" x2="' + f2(b.x) + '" y2="' + f2(b.y) + '" stroke="#B7BDC4" stroke-width="' + f2(Math.max(1.2, p * 0.07)) + '" stroke-linecap="round"/>');
   }
-  function drawMeter(A, m, map) {
-    const a = map.c(m.hole), p = map.p, title = m.title + ' ' + m.reading, fs = Math.min(15, Math.max(12, p * 0.55));
-    const w = textWidth(title, fs), h = Math.max(fs + 8, p * 0.7), cur = m.kind === 'current';
-    const cy = a.y + (cur ? -p * 0.95 : -p * 0.72);
-    A('<rect x="' + f2(a.x - w / 2) + '" y="' + f2(cy - h / 2) + '" width="' + f2(w) + '" height="' + f2(h) + '" rx="5" fill="' + (cur ? '#D6E6FF' : '#DFF5E2') + '" fill-opacity="0.94" stroke="' + (cur ? '#3D6FB4' : '#3D8B4F') + '"/>');
-    A('<text x="' + f2(a.x) + '" y="' + f2(cy) + '" text-anchor="middle" dominant-baseline="central" font-size="' + f2(fs) + '" font-weight="700" fill="' + (cur ? '#0B3D91' : '#1B5E20') + '" style="font-variant-numeric:tabular-nums">' + esc(title) + '</text>');
+  /* Meter badges sit above their probe hole. When two badges would collide they stack in free rows
+     above or below, with a thin leader back to the hole, so no reading is ever hidden. */
+  function layoutMeters(meters, map) {
+    const p = map.p, fs = Math.min(15, Math.max(12, p * 0.55)), placed = [];
+    meters.forEach((m) => {
+      const a = map.c(m.hole), title = m.title + ' ' + m.reading, w = textWidth(title, fs), h = Math.max(fs + 8, p * 0.7), cur = m.kind === 'current';
+      const baseY = a.y + (cur ? -p * 0.95 : -p * 0.72), step = h + 3;
+      let best = null;
+      const tries = [0, -1, 1, -2, 2, -3, 3];
+      for (let k = 0; k < tries.length; k++) {
+        const cy = baseY + tries[k] * step, box = { x: a.x - w / 2, y: cy - h / 2, w, h };
+        box.x = Math.max(2, box.x);
+        if (!placed.some((q) => overlapArea(box, q.box) > 0)) { best = { m, a, title, fs, cur, cy, box, leader: tries[k] !== 0 }; break; }
+      }
+      if (!best) { const cy = baseY, box = { x: a.x - w / 2, y: cy - h / 2, w, h }; best = { m, a, title, fs, cur, cy, box, leader: false }; }
+      placed.push(best);
+    });
+    return placed;
+  }
+  function drawMeter(A, mb, map) {
+    const a = mb.a, b = mb.box, cur = mb.cur;
+    if (mb.leader) A('<line x1="' + f2(a.x) + '" y1="' + f2(a.y) + '" x2="' + f2(b.x + b.w / 2) + '" y2="' + f2(b.y + b.h / 2) + '" stroke="' + (cur ? '#3D6FB4' : '#3D8B4F') + '" stroke-width="1"/>');
+    A('<rect x="' + f2(b.x) + '" y="' + f2(b.y) + '" width="' + f2(b.w) + '" height="' + f2(b.h) + '" rx="5" fill="' + (cur ? '#D6E6FF' : '#DFF5E2') + '" fill-opacity="0.96" stroke="' + (cur ? '#3D6FB4' : '#3D8B4F') + '"/>');
+    A('<text x="' + f2(b.x + b.w / 2) + '" y="' + f2(b.y + b.h / 2) + '" text-anchor="middle" dominant-baseline="central" font-size="' + f2(mb.fs) + '" font-weight="700" fill="' + (cur ? '#0B3D91' : '#1B5E20') + '" style="font-variant-numeric:tabular-nums">' + esc(mb.title) + '</text>');
   }
   const rot = (mid, ang) => 'translate(' + f2(mid.x) + ' ' + f2(mid.y) + ') rotate(' + f2(ang * 180 / Math.PI) + ')';
 
