@@ -439,6 +439,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://beckify.com/toolbox/solenoid-design/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beckify.com/toolbox/flexible-cable/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://beckify.com/toolbox/electronics-bench/</loc>
     <lastmod>2026-10-17</lastmod>
     <changefreq>monthly</changefreq>
