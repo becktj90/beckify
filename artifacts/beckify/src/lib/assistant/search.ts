@@ -44,6 +44,8 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "equipment-ground": ["egc", "equipment ground", "250.122", "grounding conductor"],
   "receptacle-circuit": ["receptacle", "outlets per circuit", "180 va", "branch circuit"],
   "lightning-protection": ["lightning", "nfpa 780", "rolling sphere", "air terminals", "down conductors"],
+  "solenoid-design": ["solenoid", "coil", "magnetic field", "inductance", "plunger force"],
+  "flexible-cable": ["flexible cord", "so cord", "type w", "portable cable", "400.5"],
   "electronics-bench": ["breadboard", "breadboard generator", "electronics lab", "electronics bench", "schematic", "solderless", "jumper", "resistor color band", "thevenin", "norton", "rc step", "rl step", "kirchhoff", "series rlc"],
   "semiconductor-iv": ["shockley", "diode iv", "bjt", "mosfet", "nmos", "q-point", "square law", "device physics"],
   "fiber-link": ["numerical aperture", "fiber optic", "acceptance angle", "link budget", "palais"],

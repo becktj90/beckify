@@ -179,6 +179,8 @@ export const TOOLS = [
   ["equipment-ground", "Equipment Grounding Conductor", "NEC 2023 Table 250.122 minimum equipment grounding conductor from the overcurrent device.", "sec-equipment-ground"],
   ["receptacle-circuit", "Receptacle Circuit", "How many receptacles fit on a 15 or 20 A branch circuit, with a conductor and voltage-drop check.", "sec-receptacle-circuit"],
   ["lightning-protection", "Lightning Protection (NFPA 780)", "Strike-terminal and down-conductor counts, material class, rolling-sphere reach and separation distance.", "sec-lightning-protection"],
+  ["solenoid-design", "Solenoid Design", "Center field, inductance, copper loss, packing and plunger force for an air-core or soft-iron solenoid.", "sec-solenoid-design"],
+  ["flexible-cable", "Flexible Cable Ampacity", "Portable cord (SO, SJO, STO) and Type W ampacity from NEC Table 400.5 with ambient and bundling factors.", "sec-flexible-cable"],
   ["electronics-bench", "Electronics Bench & Breadboard Generator", "Pick a circuit, solve for any unknown, and see it as a schematic and a solderless breadboard hookup with color-banded resistors, jumpers, and live node readings. Ideal models, not SPICE.", "sec-electronics-bench"],
   ["semiconductor-iv", "Semiconductor Device I-V", "Shockley diode with optional series Rs, npn β-forced Q-point, and long-channel NMOS cutoff / triode / saturation with a live I-V plot.", "sec-semiconductor-iv"],
   ["battery-build-designer", "Battery Build Designer", "Plan 18650 series-parallel battery packs, C-rate, grid or honeycomb layouts, and nickel-strip cross-section current estimates.", "sec-battery-build"],
