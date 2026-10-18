@@ -398,7 +398,7 @@
     var g;
     var p;
     if (!overlay) return;
-    steps = Math.max(24, Math.ceil(Math.abs(overlay.thetaDeg) / 4));
+    steps = Math.min(1440, Math.max(24, Math.ceil(Math.abs(overlay.thetaDeg) / 4))); // capped: a huge line length used to loop for billions of steps
     ctx.save();
     ctx.strokeStyle = COLORS.rotation;
     ctx.lineWidth = 2;
