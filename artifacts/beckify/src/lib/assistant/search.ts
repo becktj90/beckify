@@ -47,6 +47,8 @@ const EXTRA_TAGS: Record<string, string[]> = {
   "solenoid-design": ["solenoid", "coil", "magnetic field", "inductance", "plunger force"],
   "flexible-cable": ["flexible cord", "so cord", "type w", "portable cable", "400.5"],
   "cable-tray": ["cable tray", "cable ladder", "392.22", "tray fill"],
+  "control-panel": ["ul 508a", "control panel", "control transformer", "fault current", "disconnect"],
+  "control-strategies": ["pid", "mpc", "control strategy", "bang-bang", "adrc"],
   "electronics-bench": ["breadboard", "breadboard generator", "electronics lab", "electronics bench", "schematic", "solderless", "jumper", "resistor color band", "thevenin", "norton", "rc step", "rl step", "kirchhoff", "series rlc"],
   "semiconductor-iv": ["shockley", "diode iv", "bjt", "mosfet", "nmos", "q-point", "square law", "device physics"],
   "fiber-link": ["numerical aperture", "fiber optic", "acceptance angle", "link budget", "palais"],
