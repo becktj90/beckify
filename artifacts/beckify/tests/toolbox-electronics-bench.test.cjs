@@ -193,6 +193,34 @@ for (const id of E.circuits()) {
   }
 }
 
+/* 555 timers and display */
+{
+  const get = (sol, id) => sol.quantities.find((x) => x.id === id).value;
+  const a = E.solve('astable555', 'frequency', D('astable555'));
+  near(get(a, 'frequency'), 1 / (Math.LN2 * 3000e-6), 1e-9); near(get(a, 'duty'), 200 / 3, 1e-9);
+  near(get(E.solve('astable555', 'c', D('astable555')), 'c'), 1 / (481 * Math.LN2 * 3000), 1e-12);
+  const r12 = E.solve('astable555', 'resistors', Object.assign({}, D('astable555'), { frequency: '1000', duty: '75', c: '1e-7' }));
+  near(get(r12, 'duty'), 75, 1e-9); near(get(r12, 'frequency'), 1000, 1e-9);
+  assert.throws(() => E.solve('astable555', 'resistors', Object.assign({}, D('astable555'), { duty: '40' })), /above 50%/);
+  assert.throws(() => E.solve('astable555', 'r1', Object.assign({}, D('astable555'), { frequency: '1e6' })), /not be positive/);
+  near(get(E.solve('monostable555', 'width', D('monostable555')), 'width'), Math.log(3) * 0.01, 1e-12);
+  near(get(E.solve('monostable555', 'r', D('monostable555')), 'r'), 0.011 / (Math.log(3) * 1e-6), 1e-6);
+  near(get(E.solve('ledFlasher', 'rate', D('ledFlasher')), 'frequency'), 1 / (Math.LN2 * 210e3 * 1e-6), 1e-9);
+  near(get(E.solve('ledFlasher', 'rled', D('ledFlasher')), 'rled'), 3 / 0.009, 1e-9);
+  assert.throws(() => E.solve('ledFlasher', 'rate', Object.assign({}, D('ledFlasher'), { vf: '6' })), /above the LED/);
+  const s8 = E.solve('sevenSegment', 'map', D('sevenSegment'));
+  assert.equal(get(s8, 'count'), 7); near(get(s8, 'itotal'), 7 * 3 / 330, 1e-12);
+  assert.equal(get(E.solve('sevenSegment', 'map', Object.assign({}, D('sevenSegment'), { digit: '1' })), 'count'), 2);
+  near(get(E.solve('sevenSegment', 'r', D('sevenSegment')), 'r'), 3 / 0.009, 1e-9);
+  for (const id of ['astable555', 'monostable555', 'ledFlasher', 'sevenSegment']) {
+    const sol = E.solve(id, E.SPECS.find((x) => x.id === id).defaultUnknown, D(id));
+    assert.ok(sol.layout.audit.ok, id + ' audit: ' + JSON.stringify(sol.layout.audit));
+    assert.ok(R.renderSchematic(sol).includes('<rect'), id + ' schematic');
+    assert.ok(R.renderBreadboard(sol.layout, { pitch: 20 }).includes('<svg'), id + ' board');
+  }
+  for (let d = 0; d <= 9; d++) assert.ok(E.solve('sevenSegment', 'map', Object.assign({}, D('sevenSegment'), { digit: String(d) })).layout.audit.ok, 'digit ' + d + ' audit');
+}
+
 /* audit catches mistakes: a short, an off-board hole, and a split net */
 {
   const sol = E.solve('seriesResistors', 'current', D('seriesResistors'));
