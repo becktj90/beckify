@@ -140,14 +140,19 @@ export const PAGE_SEO = {
       "Undergraduate servo analysis: pick an example plant or enter your own G(s), then tune PID, Bode margins, root locus, lead compensators, and state-feedback. Educational approximations — not for commissioning.",
   },
   "/games": {
-    title: "Kestrel Heavy — Beckify browser games",
+    title: "Beckify browser games — Kestrel Heavy and Number Blocks",
     description:
-      "Play Kestrel Heavy, Beckify's on-site Pier 7 launch arcade. Keyboard or touch, no ads, no install, local scores in this browser.",
+      "Play Beckify's on-site browser games: Kestrel Heavy, the Pier 7 launch arcade, and Number Blocks, a talking number-blocks math game for kids. Keyboard or touch, no ads, no install.",
   },
   "/games/kestrel-heavy": {
     title: "Play Kestrel Heavy — Pier 7 launch arcade",
     description:
       "Play Kestrel Heavy in the browser: launch from Pier 7 on KID, CADET, or PAD RAT difficulty, recover on barge Haven, and keep a local personal best. No install.",
+  },
+  "/games/number-blocks": {
+    title: "Play Number Blocks — kids' math game",
+    description:
+      "Play Number Blocks in the browser: a talking number-blocks math game for kids — count, build, add, subtract, multiply, and share, up to 1,000. Visual and audio-led, no reading needed, no install.",
   },
   "/sitemap": {
     title: "Beckify site map — every calculator, project, and page",
@@ -168,6 +173,7 @@ export const STATIC_ROUTE_PATHS = [
   "control-systems",
   "games",
   "games/kestrel-heavy",
+  "games/number-blocks",
   "games/new-glenn-runner",
   // Legacy redirects only (see generate-static-routes.mjs). Not in sitemap.
   "gear",

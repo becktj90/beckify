@@ -89,22 +89,26 @@ assert.ok(fs.existsSync(path.join(root, 'src/pages/kestrel-heavy.tsx')), 'Kestre
 assert.ok(fs.existsSync(path.join(root, 'public/arcade/kestrel-heavy/index.html')), 'Kestrel Heavy arcade assets must stay');
 
 const siteStats = fs.readFileSync(path.join(root, 'src/data/site-stats.ts'), 'utf8');
-assert.match(siteStats, /PUBLIC_GAME_COUNT = 1/);
+assert.match(siteStats, /PUBLIC_GAME_COUNT: number = 2/);
 
 const siteContent = fs.readFileSync(path.join(root, 'src/data/site-content.ts'), 'utf8');
 assert.match(siteContent, /name: "Kestrel Heavy"/);
 assert.match(siteContent, /url: "\/games\/kestrel-heavy"/);
+assert.match(siteContent, /name: "Number Blocks"/);
+assert.match(siteContent, /url: "\/games\/number-blocks"/);
 const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)]
   .map((m) => m[1])
   .filter((name) => name === 'Kestrel Heavy');
-assert.equal(gameNames.length, 1, 'site-content must list only Kestrel Heavy');
+assert.equal(gameNames.length, 1, 'site-content must list Kestrel Heavy exactly once');
 
 const appSrc = fs.readFileSync(path.join(root, 'src/App.tsx'), 'utf8');
 assert.match(appSrc, /path="\/games\/kestrel-heavy"/);
 assert.match(appSrc, /path="\/games\/kestrel-heavy\/"/);
+assert.match(appSrc, /path="\/games\/number-blocks"/);
+assert.match(appSrc, /path="\/games\/number-blocks\/"/);
 assert.match(appSrc, /path="\/games\/"/);
 assert.match(appSrc, /path="\/games\/new-glenn-runner\/"/);
-assert.doesNotMatch(appSrc, /path="\/games\/(?!kestrel-heavy|new-glenn-runner)[^"]+/);
+assert.doesNotMatch(appSrc, /path="\/games\/(?!kestrel-heavy|number-blocks|new-glenn-runner)[^"]+/);
 
 const gameSources = walk(gamesDir).filter((file) => /\.(tsx|ts)$/.test(file)).map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 assert.doesNotMatch(gameSources, /games\/kids\/apollo\.png/);
@@ -135,7 +139,7 @@ assert.doesNotMatch(hubCopy, /Seven on-site/);
 assert.match(hubCopy, /Kestrel Heavy/);
 
 const gamesHub = fs.readFileSync(path.join(root, 'src/components/sections/Games.tsx'), 'utf8');
-assert.match(gamesHub, /The arcade brief/);
+assert.match(gamesHub, /The games brief/);
 assert.match(gamesHub, /Keyboard \+ touch/);
 assert.match(gamesHub, /No ads/);
 assert.doesNotMatch(gamesHub, /label:\s*"Input"/, 'arcade brief must not count input methods as a vanity integer');
@@ -143,4 +147,4 @@ assert.doesNotMatch(gamesHub, /value:\s*"2"/, 'arcade brief must not show a cryp
 assert.doesNotMatch(gamesHub, /padStart\(2/, 'arcade brief must not zero-pad the game count like a dashboard');
 assert.doesNotMatch(gamesHub, /width:\s*"(100|76|18)%"/, 'arcade brief must not use fake progress bars');
 
-console.log('Kestrel Heavy is the sole public game; HexGL and kid-photo playables stay gone');
+console.log('Kestrel Heavy and Number Blocks are the public games; HexGL and kid-photo playables stay gone');

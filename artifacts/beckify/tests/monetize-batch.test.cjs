@@ -78,7 +78,7 @@ const excludedNav = new Set([
 ]);
 const liveCalculatorCount = new Set(navTargets.filter((id) => !excludedNav.has(id))).size;
 ok("calculator count is derived from toolbox-tools", /from "\.\/toolbox-tools\.mjs"/.test(siteStats));
-ok("game count constant is 1", /PUBLIC_GAME_COUNT = 1/.test(siteStats));
+ok("game count constant is 2", /PUBLIC_GAME_COUNT: number = 2/.test(siteStats));
 ok("calculator count matches live toolbox nav", PUBLIC_CALCULATOR_COUNT === liveCalculatorCount, `${PUBLIC_CALCULATOR_COUNT} vs nav ${liveCalculatorCount}`);
 ok("home toolbox copy uses the calculator constant", homeSrc.includes("PUBLIC_CALCULATOR_COUNT") && homeSrc.includes("calculators"));
 ok("home names EMP/EMC, homework EE, LP, and number-base", /EMP\/EMC/.test(homeSrc) && /homework EE/.test(homeSrc) && /linear-programming optimizer/.test(homeSrc) && /number-base converter/.test(homeSrc));

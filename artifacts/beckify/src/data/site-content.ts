@@ -233,6 +233,12 @@ export const GAMES: Game[] = [
       "A Phaser 4 launch arcade: fly KH-n from Pier 7, hear the sequence of events, then recover first stage on barge Haven.",
     url: "/games/kestrel-heavy",
   },
+  {
+    name: "Number Blocks",
+    description:
+      "A talking number-blocks math game for kids: count, build, add, subtract, multiply, and share with number buddies, up to 1,000. Visual and audio-led, no reading needed.",
+    url: "/games/number-blocks",
+  },
 ];
 
 // Legacy single-game export for backwards compatibility

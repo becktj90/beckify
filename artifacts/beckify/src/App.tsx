@@ -20,6 +20,7 @@ const AppsPage = lazy(() => import("@/pages/apps"));
 const GamesPage = lazy(() => import("@/pages/games"));
 const SiteMapPage = lazy(() => import("@/pages/sitemap"));
 const KestrelHeavyPage = lazy(() => import("@/pages/kestrel-heavy"));
+const NumberBlocksPage = lazy(() => import("@/pages/number-blocks"));
 const VespaP200EPage = lazy(() => import("@/pages/vespa-p200e"));
 const HondaXR650RPage = lazy(() => import("@/pages/honda-xr650r"));
 const ControlSystemsPage = lazy(() => import("@/pages/control-systems"));
@@ -71,6 +72,8 @@ function Router() {
         <Route path="/games/" component={GamesPage} />
         <Route path="/games/kestrel-heavy" component={KestrelHeavyPage} />
         <Route path="/games/kestrel-heavy/" component={KestrelHeavyPage} />
+        <Route path="/games/number-blocks" component={NumberBlocksPage} />
+        <Route path="/games/number-blocks/" component={NumberBlocksPage} />
         <Route path="/games/new-glenn-runner">{() => <Redirect to="/games/kestrel-heavy/" />}</Route>
         <Route path="/games/new-glenn-runner/">{() => <Redirect to="/games/kestrel-heavy/" />}</Route>
         <Route path="/toolbox" component={ToolboxPage} />
