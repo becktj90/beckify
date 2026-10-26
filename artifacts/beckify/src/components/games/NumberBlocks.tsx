@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
-const GAME_SRC = `${import.meta.env.BASE_URL}games/number-blocks/index.html`.replace(/([^:]\/)\/+/g, "$1");
+const GAME_SRC = `${import.meta.env.BASE_URL}games/number-blocks/game.html`.replace(/([^:]\/)\/+/g, "$1");
 
 export function NumberBlocks() {
   const stageRef = useRef<HTMLDivElement>(null);
