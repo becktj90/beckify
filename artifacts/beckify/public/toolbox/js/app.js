@@ -869,50 +869,7 @@ function selectConductorAndConduit(amps) {
   return { runs: 1, size: 'Special — consult engineer', ampsEach: 0, conduit: 'Special' };
 }
 
-window.calcConduitFill = function () {
-  const qty = parseInt(document.getElementById('cf_qty').value) || 0;
-  const awg = document.getElementById('cf_awg').value;
-  const tradeSize = document.getElementById('cf_conduit').value;
-  const conduit = EMT_SIZES[tradeSize];
-  const wireArea = THHN_AREAS[awg];
-  if (!conduit || !wireArea || qty < 1) return showError('cf_result', 'Select conduit size, wire size, and quantity.');
-
-  const totalWireArea = qty * wireArea;
-  const maxFillPct = qty === 1 ? 53 : qty === 2 ? 31 : 40;
-  const maxFillArea = conduit.area * maxFillPct / 100;
-  const fillPct = totalWireArea / conduit.area * 100;
-  const pass = totalWireArea <= maxFillArea;
-
-  const rows = [
-    ['Total Wire Area', fmt(totalWireArea, 4) + ' sq in'],
-    ['Conduit Internal Area (' + tradeSize + '" EMT)', fmt(conduit.area) + ' sq in'],
-    ['NEC Max Fill % for ' + qty + ' wire(s)', maxFillPct + ' %'],
-    ['Max Allowable Wire Area', fmt(maxFillArea, 4) + ' sq in'],
-    ['Actual Fill %', fmt(fillPct, 2) + ' %'],
-    ['Status', pass ? '✔ PASS — within NEC limits' : '✘ FAIL — exceeds NEC fill limit']
-  ];
-  showResult('cf_result', rows);
-
-  if (!pass) {
-    // suggest minimum conduit — append an extra row using DOM methods
-    const sizes = Object.keys(EMT_SIZES);
-    const minSize = sizes.find(s => EMT_SIZES[s].area * maxFillPct / 100 >= totalWireArea);
-    if (minSize) {
-      const el = document.getElementById('cf_result');
-      const row = document.createElement('div');
-      row.className = 'res-row';
-      const lblSpan = document.createElement('span');
-      lblSpan.className = 'res-label';
-      lblSpan.textContent = 'Minimum Conduit Size';
-      const valSpan = document.createElement('span');
-      valSpan.className = 'res-val';
-      valSpan.textContent = minSize + '" EMT';
-      row.appendChild(lblSpan);
-      row.appendChild(valSpan);
-      el.appendChild(row);
-    }
-  }
-};
+/* calcConduitFill (same-size card) lives in wire-tools.js with the mixed calculator. */
 
 /* ============================================================
    13. SHORT CIRCUIT (AVAILABLE FAULT CURRENT)

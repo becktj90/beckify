@@ -211,6 +211,23 @@ window.calcConduitFillAdvanced = function () {
   wtRow(el, 'Maximum fill', limit.pct + ' %');
   wtRow(el, 'Basis', limit.basis);
 
+  /* Cross-section at the size being judged: the chosen size, or the minimum
+     that fits when Auto. Nothing is drawn when the bundle fits no size. */
+  const vizTrade = chosenSize === 'auto' ? minSize : chosenSize;
+  const vizArea = vizTrade ? conduit.areas[vizTrade] : undefined;
+  const mountViz = function () {
+    if (!window.ConduitViz || !vizTrade || typeof vizArea !== 'number') return;
+    window.ConduitViz.mount(el, {
+      type: type, trade: vizTrade, nipple: isNipple,
+      groups: rows.map(function (r) {
+        return { qty: r.qty, size: r.size, insul: r.insul, area: r.area, label: wireSizeLabel(r.size) + ' ' + r.insul };
+      }),
+      totalArea: totalArea, racewayArea: vizArea,
+      fillPct: (totalArea / vizArea) * 100, limitPct: limit.pct, limitBasis: limit.basis,
+      pass: totalArea <= vizArea * (limit.pct / 100),
+    });
+  };
+
   if (chosenSize === 'auto') {
     wtHeading(el, 'Recommended raceway');
     if (minSize) {
@@ -226,6 +243,7 @@ window.calcConduitFillAdvanced = function () {
       wtRow(el, 'Minimum size', 'Exceeds largest ' + type + ' size', { color: FAIL_COLOR, bold: true });
       wtNote(el, 'Split the run across multiple raceways, or choose a raceway type with larger trade sizes.');
     }
+    mountViz();
     appendCopyBtn(el);
     return;
   }
@@ -265,8 +283,90 @@ window.calcConduitFillAdvanced = function () {
     }
   }
 
+  mountViz();
   appendCopyBtn(el);
 };
+
+/* ---------------------------------------------------------------------------
+   Same-size card (sec-conduit). Shares Table 4 / Table 5 data and the
+   cross-section drawing with the mixed calculator, and covers every Table 5
+   size through 1000 kcmil.
+   --------------------------------------------------------------------------- */
+function cfSyncTradeOptions() {
+  const typeEl = document.getElementById('cf_type');
+  const tradeEl = document.getElementById('cf_conduit');
+  if (!typeEl || !tradeEl) return;
+  const conduit = CONDUIT_TYPES[typeEl.value];
+  if (!conduit) return;
+  const keep = tradeEl.value;
+  const sizes = CONDUIT_TRADE_ORDER.filter((t) => conduit.areas[t] !== undefined);
+  tradeEl.textContent = '';
+  sizes.forEach((t) => {
+    const o = document.createElement('option');
+    o.value = t;
+    o.textContent = t + '" (' + fmt(conduit.areas[t], 3) + ' sq in)';
+    if (t === keep) o.selected = true;
+    tradeEl.appendChild(o);
+  });
+  if (!sizes.includes(keep)) tradeEl.value = sizes.includes('3/4') ? '3/4' : sizes[0];
+}
+window.cfSyncTradeOptions = cfSyncTradeOptions;
+
+window.calcConduitFill = function () {
+  const el = wtClear('cf_result');
+  if (!el) return;
+  const qty = parseInt(document.getElementById('cf_qty').value, 10) || 0;
+  const awg = document.getElementById('cf_awg').value;
+  const tradeSize = document.getElementById('cf_conduit').value;
+  const typeEl = document.getElementById('cf_type');
+  const insulEl = document.getElementById('cf_insul');
+  const nippleEl = document.getElementById('cf_nipple');
+  const type = typeEl ? typeEl.value : 'EMT';
+  const insul = insulEl ? insulEl.value : 'THHN';
+  const isNipple = !!(nippleEl && nippleEl.checked);
+  const conduit = CONDUIT_TYPES[type];
+  const insTable = INSULATION_TYPES[insul];
+  const area = conduit && conduit.areas[tradeSize];
+  const wireArea = insTable && insTable.areas[awg];
+  if (!area || !wireArea || qty < 1) return showError('cf_result', 'Select conduit size, wire size, and quantity.');
+
+  const totalWireArea = qty * wireArea;
+  const limit = conduitFillLimit(qty, isNipple);
+  const maxFillArea = area * limit.pct / 100;
+  const fillPct = totalWireArea / area * 100;
+  const pass = totalWireArea <= maxFillArea;
+  const label = wireSizeLabel(awg) + ' ' + insul;
+
+  el.className = 'result show';
+  wtRow(el, 'Total wire area', fmt(totalWireArea, 4) + ' sq in');
+  wtRow(el, 'Raceway internal area (' + tradeSize + '" ' + type + ')', fmt(area, 3) + ' sq in');
+  wtRow(el, 'NEC max fill for ' + qty + ' wire' + (qty === 1 ? '' : 's'), limit.pct + ' %');
+  wtRow(el, 'Basis', limit.basis);
+  wtRow(el, 'Max allowable wire area', fmt(maxFillArea, 4) + ' sq in');
+  wtRow(el, 'Actual fill', fmt(fillPct, 2) + ' %', { bold: true });
+  wtRow(el, 'Status', pass ? '✔ PASS — within NEC limits' : '✘ FAIL — exceeds NEC fill limit', { color: pass ? PASS_COLOR : FAIL_COLOR, bold: true });
+
+  if (!pass) {
+    const minSize = CONDUIT_TRADE_ORDER.filter((t) => conduit.areas[t] !== undefined)
+      .find((t) => conduit.areas[t] * limit.pct / 100 >= totalWireArea);
+    wtRow(el, 'Minimum raceway size', minSize ? minSize + '" ' + type : 'Larger than any ' + type + ' size — split the run', { bold: true });
+  }
+
+  if (window.ConduitViz) {
+    window.ConduitViz.mount(el, {
+      type: type, trade: tradeSize, nipple: isNipple,
+      groups: [{ qty: qty, size: awg, insul: insul, area: wireArea, label: label }],
+      totalArea: totalWireArea, racewayArea: area,
+      fillPct: fillPct, limitPct: limit.pct, limitBasis: limit.basis, pass: pass,
+    });
+  }
+  appendCopyBtn(el);
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+  const typeEl = document.getElementById('cf_type');
+  if (typeEl) typeEl.addEventListener('change', function () { cfSyncTradeOptions(); });
+});
 
 /* Same-size example — matches the iOS Conduit Fill example and the
    sec-conduit doc copy: four 12 AWG THHN in 3/4" EMT (PASS, ~10% fill). */
@@ -274,6 +374,8 @@ window.loadConduitFillSameSizeExample = function () {
   var conduitEl = document.getElementById('cf_conduit');
   var awgEl = document.getElementById('cf_awg');
   var qtyEl = document.getElementById('cf_qty');
+  var typeEl0 = document.getElementById('cf_type');
+  if (typeEl0) { typeEl0.value = 'EMT'; cfSyncTradeOptions(); }
   if (conduitEl) conduitEl.value = '3/4';
   if (awgEl) awgEl.value = '12';
   if (qtyEl) qtyEl.value = '4';

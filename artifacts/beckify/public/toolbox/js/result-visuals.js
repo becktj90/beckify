@@ -750,6 +750,8 @@
     return numericSignal(shell(result, 'Data-driven visual summary of the calculated values shown above'), values.length ? values : [0, 1]);
   }
 
+  window.BeckifyResultVisuals = { shell: shell };
+
   function init() {
     const observe = () => document.querySelectorAll('.result.show').forEach(build);
     observe();

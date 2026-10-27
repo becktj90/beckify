@@ -1,9 +1,9 @@
 :root {
-  --sgll-bg: #05060f;
+  --sgll-bg: #080b10;
   --sgll-card: rgba(255,255,255,0.032);
   --sgll-input: rgba(255,255,255,0.05);
   --sgll-border: rgba(255,255,255,0.1);
-  --sgll-border-hover: rgba(139,123,255,0.45);
+  --sgll-border-hover: rgba(64,186,214,0.45);
   --sgll-text: #e7ecf3;
   --sgll-muted: #93a0b4;
   --sgll-accent: #40bad6;
