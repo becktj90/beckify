@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="color-scheme" content="light"/>
 <link rel="icon" href="data:,"/>
-<title>Number Blocks — A Math Adventure</title>
+<title>Cube Squad — A Math Adventure</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -197,6 +197,12 @@
   .newborn{animation:blockIn .5s cubic-bezier(.2,1.4,.4,1);z-index:2;}
   .draggable{touch-action:none;cursor:grab;position:relative;}
   .draggable.dragging{cursor:grabbing;z-index:6;filter:brightness(1.1);box-shadow:0 12px 20px rgba(0,0,0,.32);}
+  /* Drag-to-combine (Addition / Multiplication / Take Away): group boxes are
+     draggable; no fixed widths, so phone layouts wrap exactly as before. */
+  .drag-combine{touch-action:none;cursor:grab;position:relative;}
+  .drag-combine.dragging{cursor:grabbing;z-index:6;filter:brightness(1.08);box-shadow:0 12px 20px rgba(0,0,0,.25);}
+  .drag-combine.drop-target{outline:4px dashed #22c55e;outline-offset:2px;}
+  .drag-hint{font-weight:900;color:#475569;font-size:15px;text-align:center;}
   .feedback.good{color:#15803d;} .feedback.try{color:#b45309;}
   .next-row{display:flex;justify-content:center;margin-top:6px;min-height:58px;}
 
@@ -237,7 +243,7 @@
         <div class="mini" style="background:#f97316;height:48px">2</div>
         <div class="mini" style="background:#22c55e;height:58px">3</div>
       </div>
-      <h1>Number Blocks<span id="brandSub">A Math Adventure</span></h1>
+      <h1>Cube Squad<span id="brandSub">A Math Adventure</span></h1>
     </div>
     <div class="hud">
       <div class="pill" title="Stars you've earned">⭐ <span id="stars">0</span></div>
@@ -279,7 +285,7 @@
   </section>
 
   <section class="friends">
-    <h3>Meet the Number Friends 👋</h3>
+    <h3>Meet the Cube Squad 👋</h3>
     <p>Tap a friend to hear its number. Taller buddies are bigger numbers, a ★ means odd, and 4 and 9 can turn into squares! Ten ones make a Ten — and ten tens make a Hundred!</p>
     <div class="friends-row" id="friendsRow"></div>
   </section>
@@ -940,6 +946,94 @@
     return '<div class="eq-visual">'+left+'<span class="eq-op">'+op+'</span>'+right+'<span class="eq-op">=</span><span class="eq-q">?</span></div>';
   }
 
+  /* ================= Drag-to-combine =================
+     Additional input alongside the existing answer-tap flow: dragging one
+     group box onto another combines the groups and wins the round via the
+     same winRound() path as a correct tap (same stars, sounds, praise).
+     A missed drop springs back with NO state change, so tapping the answer
+     always still works -- no round can deadlock on drag. Build It's own
+     drag code (drawBuild) is untouched; this helper is only wired in
+     roundAdd / roundSub / roundMul below. */
+  function winByDrag(){
+    if(state.locked) return;
+    state.locked = true;
+    answerArea.querySelectorAll(".choice").forEach(function(b){
+      if(parseInt(b.getAttribute("data-val"),10)===state.answer) b.classList.add("correct","pop");
+    });
+    winRound();
+  }
+  function dragHint(text){
+    var d=document.createElement("div"); d.className="drag-hint"; d.textContent=text;
+    visual.appendChild(d);
+  }
+  function enableDragCombine(el, targets, onCombine){
+    el.classList.add("drag-combine");
+    el.addEventListener("pointerdown", function(ev){
+      if(state.locked) return;
+      ev.preventDefault();
+      var sx=ev.clientX, sy=ev.clientY, moved=false, target=null;
+      el.classList.add("dragging");
+      squeakSound();
+      try{ el.setPointerCapture(ev.pointerId); }catch(e){}
+      function hitTarget(x, y){
+        for(var i=0;i<targets.length;i++){
+          if(targets[i]===el) continue;
+          var r=targets[i].getBoundingClientRect();
+          if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom) return targets[i];
+        }
+        return null;
+      }
+      function mv(e){
+        var dx=e.clientX-sx, dy=e.clientY-sy;
+        if(Math.abs(dx)+Math.abs(dy)>8) moved=true;
+        el.style.transform="translate("+dx+"px,"+dy+"px) rotate("+Math.max(-18,Math.min(18,dx*0.15))+"deg) scale(1.08)";
+        var nt = moved ? hitTarget(e.clientX, e.clientY) : null;
+        if(nt!==target){
+          if(target) target.classList.remove("drop-target");
+          target=nt;
+          if(target) target.classList.add("drop-target");
+        }
+      }
+      function up(e){
+        el.removeEventListener("pointermove", mv);
+        el.removeEventListener("pointerup", up);
+        el.removeEventListener("pointercancel", up);
+        el.classList.remove("dragging");
+        if(target) target.classList.remove("drop-target");
+        if(state.locked){ el.style.transform=""; return; }
+        if(moved && target){
+          el.style.transform="";
+          onCombine(el, target);
+        } else if(moved){
+          el.style.transition="transform .3s cubic-bezier(.2,1.8,.4,1)";
+          el.style.transform="";
+          boingSound();
+          setTimeout(function(){ el.style.transition=""; }, 320);
+        } else {
+          el.style.transform="";
+        }
+      }
+      el.addEventListener("pointermove", mv);
+      el.addEventListener("pointerup", up);
+      el.addEventListener("pointercancel", up);
+    });
+  }
+  function combineAddVisual(a, b, ans){
+    var inner = (ans<=20) ? buddyHTML(ans, ans<=10?28:18) : placeValueHTML(ans,{});
+    visual.innerHTML='<div class="eq-visual"><div class="group-box"><small>'+a+' + '+b+'</small>'+inner+'</div><span class="eq-op">=</span><span class="eq-q">'+ans+'</span></div>';
+    winByDrag();
+  }
+  function combineMulVisual(ans){
+    var inner = (ans<=20) ? buddyHTML(ans, 20) : (ans<=60 ? '<div class="group-row">'+miniCubesHTML(ans, colorFor(5))+'</div>' : placeValueHTML(ans,{}));
+    visual.innerHTML='<div class="eq-visual"><div class="group-box"><small>all together</small>'+inner+'</div><span class="eq-op">=</span><span class="eq-q">'+ans+'</span></div>';
+    winByDrag();
+  }
+  function combineSubVisual(a, b, ans){
+    var inner = (ans<=10) ? buddyHTML(ans, 26) : '<div class="group-row">'+miniCubesHTML(ans, "#14b8a6")+'</div>';
+    visual.innerHTML='<div class="eq-visual"><div class="group-box"><small>'+a+' take away '+b+'</small>'+inner+'</div><span class="eq-op">=</span><span class="eq-q">'+ans+'</span></div>';
+    winByDrag();
+  }
+
   function roundAdd(){
     var a,b;
     if(state.level===1){ a=rand(1,12); b=rand(1, Math.min(9,20-a)); if(a+b<3) b=3; }
@@ -953,6 +1047,12 @@
       visual.innerHTML = equationVisual(a,"+",b,{forcePV: state.level===3 || a>20});
     }
     renderChoices(ans, state.level===1?4:(state.level===2?10:60));
+    /* Drag-to-combine: drag either addend group onto the other. */
+    (function(){
+      var boxes=visual.querySelectorAll(".group-box");
+      dragHint("\u{1F446} Drag the groups together to combine them");
+      boxes.forEach(function(box){ enableDragCombine(box, boxes, function(){ combineAddVisual(a, b, ans); }); });
+    })();
   }
 
   function roundSub(){
@@ -970,6 +1070,19 @@
       visual.innerHTML = equationVisual(a,"−",b,{forcePV:true}) + '<div style="font-weight:900;color:#475569">'+b+' + ? = '+a+'</div>';
     }
     renderChoices(ans, state.level===1?4:(state.level===2?10:60));
+    /* Drag-to-take-away (only where the subtrahend is a draggable numeral
+       box, i.e. a<=20): drag the number onto the blocks to take it away.
+       For a>20 the place-value + missing-addend visual has no such box,
+       so tap-only there -- deliberately not wired. */
+    if(a<=20){
+      (function(){
+        var boxes=visual.querySelectorAll(".group-box");
+        if(boxes.length>=2){
+          dragHint("\u{1F446} Drag the number onto the blocks to take it away");
+          enableDragCombine(boxes[1], [boxes[0]], function(){ combineSubVisual(a, b, ans); });
+        }
+      })();
+    }
   }
 
   function roundMul(){
@@ -997,6 +1110,14 @@
       visual.innerHTML=html2;
     }
     renderChoices(ans, state.level===1?5:(state.level===2?10:40));
+    /* Drag-to-combine: drag any group onto another to gather all groups. */
+    (function(){
+      var boxes=visual.querySelectorAll(".group-box");
+      if(boxes.length>=2){
+        dragHint("\u{1F446} Drag the groups together to combine them");
+        boxes.forEach(function(box){ enableDragCombine(box, boxes, function(){ combineMulVisual(ans); }); });
+      }
+    })();
   }
   function skipCount(groups, size){
     var parts=[]; for(var i=1;i<=groups;i++) parts.push(i*size); return parts.join(", ");
