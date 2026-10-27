@@ -656,6 +656,33 @@ html.game-immersive-open body {
   overscroll-behavior: none;
 }
 
+/* Cube Squad page lock (see NumberBlocks.tsx): the game page is mounted
+   with this class for its whole lifetime, not just in immersive mode, so
+   the host page has no vertical scroll path at all and a scroll gesture
+   cannot reveal the browser address bar. The shell is exactly 100dvh and
+   the iframe fills it; horizontal scrolling inside the game iframe (the
+   friends strip) is unaffected because this only locks the host page. */
+html.cube-squad-page,
+html.cube-squad-page body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+.cube-squad-page-shell {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.cube-squad-page-shell .game-stage:not(.is-immersive) {
+  height: 100%;
+}
+
+.cube-squad-page-shell .game-stage:not(.is-immersive) iframe {
+  height: 100%;
+}
+
 html.game-immersive-open nav {
   visibility: hidden;
   pointer-events: none;

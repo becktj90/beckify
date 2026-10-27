@@ -42,7 +42,7 @@ const GAME_FACTS = [
 ] as const;
 
 /**
- * Public games hub. Beckify's on-site games: Kestrel Heavy and Number Blocks.
+ * Public games hub. Beckify's on-site games: Kestrel Heavy and Cube Squad.
  */
 export const Games = () => {
   return (
@@ -61,7 +61,7 @@ export const Games = () => {
           <div>
             <p className="type-label text-[var(--accent)]">The games brief</p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-              Beckify's on-site games: Kestrel Heavy, the Pier 7 launch arcade, and Number Blocks, a talking number-blocks math game for kids. Play in the browser — no install, no ads.
+              Beckify's on-site games: Kestrel Heavy, the Pier 7 launch arcade, and Cube Squad, a talking cube math game for kids. Play in the browser — no install, no ads.
             </p>
           </div>
           <ul className="flex flex-wrap gap-2" aria-label="Games at a glance">

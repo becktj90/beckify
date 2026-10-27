@@ -234,9 +234,9 @@ export const GAMES: Game[] = [
     url: "/games/kestrel-heavy",
   },
   {
-    name: "Number Blocks",
+    name: "Cube Squad",
     description:
-      "A talking number-blocks math game for kids: count, build, add, subtract, multiply, and share with number buddies, up to 1,000. Visual and audio-led, no reading needed.",
+      "A talking cube math game for kids: count, build, add, subtract, multiply, and share with cube friends, up to 1,000. Visual and audio-led, no reading needed.",
     url: "/games/number-blocks",
   },
 ];

@@ -94,7 +94,7 @@ assert.match(siteStats, /PUBLIC_GAME_COUNT: number = 2/);
 const siteContent = fs.readFileSync(path.join(root, 'src/data/site-content.ts'), 'utf8');
 assert.match(siteContent, /name: "Kestrel Heavy"/);
 assert.match(siteContent, /url: "\/games\/kestrel-heavy"/);
-assert.match(siteContent, /name: "Number Blocks"/);
+assert.match(siteContent, /name: "Cube Squad"/);
 assert.match(siteContent, /url: "\/games\/number-blocks"/);
 const gameNames = [...siteContent.matchAll(/name: "([^"]+)"/g)]
   .map((m) => m[1])
@@ -106,6 +106,8 @@ assert.match(appSrc, /path="\/games\/kestrel-heavy"/);
 assert.match(appSrc, /path="\/games\/kestrel-heavy\/"/);
 assert.match(appSrc, /path="\/games\/number-blocks"/);
 assert.match(appSrc, /path="\/games\/number-blocks\/"/);
+assert.match(appSrc, /path="\/games\/number-blocks\/privacy"/);
+assert.match(appSrc, /path="\/games\/number-blocks\/privacy\/"/);
 assert.match(appSrc, /path="\/games\/"/);
 assert.match(appSrc, /path="\/games\/new-glenn-runner\/"/);
 assert.doesNotMatch(appSrc, /path="\/games\/(?!kestrel-heavy|number-blocks|new-glenn-runner)[^"]+/);
@@ -147,4 +149,4 @@ assert.doesNotMatch(gamesHub, /value:\s*"2"/, 'arcade brief must not show a cryp
 assert.doesNotMatch(gamesHub, /padStart\(2/, 'arcade brief must not zero-pad the game count like a dashboard');
 assert.doesNotMatch(gamesHub, /width:\s*"(100|76|18)%"/, 'arcade brief must not use fake progress bars');
 
-console.log('Kestrel Heavy and Number Blocks are the public games; HexGL and kid-photo playables stay gone');
+console.log('Kestrel Heavy and Cube Squad are the public games; HexGL and kid-photo playables stay gone');

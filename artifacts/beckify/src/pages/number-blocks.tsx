@@ -10,7 +10,7 @@ export default function NumberBlocksPage() {
         description={PAGE_SEO["/games/number-blocks"].description}
         path="/games/number-blocks"
         schema={videoGameSchema(
-          "Number Blocks",
+          "Cube Squad",
           PAGE_SEO["/games/number-blocks"].description,
           "/games/number-blocks",
         )}

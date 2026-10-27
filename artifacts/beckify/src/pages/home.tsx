@@ -255,7 +255,7 @@ export default function Home() {
                     </div>
                     <h2 className="font-display text-lg font-semibold tracking-[-0.015em] leading-snug text-[var(--foreground)]">Games</h2>
                     <p className="text-sm text-[var(--muted)] leading-[1.65] tracking-[0.01em]">
-                      {PUBLIC_GAME_COUNT} browser games — Kestrel Heavy, a launch arcade, and Number Blocks, a kids' math game. No install, just play.
+                      {PUBLIC_GAME_COUNT} browser games — Kestrel Heavy, a launch arcade, and Cube Squad, a kids' math game. No install, just play.
                     </p>
                   </div>
                 </div>

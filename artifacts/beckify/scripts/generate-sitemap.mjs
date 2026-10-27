@@ -117,6 +117,7 @@ const urls = [
   ["/games", "monthly", "0.5", lastChange("src/pages/games.tsx")],
   ["/games/kestrel-heavy", "monthly", "0.5", lastChange("src/pages/kestrel-heavy.tsx")],
   ["/games/number-blocks", "monthly", "0.5", lastChange("src/pages/number-blocks.tsx")],
+  ["/games/number-blocks/privacy", "yearly", "0.5", lastChange("src/pages/cube-squad-privacy.tsx")],
   ["/projects", "monthly", "0.5", lastChange("src/pages/projects.tsx")],
   ["/projects/vespa-p200e", "yearly", "0.5", lastChange("src/pages/vespa-p200e.tsx")],
   ["/projects/honda-xr650r", "yearly", "0.5", lastChange("src/pages/honda-xr650r.tsx")],

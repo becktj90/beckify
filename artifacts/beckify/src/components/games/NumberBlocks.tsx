@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useGameFullscreen } from "@/hooks/use-game-fullscreen";
 
@@ -8,28 +8,51 @@ export function NumberBlocks() {
   const stageRef = useRef<HTMLDivElement>(null);
   const { immersive, toggleFullscreen, exitFullscreen } = useGameFullscreen();
 
+  // Page-level scroll lock: the game page must never scroll vertically, so
+  // a scroll gesture can never reveal the browser address bar — in the
+  // default view as well as in fullscreen. The existing
+  // `game-immersive-open` lock only covers the immersive toggle; this class
+  // covers the whole time the page is mounted and is removed on unmount.
+  // It locks the host page only — the friends strip's horizontal scroll
+  // lives inside the game iframe and is untouched.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("cube-squad-page");
+    return () => {
+      root.classList.remove("cube-squad-page");
+    };
+  }, []);
+
   return (
-    <section className="fixed inset-0 z-[60] h-[100dvh] w-full bg-[#05050d]" aria-labelledby="number-blocks-title">
-      <h1 id="number-blocks-title" className="sr-only">Number Blocks</h1>
+    <section className="cube-squad-page-shell fixed inset-0 z-[60] h-[100dvh] w-full overflow-hidden bg-[#05050d]" aria-labelledby="cube-squad-title">
+      <h1 id="cube-squad-title" className="sr-only">Cube Squad</h1>
       <div
         ref={stageRef}
         className={`game-stage relative overflow-hidden bg-[#05050d] ${immersive ? "fixed inset-0 z-[80] is-immersive rounded-none border-0" : "h-full w-full min-w-0"}`}
       >
         <iframe
           src={GAME_SRC}
-          title="Number Blocks"
+          title="Cube Squad"
           className="absolute inset-0 block h-full w-full border-0 bg-black"
           allow="fullscreen; autoplay"
           allowFullScreen
         />
         {!immersive && (
-          <a
-            href={`${import.meta.env.BASE_URL}games`}
-            className="kh-back-link absolute bottom-[max(0.25rem,env(safe-area-inset-bottom))] left-2 z-10 inline-flex h-9 items-center rounded-md border border-white/30 bg-[#0a0f24]/70 px-2.5 text-xs font-bold tracking-wide text-white/80 backdrop-blur"
-            aria-label="Back to Beckify games"
-          >
-            &larr; BECKIFY
-          </a>
+          <div className="absolute bottom-[max(0.25rem,env(safe-area-inset-bottom))] left-2 z-10 flex items-center gap-2">
+            <a
+              href={`${import.meta.env.BASE_URL}games`}
+              className="kh-back-link inline-flex h-9 items-center rounded-md border border-white/30 bg-[#0a0f24]/70 px-2.5 text-xs font-bold tracking-wide text-white/80 backdrop-blur"
+              aria-label="Back to Beckify games"
+            >
+              &larr; BECKIFY
+            </a>
+            <a
+              href={`${import.meta.env.BASE_URL}games/number-blocks/privacy`}
+              className="inline-flex h-9 items-center rounded-md border border-white/30 bg-[#0a0f24]/70 px-2.5 text-xs font-bold tracking-wide text-white/80 backdrop-blur"
+            >
+              Privacy
+            </a>
+          </div>
         )}
         <button
           type="button"

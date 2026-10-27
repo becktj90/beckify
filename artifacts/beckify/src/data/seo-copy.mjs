@@ -140,9 +140,9 @@ export const PAGE_SEO = {
       "Undergraduate servo analysis: pick an example plant or enter your own G(s), then tune PID, Bode margins, root locus, lead compensators, and state-feedback. Educational approximations — not for commissioning.",
   },
   "/games": {
-    title: "Beckify browser games — Kestrel Heavy and Number Blocks",
+    title: "Beckify browser games — Kestrel Heavy and Cube Squad",
     description:
-      "Play Beckify's on-site browser games: Kestrel Heavy, the Pier 7 launch arcade, and Number Blocks, a talking number-blocks math game for kids. Keyboard or touch, no ads, no install.",
+      "Play Beckify's on-site browser games: Kestrel Heavy, the Pier 7 launch arcade, and Cube Squad, a talking cube math game for kids. Keyboard or touch, no ads, no install.",
   },
   "/games/kestrel-heavy": {
     title: "Play Kestrel Heavy — Pier 7 launch arcade",
@@ -150,9 +150,14 @@ export const PAGE_SEO = {
       "Play Kestrel Heavy in the browser: launch from Pier 7 on KID, CADET, or PAD RAT difficulty, recover on barge Haven, and keep a local personal best. No install.",
   },
   "/games/number-blocks": {
-    title: "Play Number Blocks — kids' math game",
+    title: "Play Cube Squad — kids' math game",
     description:
-      "Play Number Blocks in the browser: a talking number-blocks math game for kids — count, build, add, subtract, multiply, and share, up to 1,000. Visual and audio-led, no reading needed, no install.",
+      "Play Cube Squad in the browser: a talking cube math game for kids — count, build, add, subtract, multiply, and share, up to 1,000. Visual and audio-led, no reading needed, no install.",
+  },
+  "/games/number-blocks/privacy": {
+    title: "Cube Squad privacy policy — collects nothing",
+    description:
+      "Cube Squad privacy policy: the kids' math game collects no data — no accounts, no ads, no analytics, no third-party SDKs. A name typed at the start stays only in the page's memory for that session.",
   },
   "/sitemap": {
     title: "Beckify site map — every calculator, project, and page",
@@ -174,6 +179,7 @@ export const STATIC_ROUTE_PATHS = [
   "games",
   "games/kestrel-heavy",
   "games/number-blocks",
+  "games/number-blocks/privacy",
   "games/new-glenn-runner",
   // Legacy redirects only (see generate-static-routes.mjs). Not in sitemap.
   "gear",
