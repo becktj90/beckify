@@ -465,7 +465,12 @@ enum CarPlayCopySource {
             motorTempC: model.value(.motorTempC).value,
             planningUsesDefaults: model.planningRangeMiles != nil && model.effectivePlanning.usesDefaults,
             rangeLowMiles: model.rangeBandMiles?.low,
-            rangeHighMiles: model.rangeBandMiles?.high
+            rangeHighMiles: model.rangeBandMiles?.high,
+            driveSkillScore: model.insights.skill.score,
+            driveSkillTier: model.insights.skill.tier?.title,
+            harshBrakes: model.insights.skill.harshBrakes,
+            harshAccels: model.insights.skill.harshAccels,
+            hardCorners: model.insights.skill.hardCorners
         )
     }
 }

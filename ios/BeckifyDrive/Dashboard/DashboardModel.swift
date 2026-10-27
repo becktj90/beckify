@@ -8,6 +8,8 @@ struct DriveInsights {
     var gpsTrip = DriveTripStats()
     var regen = RegenScoreTracker()
     var energy = TripEnergyLedger()
+    /// Driving smoothness from phone G, speed and pedal. Runs on every layout.
+    var skill = DriveSkillTracker()
 
     init(spec: VehicleSpec? = .bolt) {
         let spec = spec ?? .bolt
@@ -430,6 +432,14 @@ final class DashboardModel: ObservableObject, OBDSessionObserving {
         if layout == .ev {
             next.energy.add(amps: liveAmps, speedKph: liveSpeed ?? (gps?.freshness == .live ? gps?.value : nil), altitudeMeters: altitude, at: now)
         }
+        // Phone G peaks since the last tick plus speed and pedal from the car.
+        // With no aligned G the tracker falls back to the change in speed.
+        next.skill.add(
+            window: sensors.gForce.takeWindow(),
+            speedKph: liveSpeed ?? (gps?.freshness == .live ? gps?.value : nil),
+            throttlePercent: liveValue(.acceleratorPercent) ?? liveValue(.throttlePercent),
+            at: now
+        )
         insights = next
 
         if layout == .ev, let ah = liveValue(.capacityAh) {

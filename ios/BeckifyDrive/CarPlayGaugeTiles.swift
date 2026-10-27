@@ -642,11 +642,13 @@ struct CarPlayTilesPreview: View {
             speedKph: 96.6, speedSource: "OBD", rangeMiles: 214, weatherRangeMiles: 188,
             whPerMile: 290, packTempC: 29, ambientC: 9, hvCurrentAmps: 115, torqueNm: 271,
             tripKm: 23.4, maxSpeedKph: 112, avgSpeedKph: 54, regenKWh: 0.8, netKWh: 3.3,
-            regenScore: 0.62, motorTempC: 41
+            regenScore: 0.62, motorTempC: 41,
+            driveSkillScore: 93, driveSkillTier: "Chauffeur", harshBrakes: 1, harshAccels: 0, hardCorners: 0
         )),
         ("REGEN · Live · Bolt EUV", DriveCarPlayTileInputs(
             layout: .ev, socPercent: 12, powerKW: -24, peakPowerKW: 42, flow: .regen,
-            speedKph: 52, speedSource: "OBD", whPerMile: 260, packTempC: 48
+            speedKph: 52, speedSource: "OBD", whPerMile: 260, packTempC: 48,
+            driveSkillScore: 31, driveSkillTier: "Rough", harshBrakes: 6, harshAccels: 3, hardCorners: 4
         )),
         ("Live · Generic OBD", DriveCarPlayTileInputs(
             layout: .powertrain, speedKph: 88.5, speedSource: "OBD", rpm: 2_430,
