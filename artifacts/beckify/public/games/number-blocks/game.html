@@ -324,8 +324,8 @@
 <script>
 (function(){
   "use strict";
-  var COLORS = {1:"#ef4444",2:"#f97316",3:"#eab308",4:"#22c55e",5:"#3b82f6",6:"#8b5cf6",7:"#ec4899",8:"#78716c",9:"#0ea5e9",0:"#64748b"};
-  var DIGIT_COLORS = ["#64748b","#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#ec4899","#78716c","#0ea5e9"];
+  var COLORS = {1:"#f472b6",2:"#2dd4bf",3:"#a78bfa",4:"#a3e635",5:"#fb923c",6:"#38bdf8",7:"#fbbf24",8:"#34d399",9:"#fdba74",0:"#64748b"};
+  var DIGIT_COLORS = ["#64748b","#f472b6","#2dd4bf","#a78bfa","#a3e635","#fb923c","#38bdf8","#fbbf24","#34d399","#fdba74"];
   var state = { mode:"count", level:1, stars:0, streak:0, answer:null, locked:false, sound:true, voice:true,
                 buildTarget:0, buildH:0, buildT:0, buildF:0, buildO:0, questionClips:[], lastAdded:null, suppressTap:false, counted:0, countTotal:0, jingled:false };
   var $ = function(id){ return document.getElementById(id); };
@@ -447,15 +447,14 @@
   /* ----- Silly sound palette (ElevenLabs files, kid-safe volumes) ----- */
   function boingSound(){ sfx("sfx-boing"); }
   function squeakSound(){ sfx("sfx-squeak"); }
-  function fartSound(){ sfx("sfx-fart"); }
   function meowSound(){ sfx("sfx-meow"); }
   function sillyTap(){
     var r=Math.random();
-    if(r<0.4) squeakSound(); else if(r<0.7) popSound(); else if(r<0.9) boingSound(); else fartSound();
+    if(r<0.4) squeakSound(); else if(r<0.7) popSound(); else if(r<0.9) boingSound(); else boingSound();
   }
   function friendSound(){
     var r=Math.random();
-    if(r<0.4) meowSound(); else if(r<0.65) boingSound(); else if(r<0.85) squeakSound(); else fartSound();
+    if(r<0.4) meowSound(); else if(r<0.65) boingSound(); else if(r<0.85) squeakSound(); else squeakSound();
   }
   function jingle(){ /* ElevenLabs-generated jingle + welcome voice, plays once on first tap */
     sfx("sfx-jingle");
@@ -533,7 +532,7 @@
   /* ---------- Helpers ---------- */
   function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
   function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
-  function colorFor(n){ return DIGIT_COLORS[Math.abs(n)%10] || "#3b82f6"; }
+  function colorFor(n){ return buddyPalette(Math.abs(n)).bg; } /* Count It cubes + group boxes use the buddy palette, so counting color-matches */
   function maxFor(){ return state.level===1?20:(state.level===2?100:1000); }
 
   function makeChoices(answer, spread){
@@ -561,16 +560,14 @@
     return '<span class="beyes">'+eyes+'</span><span class="bblush l"></span><span class="bblush r"></span><span class="bmouth '+mouth+'"></span>';
   }
 
-  /* Buddy colors follow the reference scheme: 1 red, 2 orange, 3 yellow,
-     4 green, 5 cyan, 6 purple, 7 rainbow, 8 pink, 9 grey. Tens take their
-     tens-digit color (20 orange, 50 blue, 70 rainbow) -- except 10 and 100,
-     which are white with red trim. */
-  var RAINBOW_GRADIENT = "linear-gradient(180deg,#ef4444 0%,#ef4444 16.7%,#f97316 16.7%,#f97316 33.4%,#eab308 33.4%,#eab308 50%,#22c55e 50%,#22c55e 66.7%,#3b82f6 66.7%,#3b82f6 83.4%,#8b5cf6 83.4%,#8b5cf6 100%)";
+  /* Buddy colors (fresh palette): 1 pink, 2 teal, 3 violet, 4 lime,
+     5 orange, 6 sky, 7 amber, 8 mint, 9 peach, 10 blue. Tens take their
+     tens-digit color (20 teal, 30 violet, 40 lime, 50 orange, 60 sky,
+     70 amber, 80 mint, 90 peach, 100 blue). */
   function buddyPalette(n){
-    if(n===10 || n===100) return { bg:"#ffffff", trim:true };
+    if(n===10 || n===100) return { bg:"#3b82f6" };
     var d = (n%10===0) ? (Math.floor(n/10)%10) : (n%10);
-    if(d===7) return { rainbow:true };
-    var map = {0:"#64748b",1:"#ef4444",2:"#f97316",3:"#eab308",4:"#22c55e",5:"#38bdf8",6:"#8b5cf6",8:"#ec4899",9:"#9ca3af"};
+    var map = {0:"#64748b",1:"#f472b6",2:"#2dd4bf",3:"#a78bfa",4:"#a3e635",5:"#fb923c",6:"#38bdf8",7:"#fbbf24",8:"#34d399",9:"#fdba74"};
     return { bg: map[d] || "#3b82f6" };
   }
 
@@ -581,8 +578,7 @@
     opts = opts||{};
     cubeSize = cubeSize||30;
     var pal = buddyPalette(n);
-    var color = pal.rainbow ? "transparent" : pal.bg;
-    var trimStyle = pal.trim ? ";border-color:#ef4444" : "";
+    var color = pal.bg;
     var pop = opts.pop||0;
     var star = (n%2===1) ? '<span class="bstar">★</span>' : '';
     var badgeSize = Math.max(26, Math.round(cubeSize*0.95));
@@ -598,11 +594,11 @@
       var faceAt = (pop>0 && pop<n) ? pop : 0; /* face stays on the top block that's left */
       for(var j=0;j<Math.max(1,n);j++){
         var popped = j < pop;
-        cubes += '<span class="bcube'+(popped?' popped':'')+'" style="width:'+cubeSize+'px;height:'+cubeSize+'px;background:'+color+trimStyle+'">'
+        cubes += '<span class="bcube'+(popped?' popped':'')+'" style="width:'+cubeSize+'px;height:'+cubeSize+'px;background:'+color+'">'
           + (j===faceAt ? faceHTML(n)+star+'<span class="barm left"></span><span class="barm right"></span>' : '')
           + '</span>';
       }
-      body = '<span class="bstack"'+(pal.rainbow ? ' style="background:'+RAINBOW_GRADIENT+'"' : '')+'>'+cubes+'</span>';
+      body = '<span class="bstack">'+cubes+'</span>';
     }
     var bob = ' style="animation-duration:'+(2.2+(n%4)*0.35).toFixed(2)+'s;animation-delay:'+(n*0.18).toFixed(2)+'s"';
     return '<span class="buddy"'+bob+'>'+badge+body+'<span class="blegs"><i></i><i></i></span></span>';
@@ -896,7 +892,7 @@
         if(buildValue()!==before) speakBuildTotal();
       });
     });
-    /* Drag a block for fun — fling it far and it pops off with a silly fart */
+    /* Drag a block for fun — fling it far and it pops off with a boing */
     visual.querySelectorAll(".pv-stack .draggable").forEach(function(el){
       el.addEventListener("pointerdown", function(ev){
         if(state.locked) return;
@@ -923,7 +919,7 @@
             if(col==="t"&&state.buildT>0) state.buildT--;
             if(col==="f"&&state.buildF>0) state.buildF--;
             if(col==="o"&&state.buildO>0) state.buildO--;
-            fartSound(); drawBuild(); speakBuildTotal();
+            boingSound(); drawBuild(); speakBuildTotal();
           } else if(moved){
             state.suppressTap=true;
             el.style.transition="transform .3s cubic-bezier(.2,1.8,.4,1)";
@@ -1162,9 +1158,9 @@
     var row=$("friendsRow"); var html="";
     [1,2,3,4,5,6,7,8,9,10,20,50,100].forEach(function(n){
       if(n<=10) html+='<button class="friend" data-n="'+n+'">'+buddyHTML(n, n===10?17:19)+'<b>'+n+'</b></button>';
-      else if(n===20) html+='<button class="friend" data-n="20"><span style="display:flex;gap:3px"><span class="ten-rod" style="background:#f97316">10</span><span class="ten-rod" style="background:#f97316">10</span></span><b>20</b></button>';
-      else if(n===50) html+='<button class="friend" data-n="50"><span style="display:flex;gap:3px">'+repeat('<span class="ten-rod" style="background:#38bdf8">10</span>',5)+'</span><b>50</b></button>';
-      else html+='<button class="friend" data-n="100"><span class="hundred" style="background:#ffffff;border-color:#ef4444;color:#ef4444">100</span><b>100</b></button>';
+      else if(n===20) html+='<button class="friend" data-n="20"><span style="display:flex;gap:3px"><span class="ten-rod" style="background:#2dd4bf">10</span><span class="ten-rod" style="background:#2dd4bf">10</span></span><b>20</b></button>';
+      else if(n===50) html+='<button class="friend" data-n="50"><span style="display:flex;gap:3px">'+repeat('<span class="ten-rod" style="background:#fb923c">10</span>',5)+'</span><b>50</b></button>';
+      else html+='<button class="friend" data-n="100"><span class="hundred" style="background:#3b82f6;color:#ffffff">100</span><b>100</b></button>';
     });
     row.innerHTML=html;
     row.querySelectorAll(".friend").forEach(function(f){
