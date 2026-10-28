@@ -75,7 +75,7 @@
   .visual{margin:16px 0 6px;min-height:210px;background:#f0f9ff;border:3px dashed #7dd3fc;border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
   .visual.plain{background:#fffbeb;border-color:#fcd34d;}
 
-  /* Number block character */
+  /* Cube character */
   .nb{display:inline-flex;flex-direction:column;align-items:center;gap:0;vertical-align:bottom;}
   .nb .cube{border:3px solid rgba(0,0,0,.22);border-bottom-width:2px;display:grid;place-items:center;color:#fff;font-family:Fredoka,sans-serif;font-weight:700;position:relative;box-shadow:inset 0 -6px 0 rgba(0,0,0,.12), inset 0 4px 0 rgba(255,255,255,.35);}
   .nb .cube:first-child{border-radius:10px 10px 0 0;}
@@ -305,7 +305,7 @@
     <div style="font-size:56px">🏆</div>
     <h2 id="celebTitle">Superstar!</h2>
     <p id="celebText">You got 5 in a row!</p>
-    <button class="big-btn primary" id="celebBtn">▶</button>
+    <button class="big-btn primary" id="celebBtn" aria-label="Keep playing">▶</button>
   </div>
 </div>
 
@@ -702,7 +702,7 @@
         + buddyHTML(state.answer, state.answer<=10?28:(state.answer<=16?18:14));
       visual.appendChild(rb);
     }
-    nextRow.innerHTML='<button class="big-btn primary" id="nextBtn">▶</button>';
+    nextRow.innerHTML='<button class="big-btn primary" id="nextBtn" aria-label="Next">▶</button>';
     $("nextBtn").addEventListener("click", function(){ squeakSound(); newRound(); });
     if(state.mode==="build") lockBuildControls();
     if(state.streak>0 && state.streak%5===0){
@@ -819,8 +819,8 @@
         '<button class="build-btn" data-add="1" style="background:#ef4444"><b>+1</b></button>'+
       '</div>'+
       '<div class="build-actions">'+
-        '<button class="big-btn" id="buildClear" style="font-size:26px">↺</button>'+
-        '<button class="big-btn primary" id="buildCheck" style="font-size:26px">✓</button>'+
+        '<button class="big-btn" id="buildClear" style="font-size:26px" aria-label="Start over">↺</button>'+
+        '<button class="big-btn primary" id="buildCheck" style="font-size:26px" aria-label="Check my answer">✓</button>'+
       '</div>';
     answerArea.querySelectorAll("[data-add]").forEach(function(b){
       b.addEventListener("click", function(){
