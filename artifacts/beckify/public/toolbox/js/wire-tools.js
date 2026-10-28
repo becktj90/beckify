@@ -225,7 +225,7 @@ window.calcConduitFillAdvanced = function () {
       totalArea: totalArea, racewayArea: vizArea,
       fillPct: (totalArea / vizArea) * 100, limitPct: limit.pct, limitBasis: limit.basis,
       pass: totalArea <= vizArea * (limit.pct / 100),
-    });
+    }, { top: true });
   };
 
   if (chosenSize === 'auto') {
@@ -312,6 +312,38 @@ function cfSyncTradeOptions() {
 }
 window.cfSyncTradeOptions = cfSyncTradeOptions;
 
+/** Live to-scale cross-section at the top of the same-size card. */
+function cfPreview() {
+  const host = document.getElementById('cf_viz');
+  if (!host) return;
+  const clear = function () { host.textContent = ''; };
+  if (!window.ConduitViz || typeof CONDUIT_TYPES === 'undefined') return clear();
+  const val = function (id, d) { const n = document.getElementById(id); return n ? n.value : d; };
+  const qty = parseInt(val('cf_qty', ''), 10) || 0;
+  const awg = val('cf_awg', '12');
+  const tradeSize = val('cf_conduit', '3/4');
+  const type = val('cf_type', 'EMT');
+  const insul = val('cf_insul', 'THHN');
+  const nippleEl = document.getElementById('cf_nipple');
+  const isNipple = !!(nippleEl && nippleEl.checked);
+  const conduit = CONDUIT_TYPES[type];
+  const insTable = INSULATION_TYPES[insul];
+  const area = conduit && conduit.areas[tradeSize];
+  const wireArea = insTable && insTable.areas[awg];
+  if (!area || !wireArea || qty < 1) return clear();
+  const totalWireArea = qty * wireArea;
+  const limit = conduitFillLimit(qty, isNipple);
+  clear();
+  window.ConduitViz.mount(host, {
+    type: type, trade: tradeSize, nipple: isNipple,
+    groups: [{ qty: qty, size: awg, insul: insul, area: wireArea, label: wireSizeLabel(awg) + ' ' + insul }],
+    totalArea: totalWireArea, racewayArea: area,
+    fillPct: totalWireArea / area * 100, limitPct: limit.pct, limitBasis: limit.basis,
+    pass: totalWireArea <= area * (limit.pct / 100),
+  });
+}
+window.cfPreview = cfPreview;
+
 window.calcConduitFill = function () {
   const el = wtClear('cf_result');
   if (!el) return;
@@ -352,20 +384,23 @@ window.calcConduitFill = function () {
     wtRow(el, 'Minimum raceway size', minSize ? minSize + '" ' + type : 'Larger than any ' + type + ' size — split the run', { bold: true });
   }
 
-  if (window.ConduitViz) {
-    window.ConduitViz.mount(el, {
-      type: type, trade: tradeSize, nipple: isNipple,
-      groups: [{ qty: qty, size: awg, insul: insul, area: wireArea, label: label }],
-      totalArea: totalWireArea, racewayArea: area,
-      fillPct: fillPct, limitPct: limit.pct, limitBasis: limit.basis, pass: pass,
-    });
-  }
+  /* The drawing lives in #cf_viz at the top of the card, above the inputs, so
+     it is visible without scrolling past them (and redraws live in cfPreview). */
+  el.dataset.visualized = '1';
+  cfPreview();
   appendCopyBtn(el);
 };
 
 document.addEventListener('DOMContentLoaded', function () {
   const typeEl = document.getElementById('cf_type');
   if (typeEl) typeEl.addEventListener('change', function () { cfSyncTradeOptions(); });
+  ['cf_type', 'cf_conduit', 'cf_awg', 'cf_insul', 'cf_qty', 'cf_nipple'].forEach(function (id) {
+    const n = document.getElementById(id);
+    if (!n) return;
+    n.addEventListener('change', cfPreview);
+    n.addEventListener('input', cfPreview);
+  });
+  cfPreview();
 });
 
 /* Same-size example — matches the iOS Conduit Fill example and the

@@ -321,7 +321,7 @@
    * Adds the drawing to a calculator result element. Call after the result rows
    * are built and before appendCopyBtn. Safe to call on every recalculation.
    */
-  function mount(resultEl, payload) {
+  function mount(resultEl, payload, opts) {
     if (!resultEl) return;
     var old = resultEl.querySelector('.calculation-visual');
     if (old) old.remove();
@@ -330,6 +330,11 @@
     if (!shell) return;
     var svg = shell(resultEl, 'Conduit cross-section: ' + payload.trade + ' inch ' + payload.type + ' at ' + num(payload.fillPct, 1) + ' percent fill, limit ' + payload.limitPct + ' percent');
     draw(svg, payload);
+    /* opts.top puts the drawing above the result rows (the iOS app does the
+       same: diagram first, numbers under it). */
+    if (opts && opts.top && svg.parentNode && svg.parentNode.parentNode === resultEl) {
+      resultEl.insertBefore(svg.parentNode, resultEl.firstChild);
+    }
     var readout = svg.parentNode.querySelector('.calculation-visual-readout');
     if (readout) {
       readout.textContent = payload.trade + '" ' + payload.type + ' · ' + num(payload.fillPct, 1) + '% of ' + payload.limitPct + '% allowed · ' + (payload.pass ? 'within NEC Table 1' : 'over NEC Table 1');

@@ -54,5 +54,12 @@ for (const size of Object.keys(ins.THHN.areas)) {
 ok("same-size card reaches 1000 kcmil", awgSelect.includes('value="1000"'));
 ok("conduit-viz.js is precached", /conduit-viz\.js/.test(fs.readFileSync(path.join(dir, "..", "sw.js"), "utf8")));
 
+// The same-size drawing sits at the top of its card, above the inputs, and the
+// guide card no longer pushes the calculator down the page.
+const cardHtml = html.slice(html.indexOf('id="sec-conduit"'));
+ok("cf_viz host precedes the same-size inputs", cardHtml.indexOf('id="cf_viz"') > 0 && cardHtml.indexOf('id="cf_viz"') < cardHtml.indexOf('id="cf_type"'));
+const mx = fs.readFileSync(path.join(dir, "math-explanations.js"), "utf8");
+ok("conduit guide renders after the calculator grid", /sec-conduit-adv'\)[\s\S]{0,120}\.card-grid/.test(mx));
+
 if (failures) { console.log(`\n${failures} failure(s)`); process.exit(1); }
 console.log("\nAll conduit viz checks passed");
