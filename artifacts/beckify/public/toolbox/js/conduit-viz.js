@@ -177,135 +177,189 @@
   }
   function num(n, d) { return Number(n).toFixed(d); }
 
+  /* Above this many conductors the exact settled pack gets slow (it searches
+     contact points for every circle), so the drawing shows the fill as an
+     area-true disc instead. The numbers are exact either way. */
+  var MAX_DRAWN = 200;
+
+  /* Ink that reads on each tint (the tints are all mid-bright). */
+  function ink() { return '#071016'; }
+
+  function pill(svg, x, y, w, h, label, color, bg) {
+    el('rect', { x: x, y: y, width: w, height: h, rx: h / 2, fill: bg, stroke: color, 'stroke-width': 1.4 }, svg);
+    txt(svg, x + w / 2, y + h / 2 + 5, label, { 'text-anchor': 'middle', fill: color, 'font-size': 13, 'font-weight': 700, 'letter-spacing': 1 });
+  }
+
+  function callout(svg, x, y, w, title, value) {
+    el('rect', { x: x, y: y, width: w, height: 46, rx: 10, fill: 'rgba(255,255,255,0.045)', stroke: 'rgba(255,255,255,0.08)' }, svg);
+    txt(svg, x + 12, y + 18, title.toUpperCase(), { fill: C.muted, 'font-size': 10.5, 'letter-spacing': 1.2, 'font-weight': 600 });
+    txt(svg, x + 12, y + 37, value, { fill: C.text, 'font-size': 14.5, 'font-weight': 700 });
+  }
+
   /**
    * Draws the cross-section into `svg` (replaces its contents, sets its viewBox).
+   * Same order as the iOS ConduitFillDiagram: status row, fill bar, to-scale
+   * bore, dimension line, callout tiles, legend, notes.
    * payload: {
    *   type, trade, groups: [{qty, size, insul, area, label}],
    *   fillPct, limitPct, limitBasis, pass, nipple
    * }
    */
   function draw(svg, p) {
-    var W = 640, H = 496;
-    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var W = 400, M = 20, H = 200;
     while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     el('rect', { 'data-plot-bg': '1', x: 0, y: 0, width: W, height: H, fill: C.bg }, svg);
 
     var b = bore(p.type, p.trade);
-    var defs = el('defs', {}, svg);
-    var grad = el('radialGradient', { id: 'cvWall', cx: '35%', cy: '30%', r: '85%' }, defs);
-    el('stop', { offset: '0%', 'stop-color': METAL[p.type] === 'pvc' ? '#d8dee6' : METAL[p.type] === 'flex' ? '#5d6877' : '#aab6c4' }, grad);
-    el('stop', { offset: '100%', 'stop-color': METAL[p.type] === 'pvc' ? '#8e99a8' : METAL[p.type] === 'flex' ? '#2c3440' : '#5b6675' }, grad);
-
-    txt(svg, 20, 26, 'RACEWAY CROSS-SECTION', { fill: C.muted, 'font-size': 11, 'letter-spacing': 1.5 });
-    txt(svg, 620, 26, p.trade + '" ' + p.type + (p.nipple ? ' nipple' : ''), { fill: C.text, 'font-size': 12, 'font-weight': 700, 'text-anchor': 'end' });
-
     if (!b) {
-      txt(svg, W / 2, H / 2, 'Drawing not available for this raceway size.', { 'text-anchor': 'middle', fill: C.muted });
-      return;
+      txt(svg, W / 2, H / 2, 'Drawing not available for this raceway size.', { 'text-anchor': 'middle', fill: C.muted, 'font-size': 13 });
+      return svg;
     }
-
-    /* Bore drawing, scaled so the outside edge is 300 px across. */
-    var outer = b.od || b.id * 1.1;
-    var S = 300 / outer;
-    var cx = 180, cy = 192;
-    var Rid = (b.id / 2) * S, Rod = (outer / 2) * S;
-
-    el('circle', { cx: cx, cy: cy, r: Rod, fill: 'url(#cvWall)', stroke: 'rgba(255,255,255,0.28)', 'stroke-width': 1 }, svg);
-    el('circle', { cx: cx, cy: cy, r: Rid, fill: '#0b1017', stroke: 'rgba(0,0,0,0.6)', 'stroke-width': 1.5 }, svg);
-    el('circle', { cx: cx, cy: cy, r: Rid, fill: 'none', stroke: p.pass ? 'rgba(86,214,164,0.55)' : 'rgba(244,112,120,0.7)', 'stroke-width': 1, 'stroke-dasharray': '3 4' }, svg);
-
-    /* Conductors. Group index drives the tint; copper core is drawn to Table 8 metal diameter. */
-    var flat = [];
-    p.groups.forEach(function (g, gi) {
-      for (var k = 0; k < g.qty; k++) flat.push({ g: g, gi: gi, d: overallDiameter(g.area) });
-    });
-    var packed = pack(flat.map(function (f) { return f.d / 2; }), b.id / 2);
-    var anyOverlap = false;
-    packed.forEach(function (disk, i) {
-      var f = flat[i], color = GROUP_COLORS[f.gi % GROUP_COLORS.length];
-      var px = cx + disk.x * S, py = cy - disk.y * S;
-      if (disk.overlaps) anyOverlap = true;
-      el('circle', { cx: px, cy: py, r: disk.r * S, fill: color, 'fill-opacity': 0.88, stroke: disk.overlaps ? C.bad : 'rgba(8,11,16,0.85)', 'stroke-width': disk.overlaps ? 2 : 1 }, svg);
-      var md = metalDiameter(f.g.size);
-      if (md && md / 2 < disk.r) {
-        el('circle', { cx: px, cy: py, r: (md / 2) * S, fill: C.copper, 'fill-opacity': 0.95, stroke: 'rgba(8,11,16,0.55)', 'stroke-width': 0.6 }, svg);
-      }
-    });
-
-    /* Dimension callouts. */
-    var yDim = cy + Rod + 18;
-    el('line', { x1: cx - Rid, y1: yDim, x2: cx + Rid, y2: yDim, stroke: C.line, 'stroke-width': 1 }, svg);
-    el('line', { x1: cx - Rid, y1: yDim - 4, x2: cx - Rid, y2: yDim + 4, stroke: C.line }, svg);
-    el('line', { x1: cx + Rid, y1: yDim - 4, x2: cx + Rid, y2: yDim + 4, stroke: C.line }, svg);
-    txt(svg, cx, yDim + 15, 'ID ' + num(b.id, 3) + ' in' + (b.od ? '   OD ' + num(b.od, 3) + ' in' : ''), { 'text-anchor': 'middle', fill: C.muted, 'font-size': 10.5 });
-
-    /* Right column: fill readout + bar + stats. */
-    var rx = 372;
     var color = p.pass ? C.good : C.bad;
-    txt(svg, rx, 72, 'FILL', { fill: C.muted, 'font-size': 10.5, 'letter-spacing': 1.5 });
-    txt(svg, rx, 110, num(p.fillPct, 1) + '%', { fill: color, 'font-size': 32, 'font-weight': 700, 'font-family': 'Exo 2, Sora, system-ui, sans-serif' });
-    var pillW = 92;
-    el('rect', { x: rx + 248 - pillW, y: 88, width: pillW, height: 26, rx: 13, fill: p.pass ? 'rgba(86,214,164,0.14)' : 'rgba(244,112,120,0.14)', stroke: color, 'stroke-width': 1.2 }, svg);
-    txt(svg, rx + 248 - pillW / 2, 105, p.pass ? 'PASS' : 'OVER', { 'text-anchor': 'middle', fill: color, 'font-size': 11.5, 'font-weight': 700, 'letter-spacing': 1 });
+    var nTotal = p.groups.reduce(function (n, g) { return n + g.qty; }, 0);
 
-    var bx = rx, by = 132, bw = 248, bh = 14;
-    el('rect', { x: bx, y: by, width: bw, height: bh, rx: 7, fill: 'rgba(255,255,255,0.07)' }, svg);
+    /* 1. Status row. */
+    el('circle', { cx: M + 9, cy: 28, r: 9, fill: color }, svg);
+    el('path', { d: p.pass ? 'M' + (M + 4.5) + ' 28.5 l3.2 3.2 l6 -6.6' : 'M' + (M + 5) + ' 23 l8 10 M' + (M + 13) + ' 23 l-8 10', fill: 'none', stroke: '#071016', 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
+    txt(svg, M + 26, 33, p.trade + '" ' + p.type + (p.nipple ? ' nipple' : ''), { fill: C.text, 'font-size': 16, 'font-weight': 700 });
+    pill(svg, W - M - 78, 14, 78, 28, p.pass ? 'PASS' : 'OVER', color, p.pass ? 'rgba(86,214,164,0.14)' : 'rgba(244,112,120,0.14)');
+
+    /* 2. Fill number + bar with the Table 1 limit tick. */
+    txt(svg, M, 82, num(p.fillPct, 1) + '%', { fill: color, 'font-size': 30, 'font-weight': 700, 'font-family': 'Exo 2, Sora, system-ui, sans-serif' });
+    txt(svg, W - M, 80, 'filled · ' + p.limitPct + '% allowed', { fill: C.muted, 'font-size': 12.5, 'text-anchor': 'end' });
+    var bx = M, by = 96, bw = W - 2 * M, bh = 14;
+    el('rect', { x: bx, y: by, width: bw, height: bh, rx: 7, fill: 'rgba(255,255,255,0.08)' }, svg);
     var scaleMax = Math.max(100, p.fillPct);
     var fw = Math.min(bw, (p.fillPct / scaleMax) * bw);
-    el('rect', { x: bx, y: by, width: Math.max(fw, 2), height: bh, rx: 7, fill: color }, svg);
+    el('rect', { x: bx, y: by, width: Math.max(fw, 4), height: bh, rx: 7, fill: color }, svg);
     var lx = bx + (p.limitPct / scaleMax) * bw;
-    el('line', { x1: lx, y1: by - 5, x2: lx, y2: by + bh + 5, stroke: C.text, 'stroke-width': 2 }, svg);
-    txt(svg, lx, by + bh + 19, 'limit ' + p.limitPct + '%', { 'text-anchor': lx > bx + bw - 40 ? 'end' : 'middle', fill: C.text, 'font-size': 10 });
+    el('line', { x1: lx, y1: by - 5, x2: lx, y2: by + bh + 5, stroke: C.text, 'stroke-width': 2.2 }, svg);
+    var basis = p.limitBasis || '';
+    wrapText(svg, M, by + bh + 22, basis, 52, { fill: C.muted, 'font-size': 11 });
 
+    /* 3. To-scale bore. Outside edge is the full drawing width. */
+    var outer = b.od || b.id * 1.08;
+    var Dmax = W - 2 * M - 20;
+    var S = Dmax / outer;
+    var cx = W / 2, Rid = (b.id / 2) * S, Rod = (outer / 2) * S;
+    var cy = 150 + Rod;
+    var defs = el('defs', {}, svg);
+    var kind = METAL[p.type];
+    var grad = el('radialGradient', { id: 'cvWall', cx: '35%', cy: '30%', r: '85%' }, defs);
+    el('stop', { offset: '0%', 'stop-color': kind === 'pvc' ? '#dde3ea' : kind === 'flex' ? '#68768a' : '#b7c2cf' }, grad);
+    el('stop', { offset: '100%', 'stop-color': kind === 'pvc' ? '#8b97a6' : kind === 'flex' ? '#2e3745' : '#5b6675' }, grad);
+    var bg = el('radialGradient', { id: 'cvBore', cx: '50%', cy: '40%', r: '70%' }, defs);
+    el('stop', { offset: '0%', 'stop-color': '#121923' }, bg);
+    el('stop', { offset: '100%', 'stop-color': '#070a0f' }, bg);
+
+    el('circle', { cx: cx, cy: cy, r: Rod, fill: 'url(#cvWall)', stroke: 'rgba(255,255,255,0.35)', 'stroke-width': 1 }, svg);
+    el('circle', { cx: cx, cy: cy, r: Rid, fill: 'url(#cvBore)', stroke: C.accent, 'stroke-width': 2 }, svg);
+
+    var flat = [], anyOverlap = false, tooMany = nTotal > MAX_DRAWN;
+    p.groups.forEach(function (g, gi) {
+      for (var k = 0; k < g.qty && !tooMany; k++) flat.push({ g: g, gi: gi, d: overallDiameter(g.area) });
+    });
+    if (tooMany) {
+      /* Area-true disc: its area is the conductors' share of the bore. */
+      var rr = Rid * Math.sqrt(Math.min(1, p.fillPct / 100));
+      el('circle', { cx: cx, cy: cy, r: rr, fill: color, 'fill-opacity': 0.28, stroke: color, 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }, svg);
+      txt(svg, cx, cy - 4, nTotal + ' conductors', { 'text-anchor': 'middle', fill: C.text, 'font-size': 15, 'font-weight': 700 });
+      txt(svg, cx, cy + 16, 'too many to draw one by one', { 'text-anchor': 'middle', fill: C.muted, 'font-size': 11.5 });
+    } else {
+      var packed = pack(flat.map(function (f) { return f.d / 2; }), b.id / 2);
+      packed.forEach(function (disk, i) {
+        var f = flat[i], tint = GROUP_COLORS[f.gi % GROUP_COLORS.length];
+        var px = cx + disk.x * S, py = cy - disk.y * S, rp = disk.r * S;
+        if (disk.overlaps) anyOverlap = true;
+        el('circle', { cx: px, cy: py, r: rp, fill: tint, 'fill-opacity': 0.95, stroke: disk.overlaps ? C.bad : 'rgba(7,10,15,0.9)', 'stroke-width': disk.overlaps ? 2.2 : 1.2 }, svg);
+        /* soft highlight so the insulation reads as a round jacket */
+        el('circle', { cx: px - rp * 0.22, cy: py - rp * 0.25, r: rp * 0.55, fill: 'rgba(255,255,255,0.10)' }, svg);
+        var md = metalDiameter(f.g.size);
+        var rm = md ? (md / 2) * S : 0;
+        if (rm && rm < rp) {
+          el('circle', { cx: px, cy: py, r: rm, fill: C.copper, stroke: 'rgba(7,10,15,0.55)', 'stroke-width': 0.7 }, svg);
+        }
+        /* size label when the circle is big enough to carry it */
+        if (rp >= 11) {
+          var fs = Math.min(15, rp * 0.62);
+          var t = txt(svg, px, py + fs * 0.36, f.g.size, { 'text-anchor': 'middle', fill: ink(), 'font-size': fs.toFixed(1), 'font-weight': 800 });
+          t.setAttribute('stroke', rm ? 'rgba(224,156,86,0.9)' : tint);
+          t.setAttribute('stroke-width', 2.2);
+          t.setAttribute('paint-order', 'stroke');
+        }
+      });
+    }
+
+    /* 4. Dimension line under the bore. */
+    var yDim = cy + Rod + 16;
+    el('line', { x1: cx - Rid, y1: yDim, x2: cx + Rid, y2: yDim, stroke: C.accent, 'stroke-width': 1.2 }, svg);
+    el('line', { x1: cx - Rid, y1: yDim - 5, x2: cx - Rid, y2: yDim + 5, stroke: C.accent, 'stroke-width': 1.2 }, svg);
+    el('line', { x1: cx + Rid, y1: yDim - 5, x2: cx + Rid, y2: yDim + 5, stroke: C.accent, 'stroke-width': 1.2 }, svg);
+    txt(svg, cx, yDim + 20, 'ID ' + num(b.id, 3) + ' in', { 'text-anchor': 'middle', fill: C.text, 'font-size': 13, 'font-weight': 600 });
+
+    /* 5. Callout tiles (two columns, as in the app). */
+    var diameters = {};
+    p.groups.forEach(function (g) { diameters[num(overallDiameter(g.area), 3)] = 1; });
+    var dk = Object.keys(diameters);
     var free = Math.max(0, 100 - p.fillPct);
-    var stats = [
-      ['Conductors', String(p.groups.reduce(function (n, g) { return n + g.qty; }, 0))],
-      ['Wire area', num(p.totalArea, 4) + ' sq in'],
-      ['Bore area', num(p.racewayArea, 3) + ' sq in'],
+    var tiles = [
+      ['ID', num(b.id, 3) + ' in'],
+      ['OD', b.od ? num(b.od, 3) + ' in' : 'not one listed OD'],
+      ['Wall', b.od ? num((b.od - b.id) / 2, 3) + ' in' : 'bore only'],
+      ['Wire OD', dk.length === 1 ? dk[0] + ' in' : 'mixed, see legend'],
       ['Free area', num(free, 1) + '%'],
+      ['Conductors', String(nTotal)],
     ];
-    stats.forEach(function (row, i) {
-      var y = 196 + i * 21;
-      txt(svg, rx, y, row[0], { fill: C.muted, 'font-size': 11 });
-      txt(svg, rx + 248, y, row[1], { 'text-anchor': 'end', 'font-weight': 600 });
+    var ty = yDim + 38, tw = (W - 2 * M - 10) / 2;
+    tiles.forEach(function (t, i) {
+      callout(svg, M + (i % 2) * (tw + 10), ty + Math.floor(i / 2) * 54, tw, t[0], t[1]);
     });
+    var y = ty + 3 * 54 + 14;
 
-    /* Legend: one line per conductor group. */
-    var ly = 296;
-    p.groups.slice(0, 6).forEach(function (g, gi) {
+    /* 6. Legend, one line per conductor group. */
+    p.groups.slice(0, 8).forEach(function (g, gi) {
       var col = GROUP_COLORS[gi % GROUP_COLORS.length];
-      el('circle', { cx: rx + 6, cy: ly - 4, r: 6, fill: col }, svg);
       var md = metalDiameter(g.size), od = overallDiameter(g.area);
-      if (md && od) el('circle', { cx: rx + 6, cy: ly - 4, r: Math.max(1.5, 6 * md / od), fill: C.copper }, svg);
-      txt(svg, rx + 20, ly, g.qty + ' × ' + g.label, { 'font-size': 10.5 });
-      ly += 19;
+      el('circle', { cx: M + 9, cy: y - 4, r: 9, fill: col, stroke: 'rgba(255,255,255,0.4)', 'stroke-width': 1 }, svg);
+      if (md && od) el('circle', { cx: M + 9, cy: y - 4, r: Math.max(2, 9 * md / od), fill: C.copper }, svg);
+      txt(svg, M + 26, y, g.qty + ' × ' + g.label, { fill: C.text, 'font-size': 13, 'font-weight': 600 });
+      txt(svg, W - M, y, 'OD ' + num(od, 3) + ' in', { fill: C.muted, 'font-size': 12, 'text-anchor': 'end' });
+      y += 24;
     });
-    if (p.groups.length > 6) txt(svg, rx + 20, ly, '+ ' + (p.groups.length - 6) + ' more groups', { fill: C.muted, 'font-size': 10.5 });
+    if (p.groups.length > 8) { txt(svg, M + 26, y, '+ ' + (p.groups.length - 8) + ' more groups', { fill: C.muted, 'font-size': 12 }); y += 24; }
+    y += 2;
 
-    /* Footer notes. */
+    /* 7. Notes. */
     var notes = [];
-    if (anyOverlap) notes.push('Conductors do not fit as drawn: the bundle exceeds the bore.');
-    else notes.push('Settled packing, largest conductors toward the bottom. Illustrative: a pull does not land in this arrangement.');
+    if (anyOverlap) notes.push({ t: 'Conductors do not fit as drawn: the bundle exceeds the bore.', bad: true });
+    else if (!tooMany) notes.push({ t: 'Settled packing, largest conductors toward the bottom. Illustrative: a pull does not land in this arrangement.' });
     var jam = jamNote(flat, b.id);
-    if (jam) notes.push(jam);
-    notes.push('Copper = Table 8 metal diameter inside Table 5 insulation. Table 1 percent fill is the NEC check, not a jam check.');
-    var ny = 408;
+    if (jam) notes.push({ t: jam, warn: true });
+    notes.push({ t: 'Copper = Table 8 metal diameter inside the Table 5 insulation. Table 1 percent fill is the NEC check, not a jam check.' });
     notes.forEach(function (n) {
-      wrapText(svg, 20, ny, n, 62, { fill: anyOverlap && n.indexOf('do not fit') === 0 ? C.bad : C.muted, 'font-size': 10 });
-      ny += 13 * Math.ceil(n.length / 62) + 3;
+      var lines = wrapText(svg, M, y, n.t, 50, { fill: n.bad ? C.bad : n.warn ? C.warn : C.muted, 'font-size': 11.5 });
+      y += 15 * lines + 5;
     });
+
+    H = Math.ceil(y + 8);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var bgRect = svg.querySelector('rect[data-plot-bg]');
+    bgRect.setAttribute('height', H);
     return svg;
   }
 
   function wrapText(svg, x, y, s, max, attrs) {
-    var words = s.split(' '), line = '', dy = 0;
+    var words = s.split(' '), line = '', dy = 0, lines = 0;
+    var lh = Math.round((parseFloat((attrs && attrs['font-size']) || 11) + 3.5));
     words.forEach(function (w) {
       if ((line + ' ' + w).trim().length > max) {
         txt(svg, x, y + dy, line.trim(), attrs);
-        dy += 13; line = w;
+        dy += lh; lines++; line = w;
       } else line += ' ' + w;
     });
-    if (line.trim()) txt(svg, x, y + dy, line.trim(), attrs);
+    if (line.trim()) { txt(svg, x, y + dy, line.trim(), attrs); lines++; }
+    return lines;
   }
 
   /* Three equal conductors can jam in a bend when ID / OD is 2.8 – 3.2. */

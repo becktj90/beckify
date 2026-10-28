@@ -61,5 +61,22 @@ ok("cf_viz host precedes the same-size inputs", cardHtml.indexOf('id="cf_viz"') 
 const mx = fs.readFileSync(path.join(dir, "math-explanations.js"), "utf8");
 ok("conduit guide renders after the calculator grid", /sec-conduit-adv'\)[\s\S]{0,120}\.card-grid/.test(mx));
 
+// Drawing renders for the largest sizes and the packing cap keeps huge counts fast.
+const drawSrc = fs.readFileSync(path.join(dir, "conduit-viz.js"), "utf8");
+ok("draw() caps packing for very many conductors", /MAX_DRAWN\s*=\s*200/.test(drawSrc) && /tooMany/.test(drawSrc));
+ok("draw() lays out the iOS status row, fill bar and callout tiles", /Free area/.test(drawSrc) && /Wire OD/.test(drawSrc) && /PASS/.test(drawSrc));
+for (const [type, def] of Object.entries(types)) {
+  for (const trade of Object.keys(def.areas)) {
+    const b = viz.bore(type, trade);
+    if (!b || !(b.id > 0)) ok(`bore ${type} ${trade} has a positive ID`, false);
+  }
+}
+ok("PVC80 6 in and RMC 6 in have a bore", viz.bore("PVC80", "6") && viz.bore("RMC", "6"));
+const t0 = Date.now();
+viz.pack(Array(200).fill(viz.overallDiameter(ins.THHN.areas["14"]) / 2), viz.bore("PVC40", "6").id / 2);
+ok("200 conductors pack quickly (< 5 s)", Date.now() - t0 < 5000, `${Date.now() - t0} ms`);
+const sitemapGen = fs.readFileSync(path.join(dir, "..", "..", "..", "scripts", "generate-sitemap.mjs"), "utf8");
+ok("tool landing pages put the calculator frame above the about panel", sitemapGen.indexOf('class="intro"') < sitemapGen.indexOf("<iframe") && sitemapGen.indexOf("<iframe") < sitemapGen.indexOf('class="panel"'));
+
 if (failures) { console.log(`\n${failures} failure(s)`); process.exit(1); }
 console.log("\nAll conduit viz checks passed");

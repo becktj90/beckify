@@ -96,7 +96,7 @@ async function main() {
 
   assert.equal(registry.TOOL_REGISTRY, home.TOOL_REGISTRY);
   assert.ok(registry.PUBLIC_CALCULATOR_COUNT > 50);
-  assert.match(fs.readFileSync(path.join(root, "public/toolbox/sw.js"), "utf8"), /CACHE_VERSION = 'v74'/);
+  assert.match(fs.readFileSync(path.join(root, "public/toolbox/sw.js"), "utf8"), /CACHE_VERSION = 'v75'/);
   assert.match(classicHtml, /<base href="\/toolbox\/">/);
   assert.match(classicHtml, /register\('\/toolbox\/sw\.js'/);
   assert.equal(seo.seoForStaticRoute("toolbox")?.title, seo.PAGE_SEO["/toolbox/"].title);
