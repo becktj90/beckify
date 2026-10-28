@@ -387,6 +387,9 @@
     }
     grid.append(overviewWrap, stepsWrap, exampleWrap);
     card.appendChild(grid);
+    /* Conduit fill: calculator and cross-section first, guide underneath. */
+    const grid2 = (section.id === 'sec-conduit' || section.id === 'sec-conduit-adv') ? section.querySelector('.card-grid') : null;
+    if (grid2) { grid2.after(card); return; }
     (section.querySelector('.section-header, .home-header') || section.firstElementChild)?.after(card);
   }
 

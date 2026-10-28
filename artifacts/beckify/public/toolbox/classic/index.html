@@ -64,7 +64,7 @@
       min-height: 210px;
       padding: 20px;
       text-align: center;
-      border: 2px dashed rgba(139, 123, 255, 0.45);
+      border: 2px dashed rgba(64, 186, 214, 0.45);
       border-radius: 14px;
       background: rgba(255, 255, 255, 0.03);
       transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
@@ -155,9 +155,9 @@
     .tdr-pill.up { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
     .tdr-pill.down { background: rgba(248, 113, 113, 0.12); color: #f87171; }
     .tdr-pill.unknown { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
-    .feynman-lesson { margin: 14px 0 18px; padding: 16px 18px; border: 1px solid rgba(110, 231, 183, 0.28); border-radius: 14px; background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(79,139,255,0.05)); }
+    .feynman-lesson { margin: 14px 0 18px; padding: 16px 18px; border: 1px solid rgba(110, 231, 183, 0.28); border-radius: 14px; background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(96,156,230,0.05)); }
     .feynman-lesson-title { color: #6ee7b7; font-weight: 700; font-size: 0.98rem; }
-    .feynman-formula { margin: 8px 0; color: #eef0fa; font: 600 1.05rem/1.5 Georgia, serif; letter-spacing: 0.02em; }
+    .feynman-formula { margin: 8px 0; color: #e8eef5; font: 600 1.05rem/1.5 Georgia, serif; letter-spacing: 0.02em; }
     .feynman-lesson-body { margin: 0; color: var(--fg-muted); line-height: 1.6; max-width: 78ch; }
     .calculation-visual { margin: 14px 0 10px; padding: 10px 0 2px; border-top: 1px solid rgba(255,255,255,0.08); }
     .calculation-visual svg { display: block; min-height: 108px; overflow: visible; }
@@ -330,7 +330,7 @@
 
       <div class="home-grid">
 
-        <div class="home-cat-card" style="--cat-color:#8b7bff">
+        <div class="home-cat-card" style="--cat-color:#40bad6">
           <div class="home-cat-header"><span class="home-cat-icon">⚡</span><span class="home-cat-name">01 · Core calculations</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-ohm">Ohm's Law</a></li>
@@ -342,7 +342,7 @@
           </ul>
         </div>
 
-        <div class="home-cat-card" style="--cat-color:#4f8bff">
+        <div class="home-cat-card" style="--cat-color:#609ce6">
           <div class="home-cat-header"><span class="home-cat-icon">◈</span><span class="home-cat-name">02 · Electronics &amp; digital design</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-reactance">Reactance &amp; Impedance</a></li>
@@ -374,7 +374,7 @@
           </ul>
         </div>
 
-        <div class="home-cat-card" style="--cat-color:#a78bfa">
+        <div class="home-cat-card" style="--cat-color:#e09c56">
           <div class="home-cat-header"><span class="home-cat-icon">🔋</span><span class="home-cat-name">04 · System planning</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link" href="#sec-ups">On-site Power</a></li>
@@ -453,7 +453,7 @@
           </ul>
         </div>
 
-        <div class="home-cat-card" style="--cat-color:#c4b5fd">
+        <div class="home-cat-card" style="--cat-color:#7fd3e6">
           <div class="home-cat-header"><span class="home-cat-icon">🎛</span><span class="home-cat-name">08 · Control theory</span></div>
           <ul class="home-tool-list">
             <li><a class="home-tool-link home-tool-ext" href="/control-systems/" aria-label="Control System Toolbox (opens a separate page)">Control System Toolbox <span class="nav-ext-tag" aria-hidden="true">Separate page ↗</span></a></li>
@@ -3100,15 +3100,29 @@
       <div class="card-grid">
 
         <div class="card">
-          <div class="card-title">Conduit Fill — THHN/THWN-2 in EMT</div>
+          <div class="card-title">Conduit Fill — Same-Size Conductors</div>
           <div class="card-body">
+            <div id="cf_viz" class="cf-viz-host" aria-live="polite"></div>
             <div class="formula-box">
               Fill% = (Total Wire Area / Conduit Area) × 100<br>
-              Max Fill: 1 wire=53% | 2 wires=31% | 3+=40%
+              Max Fill: 1 wire=53% | 2 wires=31% | 3+=40% | nipple=60%
             </div>
             <div class="input-group">
               <div>
-                <label>EMT Trade Size</label>
+                <label>Raceway Type</label>
+                <select id="cf_type">
+                  <option value="EMT">EMT</option>
+                  <option value="IMC">IMC</option>
+                  <option value="RMC">RMC (Rigid)</option>
+                  <option value="PVC40">PVC Schedule 40</option>
+                  <option value="PVC80">PVC Schedule 80</option>
+                  <option value="ENT">ENT</option>
+                  <option value="FMC">FMC (Flex)</option>
+                  <option value="LFMC">LFMC (Liquidtight)</option>
+                </select>
+              </div>
+              <div>
+                <label>Trade Size</label>
                 <select id="cf_conduit">
                   <option value="1/2">1/2" (0.304 sq in)</option>
                   <option value="3/4">3/4" (0.533 sq in)</option>
@@ -3116,12 +3130,14 @@
                   <option value="1-1/4">1-1/4" (1.496 sq in)</option>
                   <option value="1-1/2">1-1/2" (2.036 sq in)</option>
                   <option value="2">2" (3.356 sq in)</option>
-                  <option value="2-1/2">2-1/2" (4.788 sq in)</option>
-                  <option value="3">3" (7.393 sq in)</option>
-                  <option value="3-1/2">3-1/2" (9.893 sq in)</option>
-                  <option value="4">4" (12.72 sq in)</option>
+                  <option value="2-1/2">2-1/2" (5.858 sq in)</option>
+                  <option value="3">3" (8.846 sq in)</option>
+                  <option value="3-1/2">3-1/2" (11.545 sq in)</option>
+                  <option value="4">4" (14.753 sq in)</option>
                 </select>
               </div>
+            </div>
+            <div class="input-group">
               <div>
                 <label>Conductor Size (AWG/kcmil)</label>
                 <select id="cf_awg">
@@ -3143,13 +3159,31 @@
                   <option value="350">350 kcmil (0.5242 sq in)</option>
                   <option value="400">400 kcmil (0.5863 sq in)</option>
                   <option value="500">500 kcmil (0.7073 sq in)</option>
+                  <option value="600">600 kcmil (0.8676 sq in)</option>
+                  <option value="700">700 kcmil (0.9887 sq in)</option>
+                  <option value="750">750 kcmil (1.0496 sq in)</option>
+                  <option value="800">800 kcmil (1.1085 sq in)</option>
+                  <option value="900">900 kcmil (1.2311 sq in)</option>
+                  <option value="1000">1000 kcmil (1.3478 sq in)</option>
+                </select>
+              </div>
+              <div>
+                <label>Insulation</label>
+                <select id="cf_insul">
+                  <option value="THHN">THHN / THWN-2</option>
+                  <option value="XHHW">XHHW / XHHW-2</option>
+                  <option value="RHW">RHH / RHW / RHW-2</option>
                 </select>
               </div>
             </div>
-            <div class="input-group single">
+            <div class="input-group">
               <div>
                 <label>Number of Conductors</label>
                 <input type="number" id="cf_qty" placeholder="e.g. 3" min="1" step="1" value="3">
+              </div>
+              <div class="cfa-check" style="align-self:end;padding-bottom:10px">
+                <input type="checkbox" id="cf_nipple">
+                <label for="cf_nipple" style="margin:0">Nipple — 24 in or shorter (60%)</label>
               </div>
             </div>
             <button class="btn" onclick="calcConduitFill()">Check Fill</button>
@@ -6512,8 +6546,8 @@
             <div class="emp-diagram" role="img" aria-label="Rectangular victim loop in a uniform changing magnetic field, with induced voltage labeled around the loop.">
               <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
                 <rect x="1" y="1" width="318" height="178" fill="#0d1117" stroke="#30304a"/>
-                <text x="160" y="18" fill="#9497b8" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Φ = B · A    V = −N dΦ/dt</text>
-                <rect x="86" y="48" width="148" height="88" fill="none" stroke="#8b7bff" stroke-width="2.5"/>
+                <text x="160" y="18" fill="#94a2b2" font-size="10" text-anchor="middle" font-family="ui-monospace,monospace">Φ = B · A    V = −N dΦ/dt</text>
+                <rect x="86" y="48" width="148" height="88" fill="none" stroke="#40bad6" stroke-width="2.5"/>
                 <circle cx="234" cy="92" r="5" fill="none" stroke="#6ee7b7" stroke-width="1.6"/>
                 <text x="248" y="96" fill="#6ee7b7" font-size="11" font-family="ui-monospace,monospace">V</text>
                 <line x1="40" y1="70" x2="40" y2="130" stroke="#60a5fa" stroke-width="2"/>
@@ -6525,8 +6559,8 @@
                 <polygon points="258,128 262,138 266,128" fill="#60a5fa"/>
                 <polygon points="276,128 280,138 284,128" fill="#60a5fa"/>
                 <text x="48" y="62" fill="#60a5fa" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">B(t)</text>
-                <text x="160" y="96" fill="#eef0fa" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">victim loop</text>
-                <text x="160" y="168" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Existing cable or PCB loop — shrink A to cut V</text>
+                <text x="160" y="96" fill="#e8eef5" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">victim loop</text>
+                <text x="160" y="168" fill="#94a2b2" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Existing cable or PCB loop — shrink A to cut V</text>
               </svg>
             </div>
           </div>
@@ -6537,15 +6571,15 @@
             <div class="emp-diagram" role="img" aria-label="Conducting enclosure with a long slot in one wall. Leakage is marked through the opening.">
               <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
                 <rect x="1" y="1" width="318" height="178" fill="#0d1117" stroke="#30304a"/>
-                <rect x="70" y="36" width="180" height="110" fill="none" stroke="#8b7bff" stroke-width="3"/>
+                <rect x="70" y="36" width="180" height="110" fill="none" stroke="#40bad6" stroke-width="3"/>
                 <rect x="248" y="78" width="8" height="36" fill="#0d1117" stroke="#f5c451" stroke-width="2"/>
                 <path d="M262 84 C 286 70, 300 88, 308 80" fill="none" stroke="#ff8a8a" stroke-width="1.6"/>
                 <path d="M262 96 C 284 96, 298 104, 310 98" fill="none" stroke="#ff8a8a" stroke-width="1.6"/>
                 <path d="M262 108 C 286 118, 300 106, 308 114" fill="none" stroke="#ff8a8a" stroke-width="1.6"/>
-                <text x="160" y="92" fill="#eef0fa" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">shielded volume</text>
+                <text x="160" y="92" fill="#e8eef5" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">shielded volume</text>
                 <text x="252" y="70" fill="#f5c451" font-size="10" text-anchor="end" font-family="ui-monospace,monospace">slot ℓ</text>
                 <text x="314" y="64" fill="#ff8a8a" font-size="9" text-anchor="end" font-family="ui-sans-serif,sans-serif">leakage</text>
-                <text x="160" y="168" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Worst dimension vs λ/2 sets the opening penalty</text>
+                <text x="160" y="168" fill="#94a2b2" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Worst dimension vs λ/2 sets the opening penalty</text>
               </svg>
             </div>
           </div>
@@ -6556,18 +6590,18 @@
             <div class="emp-diagram" role="img" aria-label="Shielded enclosure wall with a 360-degree cable gland, filter or SPD block, and protected equipment inside.">
               <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
                 <rect x="1" y="1" width="318" height="178" fill="#0d1117" stroke="#30304a"/>
-                <line x1="150" y1="28" x2="150" y2="152" stroke="#8b7bff" stroke-width="4"/>
-                <text x="86" y="24" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">outside</text>
-                <text x="232" y="24" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">inside cage</text>
+                <line x1="150" y1="28" x2="150" y2="152" stroke="#40bad6" stroke-width="4"/>
+                <text x="86" y="24" fill="#94a2b2" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">outside</text>
+                <text x="232" y="24" fill="#94a2b2" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">inside cage</text>
                 <line x1="24" y1="90" x2="138" y2="90" stroke="#60a5fa" stroke-width="2"/>
                 <circle cx="150" cy="90" r="10" fill="#0d1117" stroke="#6ee7b7" stroke-width="2.4"/>
                 <line x1="160" y1="90" x2="198" y2="90" stroke="#60a5fa" stroke-width="2"/>
                 <rect x="198" y="74" width="44" height="32" rx="4" fill="#111326" stroke="#f5c451" stroke-width="1.6"/>
                 <text x="220" y="94" fill="#f5c451" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">filter</text>
-                <rect x="256" y="70" width="40" height="40" rx="3" fill="none" stroke="#eef0fa" stroke-width="1.4"/>
-                <text x="276" y="94" fill="#eef0fa" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">load</text>
+                <rect x="256" y="70" width="40" height="40" rx="3" fill="none" stroke="#e8eef5" stroke-width="1.4"/>
+                <text x="276" y="94" fill="#e8eef5" font-size="9" text-anchor="middle" font-family="ui-monospace,monospace">load</text>
                 <text x="150" y="122" fill="#6ee7b7" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">360° gland</text>
-                <text x="160" y="168" fill="#9497b8" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Bond the shield at the wall; filter or SPD the conductors</text>
+                <text x="160" y="168" fill="#94a2b2" font-size="9" text-anchor="middle" font-family="ui-sans-serif,sans-serif">Bond the shield at the wall; filter or SPD the conductors</text>
               </svg>
             </div>
           </div>
@@ -11827,6 +11861,7 @@
 <script src="js/app.js"></script>
 <script src="js/toolbox-families.js"></script>
 <script src="js/wire-tools.js"></script>
+<script src="js/conduit-viz.js"></script>
 <script src="js/power-tools.js"></script>
 <script src="js/factor-tools.js"></script>
 <script src="js/xfmr-engine.js"></script>
