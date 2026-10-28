@@ -10,8 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#dbeafe; --bg2:#fef9c3; --card:#ffffff; --ink:#1e293b; --muted:#64748b;
-    --red:#ef4444; --orange:#f97316; --yellow:#eab308; --green:#22c55e; --teal:#14b8a6; --blue:#3b82f6; --violet:#8b5cf6; --pink:#ec4899;
+    --bg:#dbeafe; --bg2:#fef9c3; --card:#ffffff; --ink:#1e293b; --muted:#4f5f74;
+    --red:#ea1414; --orange:#c45305; --yellow:#eab308; --green:#178741; --teal:#0e8478; --blue:#1c6ef5; --violet:#8554f6; --pink:#e1177b;
     --radius:24px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -33,7 +33,7 @@
   .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
   .brand{display:flex;align-items:center;gap:12px;}
   .mini-blocks{display:flex;gap:5px;align-items:flex-end;}
-  .mini{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:#fff;font-family:Fredoka,sans-serif;font-weight:700;font-size:22px;box-shadow:0 4px 0 rgba(0,0,0,.18);border:3px solid rgba(255,255,255,.9);position:relative;}
+  .mini{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:#1e293b;font-family:Fredoka,sans-serif;font-weight:700;font-size:22px;box-shadow:0 4px 0 rgba(0,0,0,.18);border:3px solid rgba(255,255,255,.9);position:relative;}
   .mini::before,.mini::after{content:"";position:absolute;top:9px;width:5px;height:7px;background:#1e293b;border-radius:99px;}
   .mini::before{left:9px}.mini::after{right:9px}
   .brand h1{font-family:Fredoka,sans-serif;font-size:28px;line-height:.95;margin:0;letter-spacing:.2px;}
@@ -48,7 +48,7 @@
   .levels{display:flex;gap:10px;margin:16px 0 12px;flex-wrap:wrap;}
   .level{flex:1;min-width:150px;border:3px solid #1e293b;border-radius:18px;padding:12px 10px;background:#fff;box-shadow:0 5px 0 #1e293b;text-align:center;}
   .level b{font-family:Fredoka,sans-serif;font-size:19px;display:block;}
-  .level small{font-weight:900;color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase;}
+  .level small{font-weight:900;color:var(--muted);font-size:14px;letter-spacing:.04em;text-transform:uppercase;}
   .level.active{background:#1e293b;color:#fff;}
   .level.active small{color:#fde68a;}
   .level:active{transform:translateY(3px);box-shadow:0 2px 0 #1e293b;}
@@ -60,7 +60,7 @@
   .mode:active{transform:translateY(4px);box-shadow:0 2px 0 #1e293b;}
   .mode .sym{font-family:Fredoka,sans-serif;font-size:34px;line-height:1;font-weight:700;text-shadow:0 2px 0 rgba(0,0,0,.2);}
   .mode b{font-family:Fredoka,sans-serif;font-size:17px;}
-  .mode small{font-size:12px;font-weight:900;opacity:.92;line-height:1.2;}
+  .mode small{font-size:14px;font-weight:900;opacity:.92;line-height:1.2;}
   .mode.active{outline:5px solid #1e293b; outline-offset:2px; transform:scale(1.02);}
 
   /* Stage */
@@ -137,7 +137,7 @@
   .count-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:640px;}
   .count-cube{width:52px;height:52px;border-radius:16px;border:3px solid rgba(0,0,0,.2);display:grid;place-items:center;font-family:Fredoka,sans-serif;font-weight:700;font-size:20px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);box-shadow:inset 0 -5px 0 rgba(0,0,0,.15), inset 0 3px 0 rgba(255,255,255,.35);transition:transform .15s;position:relative;}
   .count-cube.tapped{transform:scale(1.18) rotate(-4deg);outline:4px solid #1e293b;}
-  .count-cube .tap-num{position:absolute;top:-13px;right:-9px;background:#1e293b;color:#fff;font-size:13px;width:24px;height:24px;border-radius:50%;display:none;place-items:center;border:2px solid #fff;}
+  .count-cube .tap-num{position:absolute;top:-13px;right:-9px;background:#1e293b;color:#fff;font-size:14px;width:24px;height:24px;border-radius:50%;display:none;place-items:center;border:2px solid #fff;}
   .count-cube.tapped .tap-num{display:grid;}
   .counter-line{font-family:Fredoka,sans-serif;font-size:22px;background:#fff;border:3px solid #1e293b;border-radius:999px;padding:6px 18px;box-shadow:0 3px 0 #1e293b;}
 
@@ -145,10 +145,10 @@
   .pv{display:flex;gap:14px;justify-content:center;align-items:flex-end;flex-wrap:wrap;width:100%;}
   .pv-col{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:104px;}
   .pv-col h4{margin:0;font-family:Fredoka,sans-serif;font-size:15px;letter-spacing:.06em;text-transform:uppercase;background:#1e293b;color:#fff;padding:4px 12px;border-radius:999px;}
-  .pv-stack{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:150px;min-height:56px;align-items:flex-start;align-content:flex-start;}
-  .hundred{width:64px;height:64px;border-radius:14px;background:#3b82f6;border:3px solid rgba(0,0,0,.25);color:#fff;display:grid;place-items:center;font-family:Fredoka,sans-serif;font-weight:700;font-size:19px;background-image:repeating-linear-gradient(0deg,transparent,transparent 11px,rgba(255,255,255,.28) 12px),repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(255,255,255,.28) 12px);text-shadow:0 1px 2px rgba(0,0,0,.4);}
-  .ten-rod{width:22px;height:64px;border-radius:10px;background:#22c55e;border:3px solid rgba(0,0,0,.22);background-image:repeating-linear-gradient(0deg,transparent,transparent 9px,rgba(0,0,0,.18) 10px);display:grid;place-items:end center;color:#fff;font-family:Fredoka,sans-serif;font-size:12px;padding-bottom:2px;}
-  .one-cube{width:26px;height:26px;border-radius:10px;background:#ef4444;border:3px solid rgba(0,0,0,.22);}
+  .pv-stack{min-width:44px;display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:150px;min-height:56px;align-items:flex-start;align-content:flex-start;}
+  .hundred{width:64px;height:64px;border-radius:14px;background:#1c6ef5;border:3px solid rgba(0,0,0,.25);color:#fff;display:grid;place-items:center;font-family:Fredoka,sans-serif;font-weight:700;font-size:19px;background-image:repeating-linear-gradient(0deg,transparent,transparent 11px,rgba(255,255,255,.28) 12px),repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(255,255,255,.28) 12px);text-shadow:0 1px 2px rgba(0,0,0,.4);}
+  .ten-rod{width:28px;height:64px;border-radius:10px;background:#178741;border:3px solid rgba(0,0,0,.22);background-image:repeating-linear-gradient(0deg,transparent,transparent 9px,rgba(0,0,0,.18) 10px);display:grid;place-items:end center;color:#fff;font-family:Fredoka,sans-serif;font-size:14px;padding-bottom:2px;}
+  .one-cube{width:26px;height:26px;border-radius:10px;background:#ea1414;border:3px solid rgba(0,0,0,.22);}
   .ten-rod{position:relative;}
   .ten-rod::after{content:"";position:absolute;top:-6px;bottom:-6px;left:-11px;right:-11px;}
 
@@ -156,11 +156,11 @@
   .eq-op{font-size:44px;font-weight:700;}
   .eq-q{width:62px;height:62px;border-radius:16px;border:4px dashed #1e293b;display:grid;place-items:center;font-size:34px;background:#fef9c3;}
   .group-box{border:3px solid #1e293b;border-radius:16px;padding:10px;background:#fff;display:flex;flex-direction:column;align-items:center;gap:6px;}
-  .group-box small{font-weight:900;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;}
+  .group-box small{font-weight:900;color:var(--muted);font-size:14px;text-transform:uppercase;letter-spacing:.05em;}
   .group-row{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:190px;}
-  .mini-cube{width:28px;height:28px;border-radius:10px;border:2px solid rgba(0,0,0,.2);display:grid;place-items:center;color:#fff;font-family:Fredoka,sans-serif;font-size:13px;font-weight:700;}
+  .mini-cube{width:28px;height:28px;border-radius:10px;border:2px solid rgba(0,0,0,.2);display:grid;place-items:center;color:#fff;font-family:Fredoka,sans-serif;font-size:14px;font-weight:700;}
   .mini-cube.crossed{opacity:.28;filter:grayscale(1);text-decoration:line-through;}
-  .mini-cube.sm{width:18px;height:18px;border-radius:8px;font-size:10px;}
+  .mini-cube.sm{width:18px;height:18px;border-radius:8px;font-size:14px;}
   .groups-wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
 
   /* Answers */
@@ -168,11 +168,14 @@
   @media(min-width:720px){.choices{grid-template-columns:repeat(4,1fr);}}
   .choice{min-height:78px;border-radius:20px;border:3px solid #1e293b;background:#fff;box-shadow:0 6px 0 #1e293b;font-family:Fredoka,sans-serif;font-size:36px;font-weight:700;}
   .choice:active{transform:translateY(4px);box-shadow:0 2px 0 #1e293b;}
-  .choice.correct{background:#22c55e;color:#fff;}
-  .choice:disabled{opacity:.35;box-shadow:0 2px 0 #1e293b;position:relative;cursor:default;}
-  .choice:disabled::after{content:"✕";position:absolute;top:4px;right:10px;font-size:22px;font-weight:900;color:#b91c1c;}
+  .choice.correct{background:#178741;color:#fff;}
+  .choice:disabled{opacity:.35;box-shadow:0 2px 0 #1e293b;position:relative;cursor:default;} /* just fades: no red X */
   .choice:disabled:active{transform:none;box-shadow:0 2px 0 #1e293b;}
   .choice.wrong{background:#fecaca;animation:shake .35s;}
+  /* soft hint after two misses: a calm golden glow on the right answer */
+  .choice.softhint{border-color:#f59e0b;background:#fffbeb;animation:softHintGlow 1.6s ease-in-out infinite;}
+  @keyframes softHintGlow{0%,100%{box-shadow:0 6px 0 #1e293b,0 0 0 0 rgba(245,158,11,.0)}50%{box-shadow:0 6px 0 #1e293b,0 0 0 9px rgba(245,158,11,.35)}}
+  @media(prefers-reduced-motion:reduce){.choice.softhint{animation:none;box-shadow:0 6px 0 #1e293b,0 0 0 8px rgba(245,158,11,.35);}}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
   @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
   .pop{animation:pop .35s ease;}
@@ -185,13 +188,13 @@
   .build-total .mine{background:#fef9c3;}
   .build-total .mine.match{background:#bbf7d0;}
   .build-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:560px;}
-  .five-bar{width:64px;height:28px;border-radius:11px;background:#8b5cf6;border:3px solid rgba(0,0,0,.22);color:#fff;display:grid;place-items:center;font-family:Fredoka,sans-serif;font-weight:700;font-size:15px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.15);background-image:repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(255,255,255,.25) 12px);}
+  .five-bar{width:64px;height:28px;border-radius:11px;background:#8554f6;border:3px solid rgba(0,0,0,.22);color:#fff;display:grid;place-items:center;font-family:Fredoka,sans-serif;font-weight:700;font-size:15px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.15);background-image:repeating-linear-gradient(90deg,transparent,transparent 11px,rgba(255,255,255,.25) 12px);}
   .build-btn{border:3px solid #1e293b;border-radius:18px;padding:14px 6px;color:#fff;box-shadow:0 5px 0 #1e293b;font-family:Fredoka,sans-serif;}
-  .build-btn b{font-size:26px;display:block;} .build-btn small{font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.05em;}
+  .build-btn b{font-size:26px;display:block;} .build-btn small{font-weight:900;font-size:14px;text-transform:uppercase;letter-spacing:.05em;}
   .build-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #1e293b;}
   .build-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
   .big-btn{border:3px solid #1e293b;border-radius:999px;padding:14px 28px;font-family:Fredoka,sans-serif;font-size:21px;font-weight:700;box-shadow:0 5px 0 #1e293b;background:#fff;}
-  .big-btn.primary{background:#22c55e;color:#fff;}
+  .big-btn.primary{background:#178741;color:#fff;}
   .big-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #1e293b;}
   .build-btn:disabled,.big-btn:disabled{opacity:.45;box-shadow:0 2px 0 #1e293b;}
   .build-btn:disabled:active,.big-btn:disabled:active{transform:none;}
@@ -233,12 +236,91 @@
   /* Start screen: name entry (session-only, never stored) */
   .startscreen{z-index:80;}
   .name-input{width:100%;box-sizing:border-box;font-family:Fredoka,sans-serif;font-size:26px;font-weight:700;text-align:center;color:#1e293b;padding:14px 16px;border:3px solid #1e293b;border-radius:18px;margin:2px 0 18px;background:#fffbeb;}
-  .name-input:focus{outline:3px solid #38bdf8;outline-offset:2px;}
+  .name-input:focus{outline:4px solid #1d4ed8;outline-offset:2px;}
   .start-btns{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;}
   .confetti-bit{position:fixed;width:12px;height:18px;z-index:60;pointer-events:none;border-radius:3px;}
-  .hint{font-size:13px;font-weight:800;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;}
-  @media(max-width:520px){ .brand h1{font-size:23px} .mini{width:32px;height:32px;font-size:18px} .question{font-size:28px} }
-  @media (prefers-reduced-motion: reduce){ *{animation-duration:.01ms !important; transition-duration:.01ms !important;} }
+  .hint{font-size:14px;font-weight:800;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;}
+  .subq:empty{display:none;}
+  .fbrow{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+  .fbrow .feedback{margin-top:12px;}
+  .fbrow .next-row{margin-top:6px;}
+  /* Start screen: one big Play button first, name is optional underneath */
+  .play-big{width:100%;max-width:320px;min-height:78px;font-size:34px;margin:6px auto 14px;display:block;}
+  .name-opt{border-top:3px dashed #cbd5e1;padding-top:14px;}
+  .name-opt .opt-label{margin:0 0 8px;font-size:15px;font-weight:900;color:var(--muted);}
+  .name-opt .name-row{display:flex;gap:10px;align-items:center;justify-content:center;}
+  .name-opt .name-input{margin:0;font-size:22px;padding:10px 12px;min-width:0;flex:1;}
+  /* Phone layout: the first screen holds the header, level, modes, question AND the answers
+     with no scrolling (375x667 and 390x844). Taller phones get the roomier sizes back below. */
+  @media(max-width:520px){
+    .brand h1{font-size:19px;min-width:0;white-space:nowrap} .brand h1 span{display:none} /* phones: the tagline can't be shown at the 14px minimum without being cut off, so it is hidden here (still shown on wider screens) */
+    .brand{gap:6px;min-width:0;flex:1 1 0}
+    .mini-blocks{zoom:.62}
+    .topbar{flex-wrap:nowrap;gap:6px}
+    .hud{gap:6px;flex-wrap:nowrap;flex-shrink:0}
+    .hud .pill:nth-child(2){display:none} /* phones: only the star count in the header (room for the logo) */
+    .pill{padding:4px 10px;font-size:16px;box-shadow:0 3px 0 #1e293b}
+    .icon-btn{width:44px;height:44px;border-radius:14px;font-size:20px;box-shadow:0 3px 0 #1e293b}
+    .levels{gap:6px;margin:8px 0 8px;flex-wrap:nowrap}
+    .level{min-width:0;padding:4px 4px 5px;border-radius:14px;box-shadow:0 3px 0 #1e293b}
+    .level b{font-size:15px;line-height:1.15} .level small{font-size:14px;line-height:1.1}
+    .modes{grid-template-columns:repeat(6,1fr);gap:5px}
+    .mode{min-height:62px;padding:5px 1px 4px;border-radius:14px;box-shadow:0 4px 0 #1e293b;gap:1px}
+    .mode .sym{font-size:22px} .mode b{font-size:14px;line-height:1.05} .mode small{display:none}
+    .mode.active{outline-width:3px;outline-offset:1px;transform:none}
+    .stage{margin-top:10px;padding:10px 10px 8px;border-radius:22px;box-shadow:0 5px 0 #1e293b}
+    .question{font-size:26px}
+    .speak-btn{width:46px;height:46px;font-size:22px;box-shadow:0 3px 0 #1e293b}
+    .visual{margin:8px 0 4px;min-height:140px;padding:8px;gap:8px;border-radius:16px}
+    .count-grid{gap:6px}
+    .count-cube{width:44px;height:44px;border-radius:13px;font-size:18px}
+    .count-cube .tap-num{top:-10px;right:-7px;width:22px;height:22px;font-size:14px}
+    .counter-line{font-size:18px;padding:2px 14px;box-shadow:0 2px 0 #1e293b}
+    .choices{grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+    .choice{min-height:60px;border-radius:16px;font-size:28px;box-shadow:0 4px 0 #1e293b}
+    .fbrow{gap:10px;min-height:50px;flex-wrap:nowrap}
+    .fbrow .feedback{min-height:0;font-size:28px;margin-top:6px}
+    .fbrow .next-row{min-height:0;margin-top:0}
+    /* the Next button always sits at the bottom of the screen, so it never scrolls out of reach */
+    .fbrow .next-row:not(:empty){position:fixed;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom, 0px));z-index:20;margin:0;pointer-events:none}
+    .fbrow .next-row .big-btn{pointer-events:auto;min-width:96px}
+    .big-btn{padding:10px 24px;font-size:20px;box-shadow:0 4px 0 #1e293b}
+    .pv{gap:6px} .pv-col{min-width:0;flex:1 1 0;gap:5px} .pv-col h4{font-size:14px;padding:3px 7px;white-space:nowrap}
+    .pv-stack{max-width:100%;gap:4px;min-height:44px}
+    .build-total .target,.build-total .mine{font-size:24px;padding:6px 14px}
+    .build-btn{padding:8px 4px} .build-btn b{font-size:22px}
+    .build-actions{margin-top:8px}
+    .eq-op{font-size:34px} .eq-q{width:50px;height:50px;font-size:28px}
+    .eq-visual{gap:6px} .group-box{padding:6px;gap:4px;border-radius:14px} .group-row{gap:4px;max-width:150px}
+    .mini-cube{width:22px;height:22px;border-radius:8px;font-size:14px}
+    .friends{margin-top:12px}
+    .start-btns{gap:8px}
+  }
+  /* Taller phones (e.g. 390x844): bring back the roomier sizes, still no scrolling */
+  @media(max-width:520px) and (min-height:760px){
+    .topbar{margin-top:2px}
+    .levels{margin:12px 0 10px}
+    .level{padding:7px 4px 8px}
+    .mode{min-height:70px}
+    .mode b{font-size:14px}
+    .stage{margin-top:14px;padding:14px 12px 12px}
+    .question{font-size:32px}
+    .visual{min-height:200px;padding:12px;gap:12px;margin:10px 0 6px}
+    .count-grid{gap:8px}
+    .count-cube{width:48px;height:48px}
+    .choices{gap:10px;margin-top:10px}
+    .choice{min-height:72px;font-size:32px}
+  }
+  /* Visible keyboard / switch-control focus on everything that can be pressed (blue ring, offset so it reads on any tile color) */
+  :focus-visible{outline:4px solid #1d4ed8;outline-offset:3px;}
+  .mode.active:focus-visible{outline:5px solid #1d4ed8;outline-offset:3px;}
+  .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+  /* Reduced motion: really stop it. Every animation and transition is off (the old rule only shortened them, which made the
+     infinite ones flicker), and the confetti is skipped in script. [class] ties with the few "!important" animation rules; this one comes last. */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after,[class],[class]::before,[class]::after{animation:none !important; transition:none !important; scroll-behavior:auto !important;}
+    .confetti-bit{display:none !important;}
+  }
 </style>
 </head>
 <body>
@@ -254,26 +336,26 @@
       <h1>Cube Squad<span id="brandSub">A Math Adventure</span></h1>
     </div>
     <div class="hud">
-      <div class="pill" title="Stars you've earned">⭐ <span id="stars">0</span></div>
-      <div class="pill" title="In a row correct">🔥 <span id="streak">0</span></div>
-      <button class="icon-btn" id="soundBtn" aria-label="Toggle sound">🔊</button>
-      <button class="icon-btn" id="voiceBtn" aria-label="Toggle voice">🗣️</button>
+      <div class="pill" role="group" aria-label="Stars you've earned" title="Stars you've earned"><span aria-hidden="true">⭐</span> <span id="stars">0</span></div>
+      <div class="pill" role="group" aria-label="Stickers you've collected this visit" title="Stickers you've collected this visit"><span aria-hidden="true">🏅</span> <span id="stickers">0</span></div>
+      <button class="icon-btn" id="soundBtn" aria-label="Sound" aria-pressed="true">🔊</button>
+      <button class="icon-btn" id="voiceBtn" aria-label="Voice" aria-pressed="true">🗣️</button>
     </div>
   </div>
 
   <div class="levels" role="group" aria-label="Difficulty">
-    <button class="level active" data-level="1"><b>Starter</b><small>1–20</small></button>
-    <button class="level" data-level="2"><b>Explorer</b><small>1–100</small></button>
-    <button class="level" data-level="3"><b>Master</b><small>1–1,000</small></button>
+    <button class="level active" data-level="1" aria-pressed="true" aria-label="Starter, numbers 1 to 20"><b>Starter</b><small>1–20</small></button>
+    <button class="level" data-level="2" aria-pressed="false" aria-label="Explorer, numbers 1 to 100"><b>Explorer</b><small>1–100</small></button>
+    <button class="level" data-level="3" aria-pressed="false" aria-label="Master, numbers 1 to 1,000"><b>Master</b><small>1–1,000</small></button>
   </div>
 
   <div class="modes" role="group" aria-label="Game mode">
-    <button class="mode active" data-mode="count" style="background:#ef4444"><span class="sym">123</span><b>Count It!</b></button>
-    <button class="mode" data-mode="build" style="background:#f97316"><span class="sym">🧱</span><b>Build It!</b></button>
-    <button class="mode" data-mode="add" style="background:#22c55e"><span class="sym">+</span><b>Add</b></button>
-    <button class="mode" data-mode="sub" style="background:#14b8a6"><span class="sym">−</span><b>Take Away</b></button>
-    <button class="mode" data-mode="mul" style="background:#3b82f6"><span class="sym">×</span><b>Times</b></button>
-    <button class="mode" data-mode="div" style="background:#ec4899"><span class="sym">÷</span><b>Share It!</b></button>
+    <button class="mode active" data-mode="count" aria-pressed="true" aria-label="Count It" style="background:#ea1414"><span class="sym" aria-hidden="true">123</span><b>Count It!</b></button>
+    <button class="mode" data-mode="build" aria-pressed="false" aria-label="Build It" style="background:#c45305"><span class="sym" aria-hidden="true">🧱</span><b>Build It!</b></button>
+    <button class="mode" data-mode="add" aria-pressed="false" aria-label="Add" style="background:#178741"><span class="sym" aria-hidden="true">+</span><b>Add</b></button>
+    <button class="mode" data-mode="sub" aria-pressed="false" aria-label="Take Away" style="background:#0e8478"><span class="sym" aria-hidden="true">−</span><b>Take Away</b></button>
+    <button class="mode" data-mode="mul" aria-pressed="false" aria-label="Times" style="background:#1c6ef5"><span class="sym" aria-hidden="true">×</span><b>Times</b></button>
+    <button class="mode" data-mode="div" aria-pressed="false" aria-label="Share It" style="background:#e1177b"><span class="sym" aria-hidden="true">÷</span><b>Share It!</b></button>
   </div>
 
   <section class="stage" aria-live="polite">
@@ -288,37 +370,40 @@
     <div class="visual" id="visual"></div>
 
     <div id="answerArea"></div>
-    <div class="feedback" id="feedback"></div>
-    <div class="next-row" id="nextRow"></div>
+    <div class="fbrow">
+      <div class="feedback" id="feedback"></div>
+      <div class="next-row" id="nextRow"></div>
+    </div>
   </section>
 
-  <section class="friends">
+  <section class="friends" aria-label="Meet the Cube Squad">
     <h3>Meet the Cube Squad 👋</h3>
     <p>Tap a friend to hear its number. Taller buddies are bigger numbers, a ★ means odd, and 4 and 9 can turn into squares! Ten ones make a Ten — and ten tens make a Hundred!</p>
-    <div class="friends-row" id="friendsRow"></div>
+    <div class="friends-row" id="friendsRow" role="group" aria-label="Number friends"></div>
   </section>
 
 </div>
 
-<div class="celebrate" id="celebrate">
+<div class="celebrate" id="celebrate" role="dialog" aria-modal="true" aria-labelledby="celebTitle">
   <div class="celebrate-card">
-    <div style="font-size:56px">🏆</div>
+    <div style="font-size:56px" aria-hidden="true">🏆</div>
     <h2 id="celebTitle">Superstar!</h2>
     <p id="celebText">You got 5 in a row!</p>
     <button class="big-btn primary" id="celebBtn" aria-label="Keep playing">▶</button>
   </div>
 </div>
 
-<div class="celebrate startscreen show" id="startScreen">
+<div class="celebrate startscreen show" id="startScreen" role="dialog" aria-modal="true" aria-labelledby="startTitle">
   <div class="celebrate-card">
-    <div style="font-size:56px">👋</div>
-    <h2>What's your name?</h2>
-    <p>Type your name, then tap Play!<br/>A grown-up can help you type.</p>
-    <input id="nameInput" class="name-input" type="text" maxlength="16" placeholder="Your name" autocomplete="off" aria-label="Your name"/>
-    <div class="start-btns">
-      <button class="big-btn primary" id="playBtn">▶ Play!</button>
-      <button class="big-btn" id="skipBtn">Skip</button>
-      <button class="speak-btn" id="nameSpeakBtn" aria-label="Hear the question">🔊</button>
+    <div style="font-size:56px" aria-hidden="true">👋</div>
+    <h2 id="startTitle">Ready to play?</h2>
+    <button class="big-btn primary play-big" id="playBtn" aria-label="Play">▶ Play!</button>
+    <div class="name-opt">
+      <p class="opt-label">Add your name? <span style="font-weight:800">(optional)</span></p>
+      <div class="name-row">
+        <input id="nameInput" class="name-input" type="text" maxlength="16" placeholder="Your name" autocomplete="off" aria-label="Your name (optional)"/>
+        <button class="speak-btn" id="nameSpeakBtn" aria-label="Hear the name question">🔊</button>
+      </div>
     </div>
   </div>
 </div>
@@ -328,10 +413,32 @@
   "use strict";
   var COLORS = {1:"#f472b6",2:"#2dd4bf",3:"#a78bfa",4:"#a3e635",5:"#fb923c",6:"#38bdf8",7:"#fbbf24",8:"#34d399",9:"#fdba74",0:"#64748b"};
   var DIGIT_COLORS = ["#64748b","#f472b6","#2dd4bf","#a78bfa","#a3e635","#fb923c","#38bdf8","#fbbf24","#34d399","#fdba74"];
-  var state = { mode:"count", level:1, stars:0, streak:0, answer:null, locked:false, sound:true, voice:true,
+  var state = { mode:"count", level:1, stars:0, stickers:0, misses:0, answer:null, locked:false, sound:true, voice:true,
                 buildTarget:0, buildH:0, buildT:0, buildF:0, buildO:0, questionClips:[], lastAdded:null, suppressTap:false, counted:0, countTotal:0, jingled:false };
   var $ = function(id){ return document.getElementById(id); };
   var visual=$("visual"), questionEl=$("question"), subqEl=$("subq"), answerArea=$("answerArea"), feedbackEl=$("feedback"), nextRow=$("nextRow");
+
+  /* ---------- Gentle within-session ramp (Starter level only; in memory, session-only) ----------
+     Each mode starts at its smallest tier. After RAMP_UP "easy" rounds (won with at most one miss) it moves up one tier;
+     misses never reset that count. After RAMP_DOWN "rough" rounds in a row (two or more misses before the right answer)
+     it moves down one tier. No failure screen, no timer, nothing is announced. The thresholds are a good idea (the
+     principle is learning trajectories), not research-set numbers. Explorer and Master are not affected. */
+  var RAMP_UP = 3, RAMP_DOWN = 2;
+  var RAMP_TIERS = { count:4, build:4, add:4, sub:4, mul:3, div:3 }; /* the top tier of each mode is the old Starter range */
+  var ramp = {};
+  Object.keys(RAMP_TIERS).forEach(function(m){ ramp[m] = { tier:0, wins:0, rough:0 }; });
+  function rampTier(){ return ramp[state.mode].tier; }
+  function rampNote(){ /* called once when a round is won */
+    if(state.level!==1) return;
+    var r = ramp[state.mode]; if(!r) return;
+    if(state.misses>=2){
+      r.rough++;
+      if(r.rough>=RAMP_DOWN){ r.rough=0; if(r.tier>0){ r.tier--; r.wins=0; } }
+    } else {
+      r.rough=0; r.wins++;
+      if(r.wins>=RAMP_UP && r.tier<RAMP_TIERS[state.mode]-1){ r.tier++; r.wins=0; }
+    }
+  }
 
   /* ---------- Audio (tiny synth, no files) ---------- */
   var actx=null;
@@ -457,9 +564,11 @@
     var r=Math.random();
     if(r<0.4) meowSound(); else if(r<0.65) boingSound(); else if(r<0.85) squeakSound(); else squeakSound();
   }
-  function jingle(){ /* ElevenLabs-generated jingle + welcome voice, plays once on first tap */
+  function jingle(){ /* ElevenLabs-generated jingle + name prompt, plays once on first tap */
     sfx("sfx-jingle");
-    setTimeout(function(){ if(!started) speakClips(["welcome","nameinstruction"]); }, 900); /* never over the game if Play/Skip was tapped first */
+    /* STOPGAP: the "welcome" greeting clip is intentionally NOT auto-played (it needs re-recording; see docs/CLIPS.md).
+       The clip stays in AUDIO_DATA. To restore it once a new clip is approved: speakClips(["welcome","nameinstruction"]). */
+    setTimeout(function(){ if(!started) speakClips(["nameinstruction"]); }, 900); /* never over the game if Play/Skip was tapped first */
   }
   function goodSound(){ /* ElevenLabs celebration + a silly boom, a kid giggle, sometimes a bonus meow */
     sfx("sfx-celebrate");
@@ -530,14 +639,33 @@
     return o2;
   }
 
+  /* The clips that say a number out loud -- but only if EVERY clip it needs is already in AUDIO_DATA.
+     No clip, no audio (nothing is ever generated or synthesised to fill a gap). */
+  function numeralClips(n){
+    var c = numClips(n);
+    for(var i=0;i<c.length;i++){ if(!AUDIO_DATA[c[i]]) return []; }
+    return c;
+  }
+
   /* ---------- Helpers ---------- */
+  var W0=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  var WT=["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+  function numWord(n){ n=Math.floor(n); if(n<20) return W0[Math.max(0,n)]; if(n<100){ var r=n%10; return WT[Math.floor(n/10)]+(r?"-"+W0[r]:""); } return String(n); }
+  function cubesLabel(n){ return numWord(n)+(n===1?" cube":" cubes"); }
+  function shortPhone(){ return window.innerWidth<=520 && window.innerHeight<720; } /* e.g. 375x667: keep the first screen scroll-free */
   function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
   function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
-  function inkFor(hex){ var h=String(hex).replace("#",""); if(h.length!==6) return "#fff"; var l=0.299*parseInt(h.substr(0,2),16)+0.587*parseInt(h.substr(2,2),16)+0.114*parseInt(h.substr(4,2),16); return l>150 ? "#1e293b" : "#fff"; } /* readable digit color on any cube color */
+  function inkFor(hex){ /* the ink (white or dark slate) with the higher WCAG contrast on this color */
+    var h=String(hex).replace("#",""); if(h.length!==6) return "#fff";
+    function lin(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); }
+    var L=0.2126*lin(parseInt(h.substr(0,2),16))+0.7152*lin(parseInt(h.substr(2,2),16))+0.0722*lin(parseInt(h.substr(4,2),16));
+    return (1.05/(L+0.05)) >= ((L+0.05)/0.0233) ? "#fff" : "#1e293b";
+  }
   function colorFor(n){ return buddyPalette(Math.abs(n)).bg; } /* Count It cubes + group boxes use the buddy palette, so counting color-matches */
   function maxFor(){ return state.level===1?20:(state.level===2?100:1000); }
 
-  function makeChoices(answer, spread){
+  function makeChoices(answer, spread, minVal){
+    minVal = minVal||0;
     var set={}; set[answer]=true; var out=[answer];
     var tries=0;
     while(out.length<4 && tries<60){
@@ -545,7 +673,7 @@
       var delta = rand(1, spread||10) * (Math.random()<0.5?-1:1);
       if(state.level===3 && Math.random()<0.5) delta = rand(1,10)*10*(Math.random()<0.5?-1:1);
       var c = answer + delta;
-      if(c>=0 && !set[c]){ set[c]=true; out.push(c); }
+      if(c>=minVal && !set[c]){ set[c]=true; out.push(c); }
     }
     for(var k=2; out.length<4 && k<204; k++){ var c2=answer+k; if(!set[c2]){ set[c2]=true; out.push(c2); } }
     return shuffle(out);
@@ -582,7 +710,7 @@
     var pal = buddyPalette(n);
     var color = pal.bg;
     var pop = opts.pop||0;
-    var star = (n%2===1) ? '<span class="bstar">★</span>' : '';
+    var star = (n%2===1) ? '<span class="bstar" aria-hidden="true">★</span>' : '';
     var badgeSize = Math.max(26, Math.round(cubeSize*0.95));
     var badge = '<span class="bbadge" style="width:'+badgeSize+'px;height:'+badgeSize+'px;font-size:'+Math.max(15,Math.round(cubeSize*0.55))+'px">'+n+'</span>';
     var body;
@@ -603,7 +731,7 @@
       body = '<span class="bstack">'+cubes+'</span>';
     }
     var bob = ' style="--cs:'+cubeSize+'px;animation-duration:'+(2.2+(n%4)*0.35).toFixed(2)+'s;animation-delay:'+(n*0.18).toFixed(2)+'s"';
-    return '<span class="buddy'+(cubeSize<22?' tiny':'')+'"'+bob+'>'+badge+body+'<span class="blegs"><i></i><i></i></span></span>';
+    return '<span class="buddy'+(cubeSize<22?' tiny':'')+'" role="img" aria-label="'+cubesLabel(n)+'"'+bob+'>'+badge+body+'<span class="blegs"><i></i><i></i></span></span>';
   }
 
   function miniCubesHTML(n, color, crossedFrom, small){
@@ -621,18 +749,18 @@
     var s='<div class="pv">';
     if(h>0||opts.always){
       s+='<div class="pv-col"><h4>100</h4><div class="pv-stack">';
-      if(h===0) s+='<span style="font-weight:900;color:#94a3b8">0</span>';
+      if(h===0) s+='<span style="font-weight:900;color:#4f5f74">0</span>';
       for(var i=0;i<h;i++) s+='<span class="hundred">100</span>';
       s+='</div></div>';
     }
     if(t>0||h>0||opts.always){
       s+='<div class="pv-col"><h4>10</h4><div class="pv-stack">';
-      if(t===0) s+='<span style="font-weight:900;color:#94a3b8">0</span>';
+      if(t===0) s+='<span style="font-weight:900;color:#4f5f74">0</span>';
       for(var j=0;j<t;j++) s+='<span class="ten-rod">10</span>';
       s+='</div></div>';
     }
     s+='<div class="pv-col"><h4>1</h4><div class="pv-stack">';
-    if(o===0 && n>0) s+='<span style="font-weight:900;color:#94a3b8">0</span>';
+    if(o===0 && n>0) s+='<span style="font-weight:900;color:#4f5f74">0</span>';
     if(n===0) s+='<span class="one-cube"></span>';
     for(var k=0;k<o;k++) s+='<span class="one-cube"></span>';
     s+='</div></div></div>';
@@ -647,7 +775,7 @@
     questionEl.innerHTML=q; subqEl.textContent="";
     state.questionClips = clips || [];
     feedbackEl.textContent=""; feedbackEl.className="feedback";
-    nextRow.innerHTML=""; state.locked=false;
+    nextRow.innerHTML=""; state.locked=false; state.misses=0;
     clearTimeout(questionTimer); /* P2-5: never two pending question speaks */
     if(!started) return; /* P1-1: nothing speaks before the start screen closes */
     var seq = pendingAnnounce.concat(state.questionClips);
@@ -655,11 +783,11 @@
     questionTimer = setTimeout(function(){ speakClips(seq); }, 250);
   }
 
-  function renderChoices(answer, spread){
+  function renderChoices(answer, spread, minVal){
     state.answer=answer;
-    var choices=makeChoices(answer, spread);
+    var choices=makeChoices(answer, spread, minVal);
     var html='<div class="choices">';
-    choices.forEach(function(c){ html+='<button class="choice" data-val="'+c+'">'+c+'</button>'; });
+    choices.forEach(function(c){ html+='<button class="choice" data-val="'+c+'" aria-label="Answer '+c+'">'+c+'</button>'; });
     html+='</div>';
     answerArea.innerHTML=html;
     var btns=answerArea.querySelectorAll(".choice");
@@ -670,28 +798,33 @@
 
   function checkChoice(val, btn){
     if(state.locked) return;
+    /* A tapped numeral is always said aloud first (existing Callum number clips): a wrong pick says
+       its number and then "try again"; a right pick says its number and then the usual praise. */
     if(val===state.answer){
-      state.locked=true; btn.classList.add("correct","pop");
-      winRound();
+      state.locked=true; btn.classList.remove("softhint"); btn.classList.add("correct","pop");
+      winRound(numeralClips(val));
     } else {
       btn.classList.add("wrong"); btn.disabled=true;
-      state.streak=0; updateHUD(); trySound();
+      trySound(); noteMiss();
       var pals=visual.querySelectorAll(".buddy, .nb");
       pals.forEach(function(p){ p.classList.remove("surprised"); void p.offsetWidth; p.classList.add("surprised"); });
       setTimeout(function(){ pals.forEach(function(p){ p.classList.remove("surprised"); }); }, 500);
       feedbackEl.textContent="💪"; feedbackEl.className="feedback try";
-      speakClips(["tryagain"]);
+      speakClips(numeralClips(val).concat(["tryagain"]));
       setTimeout(function(){ btn.classList.remove("wrong"); },380);
     }
   }
 
-  function winRound(){
-    state.stars++; state.streak++;
+  function winRound(lead){
+    rampNote();
+    state.stars++;
     updateHUD(); goodSound(); confetti(26);
     var praise="praise"+rand(1,7);
     feedbackEl.textContent = playerName ? "🎉 Way to go, "+playerName+"! ⭐" : "🎉 ⭐ 🎉"; feedbackEl.className="feedback good";
     if(state.answer!==null && state.answer!==undefined)
-      speakClips([praise,"answeris"].concat(numClips(state.answer)));
+      /* tapped-numeral win: say the number once ("seven!" then praise); no "the answer is seven" repeat.
+         Other wins (drag, Build It, or a numeral with a missing clip) keep the full "the answer is N". */
+      speakClips(lead && lead.length ? lead.concat([praise]) : [praise,"answeris"].concat(numClips(state.answer)));
     else speakClips([praise]);
     var chars=visual.querySelectorAll(".nb, .buddy");
     chars.forEach(function(c){ c.classList.add("dance"); });
@@ -705,14 +838,24 @@
     nextRow.innerHTML='<button class="big-btn primary" id="nextBtn" aria-label="Next">▶</button>';
     $("nextBtn").addEventListener("click", function(){ squeakSound(); newRound(); });
     if(state.mode==="build") lockBuildControls();
-    if(state.streak>0 && state.streak%5===0){
+    if(state.stars%5===0){
+      state.stickers++; updateHUD();
       celebrateTimer = setTimeout(function(){ celebrateTimer=null; showCelebrate(); }, 650);
     }
   }
 
-  function updateHUD(){ $("stars").textContent=state.stars; $("streak").textContent=state.streak; }
+  function updateHUD(){ $("stars").textContent=state.stars; $("stickers").textContent=state.stickers; }
+  /* after two misses on one question, softly glow the right answer so the child can succeed */
+  function noteMiss(){
+    state.misses++;
+    if(state.misses>=2 && state.answer!==null && state.answer!==undefined){
+      var good=answerArea.querySelector('.choice[data-val="'+state.answer+'"]');
+      if(good) good.classList.add("softhint");
+    }
+  }
 
   function confetti(n){
+    if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; /* reduced motion: no confetti */
     var cols=["#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#ec4899"];
     for(var i=0;i<n;i++){
       var d=document.createElement("div"); d.className="confetti-bit";
@@ -730,15 +873,15 @@
     }
   }
   function showCelebrate(){
-    var master = state.streak>=10;
+    var master = state.stars>=10;
     $("celebTitle").textContent = master
       ? (playerName ? "Math Master, "+playerName+"!" : "Math Master!")
       : (playerName ? "Superstar, "+playerName+"!" : "Superstar!");
-    $("celebText").textContent = "⭐ "+state.stars+"   🔥 "+state.streak;
-    $("celebrate").classList.add("show"); confetti(60);
+    $("celebText").textContent = "⭐ "+state.stars+"   🏅 "+state.stickers;
+    $("celebrate").classList.add("show"); setBackgroundInert(true); try{ $("celebBtn").focus(); }catch(e){} confetti(60);
     speakClips([master ? "mathmaster" : "superstar"]);
   }
-  $("celebBtn").addEventListener("click", function(){ $("celebrate").classList.remove("show"); newRound(); });
+  $("celebBtn").addEventListener("click", function(){ $("celebrate").classList.remove("show"); setBackgroundInert(false); newRound(); });
 
   /* ================= ROUNDS ================= */
   function newRound(){
@@ -756,15 +899,15 @@
 
   function roundCount(){
     var n;
-    if(state.level===1) n=rand(3,20);
+    if(state.level===1){ var cr=[[1,5],[3,10],[5,15],[3,20]][rampTier()]; n=rand(cr[0],cr[1]); }
     else if(state.level===2) n=rand(12,100);
     else n=rand(105,1000);
     state.countTotal=n; state.counted=0;
     setQuestion("?", ["howmany"]);
     if(state.level===1){
-      var html='<div class="count-grid" id="countGrid">';
+      var html='<div class="count-grid" id="countGrid" role="group" aria-label="Cubes to count">';
       for(var i=0;i<n;i++){
-        html+='<button class="count-cube" data-i="'+i+'" style="background:'+colorFor(i+1)+';color:'+inkFor(colorFor(i+1))+'"><span class="tap-num"></span>'+(i+1)+'</button>';
+        html+='<button class="count-cube" data-i="'+i+'" aria-pressed="false" aria-label="Cube '+(i+1)+'" style="background:'+colorFor(i+1)+';color:'+inkFor(colorFor(i+1))+'"><span class="tap-num" aria-hidden="true"></span></button>'; /* plain cube: the count badge appears only as it is tapped */
       }
       html+='</div><div class="counter-line" id="counterLine">0</div>';
       visual.innerHTML=html;
@@ -776,11 +919,11 @@
           var pos=tapOrder.indexOf(idx);
           if(pos>=0){ /* tap a counted cube again to un-count it */
             tapOrder.splice(pos,1);
-            c.classList.remove("tapped");
+            c.classList.remove("tapped"); c.setAttribute("aria-pressed","false");
             popSound();
           } else {
             tapOrder.push(idx);
-            c.classList.add("tapped");
+            c.classList.add("tapped"); c.setAttribute("aria-pressed","true");
             if(Math.random()<0.6) squeakSound(); else popSound();
           }
           state.counted=tapOrder.length;
@@ -792,7 +935,7 @@
     } else {
       visual.innerHTML = placeValueHTML(n,{always:true, caption: countCaption(n)});
     }
-    renderChoices(n, state.level===1?4:(state.level===2?12:90));
+    renderChoices(n, state.level===1?4:(state.level===2?12:90), state.level===1?1:0);
   }
   function countCaption(n){
     var h=Math.floor(n/100), t=Math.floor((n%100)/10), o=n%10, parts=[];
@@ -804,19 +947,19 @@
 
   function roundBuild(){
     var target;
-    if(state.level===1) target=rand(4,20);
+    if(state.level===1){ var br=[[2,6],[4,10],[4,15],[4,20]][rampTier()]; target=rand(br[0],br[1]); }
     else if(state.level===2) target=rand(21,100);
     else target=rand(101,1000);
     state.buildTarget=target; state.buildH=0; state.buildT=0; state.buildF=0; state.buildO=0; state.answer=target; state.lastAdded=null;
     visual.classList.add("playmat");
-    setQuestion('🧱 <span class="big-num">'+target+'</span>', ["buildnum"].concat(numClips(target)));
+    setQuestion('<span aria-hidden="true">🧱</span><span class="sr">Build </span> <span class="big-num">'+target+'</span>', ["buildnum"].concat(numClips(target)));
     drawBuild();
     answerArea.innerHTML =
       '<div class="build-btns" style="margin:0 auto;">'+
-        '<button class="build-btn" data-add="100" style="background:#3b82f6"><b>+100</b></button>'+
-        '<button class="build-btn" data-add="10" style="background:#22c55e"><b>+10</b></button>'+
-        '<button class="build-btn" data-add="5" style="background:#8b5cf6"><b>+5</b></button>'+
-        '<button class="build-btn" data-add="1" style="background:#ef4444"><b>+1</b></button>'+
+        '<button class="build-btn" data-add="100" style="background:#1c6ef5"><b>+100</b></button>'+
+        '<button class="build-btn" data-add="10" style="background:#178741"><b>+10</b></button>'+
+        '<button class="build-btn" data-add="5" style="background:#8554f6"><b>+5</b></button>'+
+        '<button class="build-btn" data-add="1" style="background:#ea1414"><b>+1</b></button>'+
       '</div>'+
       '<div class="build-actions">'+
         '<button class="big-btn" id="buildClear" style="font-size:26px" aria-label="Start over">↺</button>'+
@@ -847,7 +990,7 @@
       var mine=buildValue();
       if(mine===state.buildTarget){ state.locked=true; winRound(); drawBuild(); }
       else{
-        state.streak=0; updateHUD(); trySound();
+        trySound(); state.misses++;
         feedbackEl.textContent = mine<state.buildTarget ? "⬆️ ➕" : "⬇️ ➖";
         feedbackEl.className="feedback try";
         speakClips([mine<state.buildTarget ? "buildmore" : "buildtoomany"]);
@@ -867,11 +1010,11 @@
       var nb = (state.lastAdded===col && i===count-1) ? " newborn" : "";
       s+='<span class="'+cls+' draggable'+nb+'" data-col="'+col+'">'+label+'</span>';
     }
-    return s || '<span style="font-weight:900;color:#cbd5e1;font-size:22px">0</span>';
+    return s || '<span style="font-weight:900;color:#4f5f74;font-size:22px">0</span>';
   }
   function drawBuild(){
     var mine=buildValue();
-    var html='<div class="build-total"><div class="target">🎯 '+state.buildTarget+'</div><div style="font-family:Fredoka,sans-serif;font-size:30px">➜</div><div class="mine'+(mine===state.buildTarget&&mine!==0?' match':'')+'">🧱 '+mine+'</div></div>';
+    var html='<div class="build-total"><div class="target"><span aria-hidden="true">🎯</span><span class="sr">Target </span> '+state.buildTarget+'</div><div style="font-family:Fredoka,sans-serif;font-size:30px">➜</div><div class="mine'+(mine===state.buildTarget&&mine!==0?' match':'')+'"><span aria-hidden="true">🧱</span><span class="sr">You have </span> '+mine+'</div></div>';
     html+='<div class="pv">'+
       '<div class="pv-col"><h4>100 × '+state.buildH+'</h4><div class="pv-stack" data-col="h">'+buildBlocks("h",state.buildH,"hundred","100")+'</div></div>'+
       '<div class="pv-col"><h4>10 × '+state.buildT+'</h4><div class="pv-stack" data-col="t">'+buildBlocks("t",state.buildT,"ten-rod","10")+'</div></div>'+
@@ -879,7 +1022,12 @@
       '<div class="pv-col"><h4>1 × '+state.buildO+'</h4><div class="pv-stack" data-col="o">'+buildBlocks("o",state.buildO,"one-cube","")+'</div></div>'+
     '</div>';
     visual.innerHTML=html;
+    var STACK_NAME={h:"hundreds",t:"tens",f:"fives",o:"ones"}, STACK_N={h:state.buildH,t:state.buildT,f:state.buildF,o:state.buildO};
     visual.querySelectorAll(".pv-stack").forEach(function(st){
+      var sc=st.getAttribute("data-col");
+      st.setAttribute("role","button"); st.setAttribute("tabindex","0");
+      st.setAttribute("aria-label", STACK_N[sc]+" "+STACK_NAME[sc]+" placed"+(STACK_N[sc]>0?", tap to take one away":""));
+      st.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); st.click(); } });
       st.addEventListener("click", function(){
         if(state.suppressTap){ state.suppressTap=false; return; }
         if(state.locked) return;
@@ -1040,13 +1188,19 @@
 
   function roundAdd(){
     var a,b;
-    if(state.level===1){ a=rand(1,12); b=rand(1, Math.min(9,20-a)); if(a+b<3) b=3; }
+    if(state.level===1){
+      var at=rampTier();
+      if(at===0){ a=rand(1,4); b=rand(1,5-a); }                                   /* sums within 5 */
+      else if(at===1){ a=rand(1,9); b=rand(Math.max(1,6-a), 10-a); }              /* sums 6 to 10 */
+      else if(at===2){ a=rand(2,12); b=rand(Math.max(1,11-a), Math.min(9,15-a)); } /* sums 11 to 15 */
+      else { a=rand(1,12); b=rand(1, Math.min(9,20-a)); if(a+b<3) b=3; }          /* the old Starter range */
+    }
     else if(state.level===2){ a=rand(12,70); b=rand(8, 99-a>8?99-a:8); if(a+b>100){ b=100-a- rand(0,5); if(b<1)b=1; } }
     else { a=rand(120,780); b=rand(45, 999-a); }
     var ans=a+b;
-    setQuestion(a+' <span style="color:#16a34a">+</span> '+b+' = ?', numClips(a).concat(["plus"], numClips(b), ["equals"]));
+    setQuestion(a+' <span style="color:#15803d">+</span> '+b+' = ?', numClips(a).concat(["plus"], numClips(b), ["equals"]));
     if(state.level===1 && a<=10 && b<=10){
-      visual.innerHTML = '<div class="eq-visual"><div class="group-box"><small>'+a+'</small>'+buddyHTML(a,24)+'</div><span class="eq-op">+</span><div class="group-box"><small>'+b+'</small>'+buddyHTML(b,24)+'</div><span class="eq-op">=</span><span class="eq-q">?</span></div>';
+      visual.innerHTML = '<div class="eq-visual"><div class="group-box"><small>'+a+'</small>'+buddyHTML(a,shortPhone()?17:24)+'</div><span class="eq-op">+</span><div class="group-box"><small>'+b+'</small>'+buddyHTML(b,shortPhone()?17:24)+'</div><span class="eq-op">=</span><span class="eq-q">?</span></div>';
     } else {
       visual.innerHTML = equationVisual(a,"+",b,{forcePV: state.level===3 || a>20});
     }
@@ -1061,11 +1215,17 @@
 
   function roundSub(){
     var a,b;
-    if(state.level===1){ a=rand(5,20); b=rand(1,a-1); }
+    if(state.level===1){
+      var st=rampTier();
+      if(st===0){ a=rand(2,5); b=rand(1,a-1); }          /* from 5 or less */
+      else if(st===1){ a=rand(6,10); b=rand(1,a-1); }    /* from 6 to 10 */
+      else if(st===2){ a=rand(11,15); b=rand(1,9); }     /* from 11 to 15 */
+      else { a=rand(5,20); b=rand(1,a-1); }              /* the old Starter range */
+    }
     else if(state.level===2){ a=rand(25,100); b=rand(6,a-5); }
     else { a=rand(200,1000); b=rand(35,a-40); }
     var ans=a-b;
-    setQuestion(a+' <span style="color:#0d9488">−</span> '+b+' = ?', numClips(a).concat(["takeaway"], numClips(b), ["equals"]));
+    setQuestion(a+' <span style="color:#0f766e">−</span> '+b+' = ?', numClips(a).concat(["takeaway"], numClips(b), ["equals"]));
     if(a<=10){
       visual.innerHTML='<div class="eq-visual"><div class="group-box"><small>'+a+'</small>'+buddyHTML(a,26,{pop:b})+'</div><span class="eq-op">−</span><div class="group-box"><div style="font-family:Fredoka,sans-serif;font-size:40px">'+b+'</div></div><span class="eq-op">=</span><span class="eq-q">?</span></div>';
     } else if(a<=20){
@@ -1091,7 +1251,12 @@
 
   function roundMul(){
     var a,b;
-    if(state.level===1){ a=rand(2,4); b=rand(2,5); }
+    if(state.level===1){
+      var mt=rampTier();
+      if(mt===0){ a=2; b=rand(2,3); }
+      else if(mt===1){ a=rand(2,3); b=rand(2,4); }
+      else { a=rand(2,4); b=rand(2,5); }                 /* the old Starter range */
+    }
     else if(state.level===2){ a=rand(2,9); b=rand(2,9); }
     else { a=rand(3,12); b=rand(4,25); if(a*b>1000){ b=Math.floor(900/a); } }
     var ans=a*b;
@@ -1129,7 +1294,12 @@
 
   function roundDiv(){
     var divisor, quotient, total;
-    if(state.level===1){ divisor=rand(2,4); quotient=rand(2,5); }
+    if(state.level===1){
+      var dt=rampTier();
+      if(dt===0){ divisor=2; quotient=rand(2,3); }
+      else if(dt===1){ divisor=rand(2,3); quotient=rand(2,4); }
+      else { divisor=rand(2,4); quotient=rand(2,5); }    /* the old Starter range */
+    }
     else if(state.level===2){ divisor=rand(2,9); quotient=rand(2,9); }
     else { divisor=rand(3,12); quotient=rand(6,40); }
     total=divisor*quotient;
@@ -1159,10 +1329,10 @@
   function buildFriends(){
     var row=$("friendsRow"); var html="";
     [1,2,3,4,5,6,7,8,9,10,20,50,100].forEach(function(n){
-      if(n<=10) html+='<button class="friend" data-n="'+n+'">'+buddyHTML(n, n===10?17:19)+'<b>'+n+'</b></button>';
-      else if(n===20) html+='<button class="friend" data-n="20"><span style="display:flex;gap:3px"><span class="ten-rod" style="background:#2dd4bf;color:#1e293b">10</span><span class="ten-rod" style="background:#2dd4bf;color:#1e293b">10</span></span><b>20</b></button>';
-      else if(n===50) html+='<button class="friend" data-n="50"><span style="display:flex;gap:3px">'+repeat('<span class="ten-rod" style="background:#fb923c;color:#1e293b">10</span>',5)+'</span><b>50</b></button>';
-      else html+='<button class="friend" data-n="100"><span class="hundred" style="background:#3b82f6;color:#ffffff">100</span><b>100</b></button>';
+      if(n<=10) html+='<button class="friend" data-n="'+n+'" aria-label="Number '+n+'">'+buddyHTML(n, n===10?17:19)+'<b>'+n+'</b></button>';
+      else if(n===20) html+='<button class="friend" data-n="20" aria-label="Number 20"><span style="display:flex;gap:3px"><span class="ten-rod" style="background:#2dd4bf;color:#1e293b">10</span><span class="ten-rod" style="background:#2dd4bf;color:#1e293b">10</span></span><b>20</b></button>';
+      else if(n===50) html+='<button class="friend" data-n="50" aria-label="Number 50"><span style="display:flex;gap:3px">'+repeat('<span class="ten-rod" style="background:#fb923c;color:#1e293b">10</span>',5)+'</span><b>50</b></button>';
+      else html+='<button class="friend" data-n="100" aria-label="Number 100"><span class="hundred" style="background:#1c6ef5;color:#ffffff">100</span><b>100</b></button>';
     });
     row.innerHTML=html;
     row.querySelectorAll(".friend").forEach(function(f){
@@ -1183,6 +1353,7 @@
     m.addEventListener("click", function(){
       document.querySelectorAll(".mode").forEach(function(x){x.classList.remove("active");});
       m.classList.add("active"); state.mode=m.getAttribute("data-mode"); sillyTap();
+      document.querySelectorAll(".mode").forEach(function(x){ x.setAttribute("aria-pressed", x===m?"true":"false"); });
       pendingAnnounce=["mode-"+state.mode]; /* spoken in full, then the question, once */
       newRound();
     });
@@ -1191,13 +1362,14 @@
     l.addEventListener("click", function(){
       document.querySelectorAll(".level").forEach(function(x){x.classList.remove("active");});
       l.classList.add("active"); state.level=parseInt(l.getAttribute("data-level"),10); sillyTap();
+      document.querySelectorAll(".level").forEach(function(x){ x.setAttribute("aria-pressed", x===l?"true":"false"); });
       pendingAnnounce=["level-"+(state.level===1?"starter":(state.level===2?"explorer":"master"))];
       newRound();
     });
   });
   $("speakBtn").addEventListener("click", function(){ ac(); speakClips(state.questionClips); });
   $("soundBtn").addEventListener("click", function(){
-    state.sound=!state.sound; this.textContent=state.sound?"🔊":"🔇"; this.classList.toggle("off",!state.sound);
+    state.sound=!state.sound; this.textContent=state.sound?"🔊":"🔇"; this.classList.toggle("off",!state.sound); this.setAttribute("aria-pressed",state.sound?"true":"false");
     if(state.sound){ popSound(); startBgMusic(); }
     else { /* sound off = full quiet: music pauses AND any voice stops */
       try{ bgMusic.pause(); }catch(e){}
@@ -1206,7 +1378,7 @@
     }
   });
   $("voiceBtn").addEventListener("click", function(){
-    state.voice=!state.voice; this.classList.toggle("off",!state.voice);
+    state.voice=!state.voice; this.classList.toggle("off",!state.voice); this.setAttribute("aria-pressed",state.voice?"true":"false");
     this.textContent = state.voice ? "🗣️" : "🔇"; /* off state as legible as the sound toggle */
     if(!state.voice){ voiceToken++; try{ if(voiceAudio) voiceAudio.pause(); }catch(e){} duckBg(false); }
     if(state.voice) speakClips(state.questionClips);
@@ -1252,7 +1424,7 @@
   function startWithName(raw){
     playerName = (raw || "").trim().slice(0, 16);
     $("brandSub").textContent = playerName ? playerName + "'s Math Adventure" : "A Math Adventure";
-    $("startScreen").classList.remove("show");
+    $("startScreen").classList.remove("show"); setBackgroundInert(false);
     started = true;
     /* P1-1: speak the first question exactly once -- wait for any welcome /
        name-instruction sequence still playing to finish, add a short beat,
@@ -1267,10 +1439,38 @@
     }, 120);
   }
   $("playBtn").addEventListener("click", function(){ startWithName($("nameInput").value); });
-  $("skipBtn").addEventListener("click", function(){ startWithName(""); });
   $("nameInput").addEventListener("keydown", function(e){ if(e.key === "Enter"){ startWithName(this.value); } });
   $("nameInput").addEventListener("focus", function(){ if(!nameSpoken) speakNameQuestion(); });
   $("nameSpeakBtn").addEventListener("click", function(){ speakNameQuestion(); });
+
+  /* Group labels for what is drawn in the play area ("five cubes"), derived from what is actually on screen */
+  function labelVisual(){
+    visual.querySelectorAll(".group-box").forEach(function(box){
+      var shown = box.querySelectorAll(".bcube:not(.popped), .mini-cube:not(.crossed)").length
+        + 100*box.querySelectorAll(".hundred").length + 10*box.querySelectorAll(".ten-rod").length + box.querySelectorAll(".pv-stack .one-cube").length;
+      var gone = box.querySelectorAll(".bcube.popped, .mini-cube.crossed").length;
+      var blocks = box.querySelector(".hundred, .ten-rod") ? "blocks" : "cubes";
+      var small = box.querySelector("small"), st = small ? small.textContent.trim() : "", text = box.textContent.trim();
+      var label;
+      if(!shown && !box.querySelector(".buddy")) label = "number " + text;
+      else {
+        label = (blocks==="blocks" ? shown+" blocks" : cubesLabel(shown + gone));
+        if(gone) label += ", " + numWord(gone) + " crossed out";
+        if(box.parentNode.classList.contains("groups-wrap") && /^\d+$/.test(st)) label = "group " + st + ": " + label;
+        else if(st && !/^\d+$/.test(st)) label += ", " + st;
+      }
+      box.setAttribute("role","group"); box.setAttribute("aria-label",label);
+      Array.prototype.forEach.call(box.children, function(c){ c.setAttribute("aria-hidden","true"); });
+    });
+    visual.querySelectorAll(".pv").forEach(function(pv){
+      if(pv.closest(".group-box") || pv.querySelector(".pv-stack[data-col]")) return;
+      var h=pv.querySelectorAll(".hundred").length, t=pv.querySelectorAll(".ten-rod").length, o=pv.querySelectorAll(".one-cube").length;
+      pv.setAttribute("role","img"); pv.setAttribute("aria-label","blocks: "+h+" hundreds, "+t+" tens, "+o+" ones");
+    });
+  }
+  new MutationObserver(labelVisual).observe(visual, {childList:true, subtree:true});
+  function setBackgroundInert(on){ var w=document.querySelector(".wrap"); if(w){ if(on) w.setAttribute("inert",""); else w.removeAttribute("inert"); } }
+  setBackgroundInert(true); /* the start screen is a dialog: the game behind it is not reachable until it closes */
 
   buildFriends();
   updateHUD();
