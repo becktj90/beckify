@@ -381,7 +381,18 @@ window.calcConduitFill = function () {
   if (!pass) {
     const minSize = CONDUIT_TRADE_ORDER.filter((t) => conduit.areas[t] !== undefined)
       .find((t) => conduit.areas[t] * limit.pct / 100 >= totalWireArea);
-    wtRow(el, 'Minimum raceway size', minSize ? minSize + '" ' + type : 'Larger than any ' + type + ' size — split the run', { bold: true });
+    wtRow(el, 'Minimum raceway size', minSize ? minSize + '" ' + type : 'Larger than any ' + type + ' size — try a larger raceway type below, or split the run', { bold: true });
+    if (!minSize) {
+      /* NEC Table 4 stops at 4 in for EMT, IMC, FMC and LFMC; say which types go bigger. */
+      const alt = [];
+      Object.keys(CONDUIT_TYPES).forEach((t) => {
+        if (t === type) return;
+        const m = CONDUIT_TRADE_ORDER.filter((x) => CONDUIT_TYPES[t].areas[x] !== undefined)
+          .find((x) => CONDUIT_TYPES[t].areas[x] * limit.pct / 100 >= totalWireArea);
+        if (m) alt.push(m + '" ' + t);
+      });
+      wtRow(el, 'Types that can hold it', alt.length ? alt.join(', ') : 'None. Split into parallel raceways.');
+    }
   }
 
   /* The drawing lives in #cf_viz at the top of the card, above the inputs, so

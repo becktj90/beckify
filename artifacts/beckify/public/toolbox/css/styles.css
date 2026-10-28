@@ -2602,3 +2602,18 @@ body.report-open { overflow: hidden; }
 .bkt-warn { border-color: #f0bc48; color: #f5d487; }
 .bkt-fig { margin: 8px 0 12px; }
 .bkt-svg { display: block; width: 100%; height: auto; max-width: 560px; }
+
+/* Conduit Fill: on wide screens the card spans the row and the drawing sits
+   beside the inputs (right column), so it is on screen with the controls. */
+@media (min-width: 900px) {
+  .card-grid > .card:has(> .card-body > #cf_viz) { grid-column: 1 / -1; }
+  .card-grid > .card:has(> .card-body > #cf_viz) ~ .card { grid-column: 1 / -1; }
+  .card-body:has(> #cf_viz) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+    column-gap: 24px;
+    align-items: start;
+  }
+  .card-body:has(> #cf_viz) > :not(#cf_viz) { grid-column: 1; }
+  .card-body:has(> #cf_viz) > #cf_viz { grid-column: 2; grid-row: 1 / span 40; position: sticky; top: 12px; }
+}
