@@ -140,6 +140,8 @@ struct DashboardCardView: View {
             phoneBattery
         case .trip:
             TripCard(trip: model.trip, source: model.tripSource, now: model.now, units: units, reset: model.resetTrip)
+        case .driveSkill:
+            DriveSkillCard(tracker: model.insights.skill)
         }
     }
 

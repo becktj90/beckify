@@ -160,6 +160,61 @@ struct RegenScoreCard: View {
     }
 }
 
+/// Driving smoothness from phone G, speed and pedal movement, Chauffeur to Reckless.
+/// A smoothness label, not a safety or impairment test.
+struct DriveSkillCard: View {
+    let tracker: DriveSkillTracker
+
+    private var tint: Color {
+        switch tracker.tier {
+        case .chauffeur?, .smooth?, .steady?: return DriveTheme.accent
+        case .spirited?, .rough?: return DriveTheme.warning
+        case .reckless?: return DriveTheme.critical
+        case nil: return DriveTheme.muted
+        }
+    }
+
+    var body: some View {
+        let score = tracker.score
+        MetricCard(
+            title: "Driver score",
+            symbol: "steeringwheel",
+            value: score.map { String(format: "%.0f", $0) },
+            unit: "/ 100",
+            freshness: score == nil ? .notReported : .live,
+            tint: tint,
+            caption: caption,
+            spokenValue: score.flatMap { value in
+                tracker.tier.map { "\(Int(value.rounded())) out of 100, \($0.title)" }
+            }
+        ) {
+            if let score, let tier = tracker.tier {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tier.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(tint)
+                    Gauge(value: score, in: 0...100) { EmptyView() }
+                        .gaugeStyle(.accessoryLinearCapacity)
+                        .tint(tint)
+                        .accessibilityHidden(true)
+                }
+            } else {
+                ProgressView(value: tracker.calibrationFraction)
+                    .tint(DriveTheme.muted)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private var caption: String {
+        guard tracker.score != nil else {
+            return "Needs about 20 s of driving. Reads the phone's G sensor, speed, and pedal. Stopped time is not scored."
+        }
+        let events = "\(tracker.harshBrakes) hard brakes, \(tracker.harshAccels) hard launches, \(tracker.hardCorners) hard corners, \(tracker.weaves) swerves."
+        return "Smoothness of the last few minutes. \(events) A smoothness label only: not a safety or impairment test."
+    }
+}
+
 /// Trip energy split into driving, climbing, stopped, and regen returned.
 struct TripEnergyCard: View {
     let ledger: TripEnergyLedger

@@ -23,7 +23,7 @@ final class DriveCarPlayTileMathTests: XCTestCase {
 
     func testBoltLayoutHasEightTilesInOrder() {
         let tiles = DriveCarPlayTiles.make(boltDriving(), units: us)
-        XCTAssertEqual(tiles.map(\.kind), [.charge, .power, .flow, .speed, .range, .weatherRange, .efficiency, .packTemp])
+        XCTAssertEqual(tiles.map(\.kind), [.charge, .power, .flow, .speed, .range, .weatherRange, .efficiency, .packTemp, .skill])
     }
 
     func testRegenRingUsesRegenScore() {
@@ -147,7 +147,7 @@ final class DriveCarPlayTileMathTests: XCTestCase {
 
     func testMissingReadingsShowDashAndNoGauge() {
         let tiles = DriveCarPlayTiles.make(DriveCarPlayTileInputs(layout: .ev), units: us)
-        XCTAssertEqual(tiles.count, 8)
+        XCTAssertEqual(tiles.count, 9)
         for tile in tiles {
             XCTAssertEqual(tile.value, "—", "\(tile.kind)")
             XCTAssertNil(tile.gauge, "\(tile.kind)")
@@ -197,7 +197,7 @@ final class DriveCarPlayTileMathTests: XCTestCase {
             coolantC: 91, fuelPercent: 63, moduleVolts: 14.3, ambientC: 9
         )
         let tiles = DriveCarPlayTiles.make(input, units: us)
-        XCTAssertEqual(tiles.map(\.kind), [.speed, .rpm, .coolant, .fuel, .moduleVolts, .ambient])
+        XCTAssertEqual(tiles.map(\.kind), [.speed, .rpm, .coolant, .fuel, .moduleVolts, .ambient, .skill])
         XCTAssertEqual(tiles[0].note, "GPS")
         XCTAssertEqual(tiles[1].value, "2430")
         XCTAssertEqual(tiles[1].gauge, .arc(fraction: 2_430.0 / 8_000.0))
@@ -213,7 +213,7 @@ final class DriveCarPlayTileMathTests: XCTestCase {
     func testStandardEVLayout() {
         let input = DriveCarPlayTileInputs(layout: .evStandard, speedKph: 50, moduleVolts: 11.8, ambientC: 9)
         let tiles = DriveCarPlayTiles.make(input, units: us)
-        XCTAssertEqual(tiles.map(\.kind), [.speed, .moduleVolts, .ambient])
+        XCTAssertEqual(tiles.map(\.kind), [.speed, .moduleVolts, .ambient, .skill])
         XCTAssertEqual(tiles[1].tone, .critical)
         if case let .bar(fraction)? = tiles[1].gauge {
             XCTAssertEqual(fraction, 0.2, accuracy: 1e-9)
@@ -230,6 +230,31 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         var scoredInput = boltDriving()
         scoredInput.regenScore = 0.62
         XCTAssertEqual(DriveCarPlayTiles.make(scoredInput, units: us)[2].spoken, "Regen 62 % est.")
+    }
+
+    func testSkillTileShowsScoreTierAndEvents() {
+        var input = boltDriving()
+        XCTAssertEqual(DriveCarPlayTiles.skill(input).note, "Calibrating")
+        XCTAssertNil(DriveCarPlayTiles.skill(input).gauge)
+        input.driveSkillScore = 93
+        input.harshBrakes = 2
+        input.harshAccels = 0
+        input.hardCorners = 1
+        let tile = DriveCarPlayTiles.skill(input)
+        XCTAssertEqual(tile.value, "93")
+        XCTAssertEqual(tile.note, "Chauffeur")
+        XCTAssertEqual(tile.tone, .accent)
+        XCTAssertEqual(tile.gauge, .arc(fraction: 0.93))
+        XCTAssertEqual(
+            DriveCarPlayTiles.readouts(.skill, input, units: us).map(\.value),
+            ["2", "0", "1"]
+        )
+        XCTAssertEqual(DriveCarPlayTiles.scaleLabels(.skill, input, units: us), .init(low: "RECKLESS", high: "CHAUFFEUR"))
+        input.driveSkillScore = 55
+        XCTAssertEqual(DriveCarPlayTiles.skill(input).tone, .caution)
+        input.driveSkillScore = 10
+        XCTAssertEqual(DriveCarPlayTiles.skill(input).tone, .critical)
+        XCTAssertEqual(DriveCarPlayTiles.skill(input).note, "Reckless")
     }
 
     func testHeadline() {
@@ -338,7 +363,7 @@ final class DriveCarPlayTileMathTests: XCTestCase {
         let sections = DriveCarPlayReadings.make(input, units: us, link: "Live · Bolt EUV")
         XCTAssertEqual(sections.map(\.header), ["Battery", "Range and energy", "Drive", "Outside and link"])
         let rows = sections.flatMap(\.rows)
-        XCTAssertEqual(rows.count, 21)
+        XCTAssertEqual(rows.count, 22)
         let byTitle = Dictionary(rows.map { ($0.title, $0) }, uniquingKeysWith: { first, _ in first })
         XCTAssertEqual(byTitle["Charge"]?.value, "65 %")
         XCTAssertEqual(byTitle["Power"]?.value, "15 hp")

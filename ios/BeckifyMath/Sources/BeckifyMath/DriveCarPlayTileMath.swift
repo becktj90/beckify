@@ -24,6 +24,8 @@ public struct DriveCarPlayTile: Equatable, Sendable, Identifiable {
         case fuel
         case moduleVolts
         case ambient
+        /// Driving smoothness score, from phone G, speed and pedal.
+        case skill
     }
 
     /// How the tile draws its reading.
@@ -163,6 +165,12 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
     /// Range band ends, miles: planning efficiency vs. this trip's measured one.
     public var rangeLowMiles: Double?
     public var rangeHighMiles: Double?
+    /// Driver smoothness: score 0…100 (nil while calibrating), its tier name, and event counts.
+    public var driveSkillScore: Double?
+    public var driveSkillTier: String?
+    public var harshBrakes: Int?
+    public var harshAccels: Int?
+    public var hardCorners: Int?
 
     public init(
         layout: DriveLayout,
@@ -192,7 +200,12 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         motorTempC: Double? = nil,
         planningUsesDefaults: Bool = false,
         rangeLowMiles: Double? = nil,
-        rangeHighMiles: Double? = nil
+        rangeHighMiles: Double? = nil,
+        driveSkillScore: Double? = nil,
+        driveSkillTier: String? = nil,
+        harshBrakes: Int? = nil,
+        harshAccels: Int? = nil,
+        hardCorners: Int? = nil
     ) {
         self.layout = layout
         self.socPercent = socPercent
@@ -222,6 +235,11 @@ public struct DriveCarPlayTileInputs: Equatable, Sendable {
         self.planningUsesDefaults = planningUsesDefaults
         self.rangeLowMiles = rangeLowMiles
         self.rangeHighMiles = rangeHighMiles
+        self.driveSkillScore = driveSkillScore
+        self.driveSkillTier = driveSkillTier
+        self.harshBrakes = harshBrakes
+        self.harshAccels = harshAccels
+        self.hardCorners = hardCorners
     }
 }
 
@@ -263,12 +281,14 @@ public enum DriveCarPlayTiles {
                 weatherRange(input, units: units),
                 efficiency(input, units: units),
                 packTemp(input, units: units),
+                skill(input),
             ]
         case .evStandard:
             return [
                 speed(input, units: units),
                 moduleVolts(input),
                 ambient(input, units: units),
+                skill(input),
             ]
         case .powertrain:
             return [
@@ -278,6 +298,7 @@ public enum DriveCarPlayTiles {
                 fuel(input),
                 moduleVolts(input),
                 ambient(input, units: units),
+                skill(input),
             ]
         }
     }
@@ -411,6 +432,25 @@ public enum DriveCarPlayTiles {
             value: String(format: "%.0f", perMile ? whPerMile : whPerMile / DriveUnitPreference.kmPerMile),
             unit: perMile ? "Wh/mi" : "Wh/km", note: "est.", gauge: .symbol, tone: .estimated,
             symbol: "leaf.fill", isEstimate: true
+        )
+    }
+
+    /// Smoothness score as an arc: Chauffeur at the top, Reckless at the bottom.
+    static func skill(_ input: DriveCarPlayTileInputs) -> DriveCarPlayTile {
+        guard let score = finite(input.driveSkillScore), score >= 0 else {
+            return notRead(.skill, title: "Driver score", symbol: "steeringwheel", note: "Calibrating")
+        }
+        let tier = DriveSkillTier.tier(for: score)
+        let tone: DriveCarPlayTile.Tone
+        switch tier {
+        case .chauffeur, .smooth, .steady: tone = .accent
+        case .spirited, .rough: tone = .caution
+        case .reckless: tone = .critical
+        }
+        return DriveCarPlayTile(
+            kind: .skill, title: "Driver score", value: String(format: "%.0f", min(100, score)), unit: "",
+            note: tier.title, gauge: .arc(fraction: clamp(score / 100)), tone: tone,
+            symbol: "steeringwheel", isEstimate: false
         )
     }
 
@@ -564,6 +604,12 @@ public enum DriveCarPlayTiles {
         case .fuel: return [trip, avg, top]
         case .moduleVolts: return [speedNow, outside, trip]
         case .ambient: return [speedNow, volts, trip]
+        case .skill:
+            return [
+                R(label: "HARSH BRAKES", value: input.harshBrakes.map(String.init) ?? missing),
+                R(label: "HARD LAUNCHES", value: input.harshAccels.map(String.init) ?? missing),
+                R(label: "HARD CORNERS", value: input.hardCorners.map(String.init) ?? missing),
+            ]
         }
     }
 
@@ -580,6 +626,7 @@ public enum DriveCarPlayTiles {
         case .rpm: return S(low: "0", high: "8k")
         case .packTemp: return S(low: "COLD", high: "HOT")
         case .moduleVolts: return S(low: "11", high: "15")
+        case .skill: return S(low: "RECKLESS", high: "CHAUFFEUR")
         case .flow, .range, .weatherRange, .efficiency, .coolant, .ambient: return nil
         }
     }
@@ -711,7 +758,7 @@ public enum DriveCarPlayReadings {
                     row(T.efficiency(input, units: units)), net, recovered, score,
                 ]),
                 DriveCarPlayReadingSection(header: "Drive", rows: [
-                    row(T.speed(input, units: units)), torque, peak, top, avg, trip,
+                    row(T.speed(input, units: units)), torque, peak, top, avg, trip, row(T.skill(input)),
                 ]),
                 DriveCarPlayReadingSection(header: "Outside and link", rows: [outside, linkRow]),
             ]
@@ -723,7 +770,7 @@ public enum DriveCarPlayReadings {
             car += [volts, outside]
             return [
                 DriveCarPlayReadingSection(header: "Car", rows: car),
-                DriveCarPlayReadingSection(header: "Trip", rows: [top, avg, trip]),
+                DriveCarPlayReadingSection(header: "Trip", rows: [top, avg, trip, row(T.skill(input))]),
                 DriveCarPlayReadingSection(header: "Link", rows: [linkRow]),
             ]
         }

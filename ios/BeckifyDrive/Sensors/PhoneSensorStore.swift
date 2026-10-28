@@ -32,6 +32,12 @@ final class GForceFeed: ObservableObject {
         if aligned { aligned = false }
     }
 
+    /// G extremes since the last call, for the driver score (once a second).
+    /// Reads `tracker` without publishing a change the views care about.
+    func takeWindow() -> GWindow? {
+        tracker.takeWindow()
+    }
+
     func resetPeak() {
         tracker.resetPeak()
     }

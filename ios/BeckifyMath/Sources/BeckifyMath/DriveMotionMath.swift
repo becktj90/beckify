@@ -68,6 +68,23 @@ public enum GBallScale {
     }
 }
 
+/// Extremes of the smoothed G vector over a short window (the driving score
+/// takes one a second). Braking and launch are magnitudes; lateral is signed.
+public struct GWindow: Equatable, Sendable {
+    public var peakBrakeG: Double
+    public var peakAccelG: Double
+    /// Lateral G with the largest magnitude in the window; positive is toward the right.
+    public var peakLateralG: Double
+    public var samples: Int
+
+    public init(peakBrakeG: Double = 0, peakAccelG: Double = 0, peakLateralG: Double = 0, samples: Int = 0) {
+        self.peakBrakeG = peakBrakeG
+        self.peakAccelG = peakAccelG
+        self.peakLateralG = peakLateralG
+        self.samples = samples
+    }
+}
+
 /// Smoothed G readout, a short fading trail, and the session peak.
 public struct GForceTracker: Equatable, Sendable {
     /// Exponential smoothing weight per sample. At 30 Hz, 0.2 settles in about
@@ -77,6 +94,7 @@ public struct GForceTracker: Equatable, Sendable {
     public private(set) var current: GVector?
     public private(set) var trail: [GVector]
     public private(set) var peak: Double
+    private var window = GWindow()
 
     public init(smoothing: Double = 0.2, trailCapacity: Int = 45) {
         self.smoothing = min(max(smoothing, 0.01), 1)
@@ -104,6 +122,17 @@ public struct GForceTracker: Equatable, Sendable {
         }
         // Peak follows the smoothed value so one pothole does not set it.
         peak = max(peak, next.magnitude)
+        window.peakBrakeG = max(window.peakBrakeG, max(0, -next.longitudinal))
+        window.peakAccelG = max(window.peakAccelG, max(0, next.longitudinal))
+        if abs(next.lateral) > abs(window.peakLateralG) { window.peakLateralG = next.lateral }
+        window.samples += 1
+    }
+
+    /// The extremes since the last call, then a fresh window. Nil when no sample
+    /// arrived (phone not lined up with the car, or sensors off).
+    public mutating func takeWindow() -> GWindow? {
+        defer { window = GWindow() }
+        return window.samples > 0 ? window : nil
     }
 
     public mutating func resetPeak() {
@@ -114,5 +143,6 @@ public struct GForceTracker: Equatable, Sendable {
         current = nil
         trail = []
         peak = 0
+        window = GWindow()
     }
 }

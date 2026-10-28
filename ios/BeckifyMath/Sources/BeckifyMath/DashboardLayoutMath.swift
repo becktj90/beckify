@@ -80,6 +80,8 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
     case phoneBattery
     case grade
     case trip
+    /// Smoothness score from phone G, speed and pedal. Works on every layout.
+    case driveSkill
 
     public var title: String {
         switch self {
@@ -114,6 +116,7 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
         case .barometer: return "Barometer"
         case .phoneBattery: return "Phone battery"
         case .trip: return "Trip"
+        case .driveSkill: return "Driver score"
         }
     }
 
@@ -136,7 +139,7 @@ public enum DashboardCardID: String, CaseIterable, Sendable, Codable {
             return layout == .ev ? .powerElectronics : nil
         case .efficiency, .weatherRange, .regenScore, .tripEnergy, .precondition, .degradation:
             return layout == .ev ? .energy : nil
-        case .gpsSpeed, .altitude, .compass, .gForce, .barometer, .phoneBattery, .grade, .trip:
+        case .gpsSpeed, .altitude, .compass, .gForce, .barometer, .phoneBattery, .grade, .trip, .driveSkill:
             return .phone
         }
     }
