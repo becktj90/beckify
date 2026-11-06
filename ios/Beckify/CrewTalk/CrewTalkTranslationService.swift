@@ -42,18 +42,33 @@ enum CrewTalkTranslationService {
     }
 
     /// Neural audio in the listener's character voice.
+    /// Repeat lines are served from the on-device speech cache
+    /// (`CrewTalkSpeechAudioCache`) instead of re-synthesizing them.
     static func speechAudio(_ text: String, crew: CrewTalkMember) async throws -> Data {
         guard let url = SpanishTranslatorAPI.speakURL(customEndpoint: "") else {
             throw CrewTalkConversationError(message: "Speak needs the Beckify API.")
         }
+        let speakText = SpanishTranslatorAPI.clampSpeakText(text)
+        // Same canonical document the server hashes, so the on-device key
+        // and the server key agree for a given line + character.
+        let cacheKey = CrewTalkSpeakRequest(text: speakText, crew: crew).audioCacheKey
+        if let cached = await CrewTalkSpeechAudioCache.shared.cachedAudio(forKey: cacheKey) {
+            return cached
+        }
         let body = try SpanishTranslatorAPI.speakRequestJSON(
-            text: SpanishTranslatorAPI.clampSpeakText(text),
+            text: speakText,
             voiceMode: .jobsite,
             language: crew.speakLanguage,
             crew: crew
         )
         do {
             let result = try await BeckifyAIClient.postAudio(url: url, body: body, bearerToken: "", timeout: 30)
+            // Only cache successful, non-empty audio. Failures throw and are
+            // never stored, so the next line retries the network — and the
+            // caller falls back to the Apple voice on failure, as before.
+            if !result.data.isEmpty {
+                await CrewTalkSpeechAudioCache.shared.store(result.data, forKey: cacheKey)
+            }
             return result.data
         } catch let error as VisionHTTPError {
             throw CrewTalkConversationError(
@@ -63,6 +78,101 @@ enum CrewTalkTranslationService {
                     endpoint: url.absoluteString
                 )
             )
+        }
+    }
+}
+
+/// On-device file cache for Crew Talk speech audio.
+///
+/// Keyed by `CrewTalkSpeakRequest.audioCacheKey` — the same SHA-256 canonical
+/// document the server uses — so a line cached here is the same clip the
+/// server would cache. Files live in the app Caches directory
+/// (`CrewTalkSpeech/<key>.mp3`) and may be purged by the system at any time;
+/// a missing file is just a cache miss.
+///
+/// Caps: 200 clips / 50 MB, least-recently-used first. A 128 kbps MP3 is
+/// ~16 KB per second of speech and Crew Talk lines are at most 500
+/// characters (~30 s), so 200 clips is roughly 15–40 MB in practice and the
+/// byte cap is the binding limit. The cache never throws: every failure is
+/// a miss (or a skipped store), so a corrupt or full cache degrades to the
+/// old behaviour — synthesize, then fall back to the Apple voice.
+actor CrewTalkSpeechAudioCache {
+    static let shared = CrewTalkSpeechAudioCache()
+
+    /// Maximum clips held. Beyond this the oldest are evicted.
+    static let maxFiles = 200
+    /// Maximum total bytes held. Beyond this the oldest are evicted.
+    static let maxBytes: Int64 = 50 * 1024 * 1024
+
+    private let folder: URL
+
+    init(folder: URL? = nil) {
+        if let folder {
+            self.folder = folder
+        } else {
+            self.folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("CrewTalkSpeech", isDirectory: true)
+        }
+        try? FileManager.default.createDirectory(at: self.folder, withIntermediateDirectories: true)
+    }
+
+    /// Cached audio for a key, or nil. A hit refreshes recency (LRU).
+    /// Corrupt files are deleted and treated as misses.
+    func cachedAudio(forKey key: String) -> Data? {
+        let url = fileURL(forKey: key)
+        guard let data = try? Data(contentsOf: url), Self.isPlausibleMP3(data) else {
+            try? FileManager.default.removeItem(at: url)
+            return nil
+        }
+        // Touch so eviction keeps recently played lines.
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
+        return data
+    }
+
+    /// Stores audio under a key. Empty or implausible audio is never stored.
+    func store(_ data: Data, forKey key: String) {
+        guard Self.isPlausibleMP3(data) else { return }
+        let url = fileURL(forKey: key)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        guard (try? data.write(to: url, options: .atomic)) != nil else { return }
+        evictIfNeeded()
+    }
+
+    private func fileURL(forKey key: String) -> URL {
+        folder.appendingPathComponent("\(key).mp3")
+    }
+
+    /// MP3s from ElevenLabs start with an ID3 tag or an MPEG frame sync.
+    /// Anything else is not a speech clip (e.g. an error page saved as data).
+    private static func isPlausibleMP3(_ data: Data) -> Bool {
+        guard data.count >= 4 else { return false }
+        if data[0] == 0x49 && data[1] == 0x44 && data[2] == 0x33 { return true } // "ID3"
+        return data[0] == 0xFF && (data[1] & 0xE0) == 0xE0
+    }
+
+    /// Deletes oldest files until the file and byte caps both hold.
+    private func evictIfNeeded() {
+        guard let urls = try? FileManager.default.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey]
+        ) else { return }
+        var entries: [(url: URL, size: Int64, date: Date)] = []
+        var totalBytes: Int64 = 0
+        for url in urls {
+            guard let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey]),
+                  let size = values.fileSize else { continue }
+            let size64 = Int64(size)
+            totalBytes += size64
+            entries.append((url, size64, values.contentModificationDate ?? .distantPast))
+        }
+        guard entries.count > Self.maxFiles || totalBytes > Self.maxBytes else { return }
+        entries.sort { $0.date < $1.date }
+        var remainingCount = entries.count
+        for entry in entries {
+            if remainingCount <= Self.maxFiles && totalBytes <= Self.maxBytes { break }
+            try? FileManager.default.removeItem(at: entry.url)
+            totalBytes -= entry.size
+            remainingCount -= 1
         }
     }
 }
