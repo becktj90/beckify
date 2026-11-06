@@ -136,10 +136,10 @@ const CLIENT_KNOBS = {
   seed: 1,
 };
 
-async function speakEleven(port, voice) {
+async function speakEleven(port, voice, text = "Panel is dead.") {
   const before = calls.length;
   const res = await postJson(port, {
-    text: "Panel is dead.",
+    text,
     voice,
     ...CLIENT_KNOBS,
   });
@@ -150,7 +150,7 @@ async function speakEleven(port, voice) {
   const call = calls[calls.length - 1];
   const payload = JSON.parse(call.init.body);
   assert.equal(payload.model_id, "eleven_v3");
-  assert.equal(payload.text, "Panel is dead.");
+  assert.equal(payload.text, text);
   assert.match(call.url, new RegExp(`/text-to-speech/${encodeURIComponent(voice.trim())}\\?`));
   assert.equal(call.init.headers["xi-api-key"], process.env.ELEVENLABS_API_KEY);
   return payload;
@@ -187,8 +187,11 @@ async function main() {
     assert.deepEqual(bodie.voice_settings, BODIE_SETTINGS);
     assert.equal(bodie.seed, undefined);
     assert.equal(calls[calls.length - 1].url.includes(CREW.bodieHale), true);
+    // Distinct text from the Bodie call above: an identical repeat would
+    // now be a server cache hit and never reach the provider, so it could
+    // not prove the client knobs are ignored server-side.
     const bodieOverride = await postJson(port, {
-      text: "Panel is dead.",
+      text: "Panel is dead. Check the breaker.",
       voice: CREW.bodieHale,
       model: "eleven_v3",
       stability: 0.99,
@@ -230,7 +233,8 @@ async function main() {
     assert.equal(longRetired.status, 400, JSON.stringify(longRetired.json));
     assert.equal(calls.length, longRetiredBefore);
 
-    const atLimit = await speakEleven(port, CREW.bodieHale);
+    // Distinct text: the earlier identical Bodie line is already cached.
+    const atLimit = await speakEleven(port, CREW.bodieHale, "Panel is dead. Lock it out.");
     assert.deepEqual(atLimit.voice_settings, BODIE_SETTINGS);
     const atLimitBefore = calls.length;
     const fiveHundred = await postJson(port, {
