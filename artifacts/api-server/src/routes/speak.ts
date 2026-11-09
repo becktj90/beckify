@@ -23,6 +23,7 @@ import {
   stripAudioTags,
 } from "../prompts/speakPrompt.js";
 import { observeRouteTiming } from "../lib/logger.js";
+import { elevenSpeakCache, speakCacheKey } from "../lib/speakCache.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
 import { chargeBudget, logAIUsage, refundBudget } from "../lib/usageBudget.js";
 
@@ -116,6 +117,46 @@ router.post("/speak", async (req, res) => {
   const clientKey = getClientKey(req);
   const budgetKind = useEleven ? "eleven" as const : "openai" as const;
   const budgetUnits = useEleven ? text.length : 1;
+
+  // Per-client request rate limit applies to every request, cache hit or
+  // miss: it is the anti-abuse guard. It is consumed before the cache
+  // lookup, so a hit still costs one request slot but no budget.
+  const bucket = consumeLocalRateLimit(clientKey);
+  if (!bucket.allowed) {
+    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
+    res.setHeader("Retry-After", String(Math.max(1, retryAfter)));
+    return res.status(429).json({
+      error: "Too many speak requests. Please try again later.",
+      retryAfter: Math.max(1, retryAfter),
+    });
+  }
+
+  // Server speech cache (ElevenLabs only, keyed by the same canonical
+  // document the iOS client hashes). A hit never calls ElevenLabs and never
+  // charges the ElevenLabs character budget.
+  const cacheKey = useEleven
+    ? speakCacheKey({ voice, model, language, format, text })
+    : null;
+  if (useEleven && cacheKey) {
+    const cached = elevenSpeakCache.get(cacheKey);
+    if (cached) {
+      const contentType = format === "wav" ? "audio/wav" : "audio/mpeg";
+      res.setHeader("Content-Type", contentType);
+      // Cacheable hit: the audio is a deterministic re-render of the same
+      // canonical input, so it may be kept for the cache TTL (24 h).
+      res.setHeader("Cache-Control", "private, max-age=86400");
+      res.setHeader("X-Beckify-TTS-Model", model);
+      res.setHeader("X-Beckify-TTS-Voice", voice);
+      res.setHeader("X-Beckify-TTS-VoiceMode", voiceMode);
+      res.setHeader("X-Beckify-TTS-Language", language);
+      res.setHeader("X-Beckify-TTS-Cacheable", "1");
+      res.setHeader("X-Beckify-TTS-Cache", "HIT");
+      logAIUsage({ route: "/api/speak", kind: "speak", outcome: "ok", clientKey, units: 0, model });
+      res.setHeader("Content-Length", String(cached.length));
+      return res.status(200).send(cached);
+    }
+  }
+
   const budget = chargeBudget(budgetKind, clientKey, budgetUnits);
   if (!budget.allowed) {
     logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "blocked", clientKey, units: budgetUnits, status: 429 });
@@ -123,16 +164,6 @@ router.post("/speak", async (req, res) => {
     return res.status(429).json({
       error: "AI budget exceeded for speech. Please try again later.",
       retryAfter: budget.retryAfter,
-    });
-  }
-  const bucket = consumeLocalRateLimit(clientKey);
-  if (!bucket.allowed) {
-    refundBudget(budgetKind, clientKey, budgetUnits);
-    const retryAfter = Math.ceil((bucket.resetAt - Date.now()) / 1000);
-    res.setHeader("Retry-After", String(Math.max(1, retryAfter)));
-    return res.status(429).json({
-      error: "Too many speak requests. Please try again later.",
-      retryAfter: Math.max(1, retryAfter),
     });
   }
   if (bucket.inFlight >= MAX_IN_FLIGHT_PER_CLIENT) {
@@ -172,7 +203,13 @@ router.post("/speak", async (req, res) => {
     res.setHeader("X-Beckify-TTS-Voice", voice);
     res.setHeader("X-Beckify-TTS-VoiceMode", voiceMode);
     res.setHeader("X-Beckify-TTS-Language", language);
-    if (useEleven) res.setHeader("X-Beckify-TTS-Cacheable", "1");
+    if (useEleven) {
+      res.setHeader("X-Beckify-TTS-Cacheable", "1");
+      res.setHeader("X-Beckify-TTS-Cache", "MISS");
+      // Cache the fresh render so the next identical line is a hit.
+      // Empty audio never reaches here (handled above).
+      if (cacheKey) elevenSpeakCache.set(cacheKey, audio);
+    }
     logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "ok", clientKey, units: budgetUnits, model });
     res.setHeader("Content-Length", String(audio.length));
     return res.status(200).send(audio);
