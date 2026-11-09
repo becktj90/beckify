@@ -90,3 +90,19 @@ jobs:
 
       - name: Build the API image (not pushed, not deployed)
         run: docker build -t beckify-api-ci artifacts/api-server
+
+      - name: Container end to end (Crew Talk speak on the free engine)
+        run: |
+          docker run -d --name api -e VOICE_ENGINE_LOCAL=1 -p 8080:8080 beckify-api-ci
+          for i in $(seq 90); do curl -fsS http://127.0.0.1:8080/api/healthz >/dev/null && break; sleep 2; done
+          # The engine loads after the API; retry until it answers.
+          for i in $(seq 60); do
+            code=$(curl -s -o /tmp/bodie.mp3 -D /tmp/h.txt -w '%{http_code}' -H 'Content-Type: application/json' \
+              -d '{"text":"Kill the power first.","voice":"XVO6RhOYU9ZEKHFXrx6b","model":"eleven_v3","language":"en","format":"mp3"}' \
+              http://127.0.0.1:8080/api/speak)
+            [ "$code" = "200" ] && break; sleep 3
+          done
+          docker logs api 2>&1 | tail -20
+          test "$code" = "200"
+          grep -i '^x-beckify-tts-provider: kokoro' /tmp/h.txt
+          test "$(stat -c %s /tmp/bodie.mp3)" -gt 5000
