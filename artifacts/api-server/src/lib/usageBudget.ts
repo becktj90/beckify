@@ -3,7 +3,7 @@ import { logger } from "./logger.js";
 /** Rolling window for every AI meter. Not a login. Keyed by client address. */
 export const AI_BUDGET_WINDOW_MS = 15 * 60 * 1000;
 
-export type AIBudgetKind = "vision" | "eleven" | "openai" | "text";
+export type AIBudgetKind = "vision" | "eleven" | "openai" | "text" | "voice";
 
 export type AIBudgetDecision = {
   allowed: boolean;
@@ -19,8 +19,10 @@ const windows = new Map<string, WindowBucket>();
 const DEFAULT_LIMITS: Record<AIBudgetKind, { env: string; limit: number }> = {
   /** Shared image analyses (nameplate, panel, TDR) per client per window. */
   vision: { env: "AI_BUDGET_VISION", limit: 5 },
-  /** ElevenLabs characters accepted per client per window. */
+  /** ElevenLabs characters accepted per client per window (opt-in provider only). */
   eleven: { env: "AI_BUDGET_ELEVEN_CHARS", limit: 8_000 },
+  /** Free Beckify voice engine characters per client per window. Protects CPU, not money. */
+  voice: { env: "AI_BUDGET_VOICE_CHARS", limit: 12_000 },
   /** OpenAI speech requests per client per window. Toolbox math is not metered. */
   openai: { env: "AI_BUDGET_OPENAI", limit: 20 },
   /** Text completions (translate, review) per client per window. */
