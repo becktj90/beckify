@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * Crew Talk speaks on the free Beckify voice engine by default. ElevenLabs is never
- * called unless explicitly opted in. Run: node ./tests/crew-voice-engine.test.cjs
+ * Opt-in free engine (CREW_VOICE_PROVIDER=kokoro). With it on, ElevenLabs is never
+ * called unless CREW_VOICE_FALLBACK=elevenlabs. Run: node ./tests/crew-voice-engine.test.cjs
  */
 
 const assert = require("node:assert/strict");
@@ -98,10 +98,10 @@ function onlyEngineCalls() {
 }
 
 async function main() {
-  delete process.env.CREW_VOICE_PROVIDER;
+  process.env.CREW_VOICE_PROVIDER = "kokoro";
   delete process.env.CREW_VOICE_FALLBACK;
   delete process.env.TRANSLATOR_VOICE_PROVIDER;
-  // A configured key must not matter: the free engine is the default.
+  // With the engine opted in, a configured ElevenLabs key must not matter.
   process.env.ELEVENLABS_API_KEY = "test-key-not-used";
   process.env.OPENAI_API_KEY = "test-key";
 
@@ -252,6 +252,19 @@ async function main() {
     assert.equal(res.status, 200);
     assert.match(calls[0].url, /api\.openai\.com/);
     delete process.env.TRANSLATOR_VOICE_PROVIDER;
+    // Default (no CREW_VOICE_PROVIDER): ElevenLabs eleven_v3 on the shipped voice id; engine untouched.
+    delete process.env.CREW_VOICE_PROVIDER;
+    calls = [];
+    res = await post(port, { text: "[coughs] Panel is dead.", voice: LEGACY.titoSolano, model: "eleven_v3", language: "es" });
+    assert.equal(res.status, 200);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].url, /^https:\/\/api\.elevenlabs\.io\/v1\/text-to-speech\/goyf4sY4AqSvMIeO1hb5\?output_format=mp3_44100_128$/);
+    const elevenBody = JSON.parse(calls[0].init.body);
+    assert.equal(elevenBody.model_id, "eleven_v3");
+    assert.equal(elevenBody.text, "[coughs] Panel is dead.", "eleven_v3 still performs audio tags");
+    assert.equal(res.headers["x-beckify-tts-model"], "eleven_v3");
+    assert.equal(res.headers["x-beckify-tts-voice"], LEGACY.titoSolano);
+    assert.equal(res.headers["x-beckify-tts-cacheable"], "1");
   } finally {
     await new Promise((r) => server.close(r));
   }

@@ -1,9 +1,10 @@
 /**
  * Voice-engine provider abstraction for `/api/speak`.
  *
- * Default Crew Talk provider is the free, self-hosted Beckify voice engine
- * (Kokoro-82M, artifacts/voice-engine). ElevenLabs is an optional provider that is
- * off unless CREW_VOICE_PROVIDER=elevenlabs or CREW_VOICE_FALLBACK=elevenlabs is set.
+ * Default Crew Talk provider is ElevenLabs (eleven_v3, the shipped character voices).
+ * The free, self-hosted Kokoro engine (voice-engine/) stays in the code but is OFF by
+ * default after a listening test (Nov 9, 2026): it did not match ElevenLabs quality.
+ * Opt in with CREW_VOICE_PROVIDER=kokoro.
  */
 
 import type { CrewVoiceProfile } from "./crewVoices.js";
@@ -74,13 +75,13 @@ export const kokoroEngine: VoiceEngine = {
 
 export type CrewVoiceProviderId = "kokoro" | "elevenlabs";
 
-/** CREW_VOICE_PROVIDER: `kokoro` (default) or `elevenlabs` (opt-in, paid). */
+/** CREW_VOICE_PROVIDER: `elevenlabs` (default) or `kokoro` (free, opt-in). */
 export function crewVoiceProvider(): CrewVoiceProviderId {
   const raw = (process.env["CREW_VOICE_PROVIDER"] || "").trim().toLowerCase();
-  return raw === "elevenlabs" ? "elevenlabs" : "kokoro";
+  return raw === "kokoro" ? "kokoro" : "elevenlabs";
 }
 
-/** CREW_VOICE_FALLBACK=elevenlabs retries a failed free-engine call on ElevenLabs. Off by default. */
+/** Only with CREW_VOICE_PROVIDER=kokoro: CREW_VOICE_FALLBACK=elevenlabs retries a failed engine call on ElevenLabs. */
 export function crewVoiceFallback(): CrewVoiceProviderId | null {
   const raw = (process.env["CREW_VOICE_FALLBACK"] || "").trim().toLowerCase();
   return raw === "elevenlabs" ? "elevenlabs" : null;
