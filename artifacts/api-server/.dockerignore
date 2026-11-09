@@ -10,3 +10,6 @@ smoke-vision-routes.mjs
 .dockerignore
 Dockerfile
 fly.toml
+voice-engine/models
+voice-engine/__pycache__
+voice-engine/test_server.py
