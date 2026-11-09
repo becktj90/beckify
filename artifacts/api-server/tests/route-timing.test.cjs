@@ -130,7 +130,7 @@ async function main() {
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     }
-    if (href.includes("api.elevenlabs.io/")) {
+    if (href.includes("api.elevenlabs.io/") || href === "http://127.0.0.1:8090/synthesize") {
       return new Response(AUDIO, {
         status: 200,
         headers: { "Content-Type": "audio/mpeg" },

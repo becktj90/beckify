@@ -8,14 +8,6 @@ import {
   speakDefaultVoiceForMode,
   speakSupportsInstructions,
   normalizeSpeakLanguage,
-  BODIE_ELEVEN_VOICE_SETTINGS,
-  BODIE_HALE_VOICE_ID,
-  CREW_TALK_ELEVEN_VOICES,
-  JUNIE_ELEVEN_VOICE_SETTINGS,
-  JUNIE_PELL_VOICE_ID,
-  SLOANE_MERRITT_SEED,
-  resolveElevenLabsModel,
-  resolveElevenLabsVoiceId,
   shouldUseElevenLabsSpeak,
   speakVoiceInstructions,
   speakVoiceMode,
@@ -24,7 +16,23 @@ import {
 } from "../prompts/speakPrompt.js";
 import { observeRouteTiming } from "../lib/logger.js";
 import { MissingProviderKeyError, getClientKey } from "../lib/visionClient.js";
-import { chargeBudget, logAIUsage, refundBudget } from "../lib/usageBudget.js";
+import { chargeBudget, logAIUsage, refundBudget, type AIBudgetKind } from "../lib/usageBudget.js";
+import {
+  CREW_VOICE_PROFILES,
+  TRANSLATOR_VOICE_PROFILES,
+  resolveCrewVoiceKey,
+  type CrewVoiceKey,
+  type CrewVoiceProfile,
+} from "../voice/crewVoices.js";
+import {
+  KOKORO_MODEL_LABEL,
+  VoiceEngineUnavailableError,
+  crewVoiceFallback,
+  crewVoiceProvider,
+  kokoroEngine,
+  translatorVoiceProvider,
+} from "../voice/engine.js";
+import { elevenVoiceIdFor, synthesizeElevenLabs } from "../voice/elevenLabs.js";
 
 interface SpeakBody {
   text?: unknown;
@@ -36,9 +44,11 @@ interface SpeakBody {
   language?: unknown;
   voiceMode?: unknown;
   mode?: unknown;
-  /** OpenAI voice-mode alias when it is a string. Numeric ElevenLabs style is ignored. */
+  /** Crew character key (e.g. `bodieHale`). Optional; shipped builds send a legacy voice id. */
+  crew?: unknown;
+  /** OpenAI voice-mode alias when it is a string. Numeric style is ignored. */
   style?: unknown;
-  /** Ignored. ElevenLabs stability is server-side for Bodie and Junie. */
+  /** Ignored. Voice settings are server-side. */
   stability?: unknown;
   /** Ignored. */
   similarity_boost?: unknown;
@@ -46,9 +56,15 @@ interface SpeakBody {
   similarityBoost?: unknown;
   /** Ignored. */
   speed?: unknown;
-  /** Ignored. Seed is server-side for Sloane only. */
+  /** Ignored. */
   seed?: unknown;
 }
+
+/** One way to make the audio for this request. */
+type SpeakPlan =
+  | { provider: "kokoro"; label: string; profile: CrewVoiceProfile; text: string; crewKey: CrewVoiceKey | null; rawVoice: string }
+  | { provider: "elevenlabs"; voiceId: string; text: string }
+  | { provider: "openai"; voice: string; model: string; text: string };
 
 const router: IRouter = Router();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -92,19 +108,40 @@ router.post("/speak", async (req, res) => {
   const format = pickFormat(body.format);
   const rawVoice = typeof body.voice === "string" ? body.voice.trim() : "";
   const rawModel = typeof body.model === "string" ? body.model.trim() : "";
-  const useEleven = shouldUseElevenLabsSpeak(rawVoice, rawModel);
-  let voice: string;
-  let model: string;
-  if (useEleven) {
-    const elevenVoice = resolveElevenLabsVoiceId(rawVoice);
-    if (!elevenVoice) {
-      return res.status(400).json({ error: "Unknown voice." });
+
+  // Crew Talk: a crew key, a `crew:` voice, a legacy crew voice id, or an eleven_* model.
+  const crewKey = resolveCrewVoiceKey(rawVoice, body.crew, language);
+  const crewShaped = crewKey != null || rawVoice.startsWith("crew:") || shouldUseElevenLabsSpeak(rawVoice, rawModel);
+  if (crewShaped && !crewKey) {
+    return res.status(400).json({ error: "Unknown voice." });
+  }
+
+  let plan: SpeakPlan;
+  if (crewKey) {
+    if (crewVoiceProvider() === "elevenlabs") {
+      const voiceId = elevenVoiceIdFor(crewKey, rawVoice);
+      if (!voiceId) return res.status(400).json({ error: "Unknown voice." });
+      plan = { provider: "elevenlabs", voiceId, text };
+    } else {
+      plan = {
+        provider: "kokoro",
+        label: crewKey,
+        profile: CREW_VOICE_PROFILES[crewKey],
+        text: stripAudioTags(text) || text,
+        crewKey,
+        rawVoice,
+      };
     }
-    voice = elevenVoice;
-    model = resolveElevenLabsModel(rawModel);
+  } else if (translatorVoiceProvider() === "kokoro" && language !== "ja") {
+    const preset = translatorPreset(voiceMode, language);
+    plan = { provider: "kokoro", label: preset, profile: TRANSLATOR_VOICE_PROFILES[preset], text: stripAudioTags(text) || text, crewKey: null, rawVoice };
   } else {
-    voice = pickVoice(body.voice, voiceMode, language);
-    model = rawModel || process.env["TTS_MODEL"] || SPEAK_DEFAULT_MODEL;
+    plan = {
+      provider: "openai",
+      voice: pickVoice(body.voice, voiceMode, language),
+      model: rawModel || process.env["TTS_MODEL"] || SPEAK_DEFAULT_MODEL,
+      text: stripAudioTags(text) || text,
+    };
   }
 
   if (text.length > SPEAK_MAX_INPUT_CHARS) {
@@ -114,8 +151,8 @@ router.post("/speak", async (req, res) => {
   }
 
   const clientKey = getClientKey(req);
-  const budgetKind = useEleven ? "eleven" as const : "openai" as const;
-  const budgetUnits = useEleven ? text.length : 1;
+  const budgetKind = budgetKindFor(plan);
+  const budgetUnits = budgetKind === "openai" ? 1 : text.length;
   const budget = chargeBudget(budgetKind, clientKey, budgetUnits);
   if (!budget.allowed) {
     logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "blocked", clientKey, units: budgetUnits, status: 429 });
@@ -143,62 +180,117 @@ router.post("/speak", async (req, res) => {
   }
   bucket.inFlight += 1;
 
+  const fail = (status: number, error: string) => {
+    refundBudget(budgetKind, clientKey, budgetUnits);
+    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status });
+    return res.status(status).json({ error });
+  };
+
   try {
-    const response = useEleven
-      ? await synthesizeElevenLabs(text, voice, model, format, elevenVoiceSettings(voice), pickSpeakSeed(voice))
-      : await synthesizeOpenAI(stripAudioTags(text) || text, voice, model, format, voiceMode, language);
+    let response: Response;
+    let served = plan;
+    try {
+      response = await runPlan(plan, format, voiceMode, language);
+      if (plan.provider === "kokoro" && !response.ok && response.status >= 500) {
+        throw new VoiceEngineUnavailableError(`voice engine HTTP ${response.status}`);
+      }
+    } catch (error) {
+      // Optional, off by default: retry a failed free-engine call on ElevenLabs.
+      const fallbackPlan = plan.provider === "kokoro" && plan.crewKey && crewVoiceFallback() === "elevenlabs"
+        ? elevenVoiceIdFor(plan.crewKey, plan.rawVoice)
+        : null;
+      if (!fallbackPlan || !isEngineFailure(error)) throw error;
+      // The paid fallback keeps its own character meter.
+      if (!chargeBudget("eleven", clientKey, text.length).allowed) throw error;
+      served = { provider: "elevenlabs", voiceId: fallbackPlan, text };
+      response = await runPlan(served, format, voiceMode, language);
+    }
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
       console.error("Speak provider HTTP", response.status, errText.slice(0, 400));
-      refundBudget(budgetKind, clientKey, budgetUnits);
-      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 502 });
-      return res.status(502).json({ error: "The speech provider could not synthesize this text." });
+      return fail(502, "The speech provider could not synthesize this text.");
     }
 
     const audioResult = await readProviderAudio(response, startedAtMs);
     firstAudioChunkMs = audioResult.firstAudioChunkMs;
     const audio = audioResult.audio;
     if (!audio.length) {
-      refundBudget(budgetKind, clientKey, budgetUnits);
-      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 502 });
-      return res.status(502).json({ error: "The speech provider returned empty audio." });
+      return fail(502, "The speech provider returned empty audio.");
     }
 
     const contentType = format === "wav" ? "audio/wav" : "audio/mpeg";
+    const header = servedHeaders(served);
     res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "no-store");
-    res.setHeader("X-Beckify-TTS-Model", model);
-    res.setHeader("X-Beckify-TTS-Voice", voice);
+    res.setHeader("X-Beckify-TTS-Provider", served.provider);
+    res.setHeader("X-Beckify-TTS-Model", header.model);
+    res.setHeader("X-Beckify-TTS-Voice", header.voice);
     res.setHeader("X-Beckify-TTS-VoiceMode", voiceMode);
     res.setHeader("X-Beckify-TTS-Language", language);
-    if (useEleven) res.setHeader("X-Beckify-TTS-Cacheable", "1");
-    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "ok", clientKey, units: budgetUnits, model });
+    // Crew voices are deterministic per line, so clients may cache them.
+    if (served.provider !== "openai") res.setHeader("X-Beckify-TTS-Cacheable", "1");
+    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "ok", clientKey, units: budgetUnits, model: header.model });
     res.setHeader("Content-Length", String(audio.length));
     return res.status(200).send(audio);
   } catch (error) {
     if (error instanceof MissingProviderKeyError) {
-      refundBudget(budgetKind, clientKey, budgetUnits);
-      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 503 });
-      return res.status(503).json({
-        error: `The speech provider key is missing (${error.envName}).`,
-      });
+      return fail(503, `The speech provider key is missing (${error.envName}).`);
+    }
+    if (error instanceof VoiceEngineUnavailableError) {
+      console.error("Voice engine unavailable", error.message);
+      return fail(503, "The voice engine is not available right now.");
     }
     if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
-      refundBudget(budgetKind, clientKey, budgetUnits);
-      logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 504 });
-      return res.status(504).json({ error: "The speech provider timed out. Please try again." });
+      return fail(504, "The speech provider timed out. Please try again.");
     }
-    refundBudget(budgetKind, clientKey, budgetUnits);
-    logAIUsage({ route: "/api/speak", kind: budgetKind, outcome: "refund", clientKey, units: budgetUnits, status: 502 });
     console.error("Speak provider request failed", error);
-    return res.status(502).json({ error: "The speech provider could not synthesize this text." });
+    return fail(502, "The speech provider could not synthesize this text.");
   } finally {
     bucket.inFlight -= 1;
   }
 });
 
+function runPlan(
+  plan: SpeakPlan,
+  format: "mp3" | "wav",
+  voiceMode: ReturnType<typeof speakVoiceMode>,
+  language: SpeakLanguage,
+): Promise<Response> {
+  const signal = AbortSignal.timeout(PROVIDER_TIMEOUT_MS);
+  if (plan.provider === "kokoro") {
+    return kokoroEngine.synthesize({ text: plan.text, format, profile: plan.profile, label: plan.label }, signal);
+  }
+  if (plan.provider === "elevenlabs") return synthesizeElevenLabs(plan.text, plan.voiceId, format, signal);
+  return synthesizeOpenAI(plan.text, plan.voice, plan.model, format, voiceMode, language, signal);
+}
 
+function isEngineFailure(error: unknown): boolean {
+  return error instanceof VoiceEngineUnavailableError
+    || (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"));
+}
+
+function budgetKindFor(plan: SpeakPlan): AIBudgetKind {
+  if (plan.provider === "kokoro") return "voice";
+  if (plan.provider === "elevenlabs") return "eleven";
+  return "openai";
+}
+
+function servedHeaders(plan: SpeakPlan): { model: string; voice: string } {
+  if (plan.provider === "kokoro") return { model: KOKORO_MODEL_LABEL, voice: plan.label };
+  if (plan.provider === "elevenlabs") return { model: "eleven_v3", voice: plan.voiceId };
+  return { model: plan.model, voice: plan.voice };
+}
+
+/** Translator preset on the free engine (only when TRANSLATOR_VOICE_PROVIDER=kokoro). */
+function translatorPreset(
+  mode: ReturnType<typeof speakVoiceMode>,
+  language: SpeakLanguage,
+): keyof typeof TRANSLATOR_VOICE_PROFILES {
+  if (mode === "deepSouth") return "deepSouth";
+  if (mode === "california" || (language === "en" && mode !== "cuban")) return "california";
+  return mode === "clean" ? "clean" : "jobsite";
+}
 
 /**
  * Buffer the provider body the same way arrayBuffer() did, while noting when the
@@ -242,6 +334,7 @@ async function synthesizeOpenAI(
   format: "mp3" | "wav",
   voiceMode: ReturnType<typeof speakVoiceMode>,
   language: SpeakLanguage,
+  signal: AbortSignal,
 ): Promise<Response> {
   const apiKey = process.env["OPENAI_API_KEY"];
   if (!apiKey) throw new MissingProviderKeyError("OPENAI_API_KEY");
@@ -260,68 +353,9 @@ async function synthesizeOpenAI(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+    signal,
     body: JSON.stringify(payload),
   });
-}
-
-async function synthesizeElevenLabs(
-  text: string,
-  voiceId: string,
-  model: string,
-  format: "mp3" | "wav",
-  voiceSettings?: Record<string, number | boolean>,
-  seed?: number,
-): Promise<Response> {
-  const apiKey = process.env["ELEVENLABS_API_KEY"];
-  if (!apiKey) {
-    throw new MissingProviderKeyError("ELEVENLABS_API_KEY");
-  }
-  const outputFormat = format === "wav" ? "wav_44100" : "mp3_44100_128";
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
-  return fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: format === "wav" ? "audio/wav" : "audio/mpeg",
-      "xi-api-key": apiKey,
-    },
-    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
-    body: JSON.stringify({
-      text,
-      model_id: model,
-      ...(voiceSettings ? { voice_settings: voiceSettings } : {}),
-      ...(seed != null ? { seed } : {}),
-    }),
-  });
-}
-
-
-/**
- * Bodie and Junie presets stay server-side.
- * Client stability, similarity, style, and speed are ignored.
- * Other allowlisted voices use the provider default.
- */
-function elevenVoiceSettings(voiceId: string): Record<string, number | boolean> | undefined {
-  const preset = voiceId === BODIE_HALE_VOICE_ID
-    ? BODIE_ELEVEN_VOICE_SETTINGS
-    : voiceId === JUNIE_PELL_VOICE_ID
-      ? JUNIE_ELEVEN_VOICE_SETTINGS
-      : undefined;
-  if (!preset) return undefined;
-  return {
-    stability: preset.stability,
-    similarity_boost: preset.similarity_boost,
-    style: preset.style,
-    use_speaker_boost: preset.use_speaker_boost,
-    speed: preset.speed,
-  };
-}
-
-/** Seed only for Sloane (50505). Client seed is ignored. */
-function pickSpeakSeed(voiceId: string): number | undefined {
-  if (voiceId === CREW_TALK_ELEVEN_VOICES.sloaneMerritt) return SLOANE_MERRITT_SEED;
-  return undefined;
 }
 
 function consumeLocalRateLimit(clientKey: string) {

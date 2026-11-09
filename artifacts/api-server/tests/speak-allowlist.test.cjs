@@ -3,6 +3,8 @@
 /**
  * WP-110: ElevenLabs speak allowlist.
  * Unknown voices fail before any provider call. Client voice knobs are ignored.
+ * ElevenLabs is opt-in now (CREW_VOICE_PROVIDER=elevenlabs); this file pins that opt-in path.
+ * The default free-engine path is covered by crew-voice-engine.test.cjs.
  * Run: node ./tests/speak-allowlist.test.cjs
  */
 
@@ -160,6 +162,7 @@ async function main() {
   installFetchMock();
   process.env.ELEVENLABS_API_KEY = "wp110-test-key";
   process.env.OPENAI_API_KEY = "wp110-test-key";
+  process.env.CREW_VOICE_PROVIDER = "elevenlabs";
 
   const express = require("express");
   const router = await loadSpeakRouter();

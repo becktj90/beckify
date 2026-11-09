@@ -30,7 +30,7 @@ Same JSON shape either way: `translation`, `dialect`, `notes`, `voiceMode`, `sou
 
 ### `POST /api/speak`
 
-Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for every voice (over → **413**). Crew Talk characters use allowlisted ElevenLabs voice ids on model `eleven_v3`; any other ElevenLabs-shaped id → **400** `Unknown voice.` before a provider call. The ElevenLabs key stays in `ELEVENLABS_API_KEY` and is never sent to the app. Empty body → **400**. Used by Spanish Translator loud playback and Crew Talk; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en).
+Short text → OpenAI neural TTS audio (`audio/mpeg` by default, or `audio/wav`). Body: `{ "text": "…", "voice": "onyx", "format": "mp3", "language": "es" }`. `language` defaults to **es** (Spanish delivery). Pass `"language": "en"` (or `en-*`) for California English on **echo** (Clean is warm, Jobsite is louder — same character, not Deep South). `voiceMode` `deepSouth` (or `deep-south`) speaks English on **ballad** with its own instructions and does not rewrite the words. Omitted or Spanish tags keep Spanish instructions: Jobsite **onyx** is a gravelly Cuban / South American tradesman; Clean **nova** stays polished. Defaults: model **gpt-4o-mini-tts** (override with `TTS_MODEL=tts-1` for cheaper clips without instructions). Caps input at **500** characters for every voice (over → **413**). Crew Talk characters speak on the **free, self-hosted Beckify voice engine** (Kokoro-82M in `voice-engine/`, no key, no per-call cost; see `docs/crew-voice-engine.md`). The character comes from `crew` (e.g. `bodieHale`), a `crew:<key>` voice, or the legacy voice id shipped iOS builds send; each character has a server-side voice profile (voice blend, pace, pitch) and client voice knobs are ignored. Response headers: `X-Beckify-TTS-Provider: kokoro`, `X-Beckify-TTS-Model: kokoro-82m`, `X-Beckify-TTS-Cacheable: 1`. Unknown crew or ElevenLabs-shaped ids → **400** `Unknown voice.` before any provider call. If the engine is down → **503** and the app plays its on-device Apple voice. ElevenLabs is **not required**: it is an optional, paid, off-by-default provider (`CREW_VOICE_PROVIDER=elevenlabs`, or `CREW_VOICE_FALLBACK=elevenlabs` to retry a failed engine call) kept only for rollback; its key would stay in `ELEVENLABS_API_KEY`. Translator presets stay on OpenAI unless `TRANSLATOR_VOICE_PROVIDER=kokoro` (English and Spanish only). Empty body → **400**. Used by Spanish Translator loud playback and Crew Talk; Apple AVSpeech remains the on-device fallback for the translator (Spanish voice for es, English voice for en).
 
 ### Crew Talk rooms (`/api/rooms`)
 
@@ -140,7 +140,16 @@ Cheap shared-CPU Machines with scale-to-zero. Config lives next to this package:
 | `TDR_VISION_PROVIDER` / `TDR_VISION_MODEL` | Optional | TDR route |
 | `LOG_LEVEL` | Optional | Defaults to `info` |
 | `AI_BUDGET_VISION` | Optional | Shared image analyses per client per 15 min. Default **5**. |
-| `AI_BUDGET_ELEVEN_CHARS` | Optional | ElevenLabs characters per client per 15 min. Default **8000**. |
+| `VOICE_ENGINE_LOCAL` | Optional | `1` starts the free voice engine inside the container (needs about 700 MB RAM more than today's 256 MB machine). |
+| `VOICE_ENGINE_URL` | Optional | Where the voice engine listens. Default `http://127.0.0.1:8090`. |
+| `VOICE_ENGINE_TOKEN` | Optional | Bearer token, only if the engine runs on another host. |
+| `VOICE_ENGINE_THREADS` | Optional | onnxruntime threads for the engine. Default: all CPUs. |
+| `CREW_VOICE_PROVIDER` | Optional | `kokoro` (default, free) or `elevenlabs` (paid, rollback only). |
+| `CREW_VOICE_FALLBACK` | Optional | `elevenlabs` retries a failed free-engine call on ElevenLabs. Off by default. |
+| `TRANSLATOR_VOICE_PROVIDER` | Optional | `openai` (default) or `kokoro` (free; English and Spanish). |
+| `AI_BUDGET_VOICE_CHARS` | Optional | Free voice engine characters per client per 15 min (CPU guard). Default **12000**. |
+| `ELEVENLABS_API_KEY` | Optional | Only for the opt-in ElevenLabs provider. Not needed. |
+| `AI_BUDGET_ELEVEN_CHARS` | Optional | ElevenLabs characters per client per 15 min (opt-in provider only). Default **8000**. |
 | `AI_BUDGET_OPENAI` | Optional | OpenAI speech requests per client per 15 min. Default **20**. |
 | `AI_BUDGET_TEXT` | Optional | Text completions (translate, review) per client per 15 min. Default **30**. |
 | `AI_TEXT_MAX_OUTPUT_TOKENS` | Optional | Ceiling for text completions. Default **1800**. |
