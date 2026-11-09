@@ -12,7 +12,7 @@ const path = require("node:path");
 const src = path.join(__dirname, "..", "src");
 const speakRoute = fs.readFileSync(path.join(src, "routes", "speak.ts"), "utf8");
 const speakPrompt = fs.readFileSync(path.join(src, "prompts", "speakPrompt.ts"), "utf8");
-// ElevenLabs is an optional, off-by-default provider in its own module.
+// ElevenLabs (the default Crew Talk provider) lives in its own module.
 const elevenProvider = fs.readFileSync(path.join(src, "voice", "elevenLabs.ts"), "utf8");
 const engine = fs.readFileSync(path.join(src, "voice", "engine.ts"), "utf8");
 
@@ -52,8 +52,8 @@ assert.doesNotMatch(speakRoute, /sk_[A-Za-z0-9]{8,}/);
 assert.doesNotMatch(speakRoute, /xi-api-key":\s*"[^"]+"/);
 assert.doesNotMatch(elevenProvider, /sk_[A-Za-z0-9]{8,}/);
 assert.doesNotMatch(elevenProvider, /xi-api-key":\s*"[^"]+"/);
-// The free engine is the default; ElevenLabs only when explicitly opted in.
-assert.match(engine, /raw === "elevenlabs" \? "elevenlabs" : "kokoro"/);
+// ElevenLabs is the default; the free engine only when explicitly opted in.
+assert.match(engine, /raw === "kokoro" \? "kokoro" : "elevenlabs"/);
 assert.doesNotMatch(speakRoute, /ELEVENLABS_API_KEY/);
 assert.doesNotMatch(speakPrompt, /sk_[A-Za-z0-9]{8,}/);
 

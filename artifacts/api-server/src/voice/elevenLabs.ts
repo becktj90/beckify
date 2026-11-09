@@ -1,7 +1,7 @@
 /**
- * OPTIONAL, PAID, OFF BY DEFAULT. Kept only as a rollback switch.
- * Used when CREW_VOICE_PROVIDER=elevenlabs, or CREW_VOICE_FALLBACK=elevenlabs after the
- * free engine fails. Needs ELEVENLABS_API_KEY. Nothing in Beckify requires it.
+ * DEFAULT Crew Talk provider (CREW_VOICE_PROVIDER unset or `elevenlabs`).
+ * Same model (eleven_v3), voice ids, Bodie/Junie settings, and Sloane seed as before #462.
+ * Needs ELEVENLABS_API_KEY.
  */
 
 import {

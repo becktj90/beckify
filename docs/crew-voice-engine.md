@@ -1,27 +1,33 @@
-# Crew Talk voice engine (no ElevenLabs)
+# Crew Talk voice engine (free Kokoro engine: off by default)
 
-Status: implemented in `artifacts/api-server` (Nov 9, 2026). It is **not deployed yet**; see "Turning it on".
+Status: **off by default** (Nov 9, 2026). Trevor listened to the per-character samples and found them nowhere near as good as ElevenLabs. Crew Talk therefore stays on **ElevenLabs `eleven_v3`** by default, with the same voice ids, Bodie/Junie settings and Sloane seed as before #462. The Kokoro engine stays in the code as an opt-in experiment only. It is not deployed and is not built into the default Docker image.
 
-Goal: Beckify needs no ElevenLabs for anything, and Crew Talk still gives every character a good, distinct voice. That includes dynamic text, because Crew Talk rewrites are generated live. Budget is $0 in API fees.
+Original goal: Beckify needs no ElevenLabs, and Crew Talk still gives every character a good, distinct voice. That includes dynamic text, because Crew Talk rewrites are generated live. Budget is $0 in API fees. The free engine met the dependency and cost goals but **not the quality bar**.
 
-## Decision
+## Current default
 
-Crew Talk now speaks through a **voice-engine provider abstraction** in `/api/speak`. The default provider is a **free, self-hosted Kokoro-82M engine** (`artifacts/api-server/voice-engine/`). The Apache-2.0 weights run on CPU through onnxruntime. It needs no key, makes no outbound calls and costs nothing per call.
+- **`CREW_VOICE_PROVIDER` unset (or `elevenlabs`).** Crew Talk `/api/speak` calls ElevenLabs `eleven_v3` with the allowlisted voice id the app sends. It uses the same server-side settings as before, and `tests/speak-allowlist.test.cjs` pins this with its pre-#462 assertions.
+- **Default Docker image.** It is the same as the pre-engine image: no Python, no model files, same 256 MB machine. CI checks this by building both images and comparing them. The engine only exists in the separate `voice-runtime` build target.
+- **Translator presets.** They stay on OpenAI, unchanged.
+
+## Free engine design (opt-in, off)
+
+`/api/speak` has a **voice-engine provider abstraction**. Opting in takes three things: `CREW_VOICE_PROVIDER=kokoro`, `VOICE_ENGINE_LOCAL=1`, and an image built with `--target voice-runtime`. With all three, Crew Talk uses a **free, self-hosted Kokoro-82M engine** (`artifacts/api-server/voice-engine/`). The Apache-2.0 weights run on CPU through onnxruntime. It needs no key, makes no outbound calls and costs nothing per call.
 
 - Each character has a server-side **voice profile** in `src/voice/crewVoices.ts`: a blend of Kokoro voice styles, a pace, a small formant-coupled pitch move, the language, and spoken-only pronunciation fixes. Client voice knobs are ignored.
-- **Old app builds work unchanged.** Shipped iOS builds still send the old ElevenLabs voice ids and `model: eleven_v3`. Those ids are now just lookup keys that map to a character, and ElevenLabs is never called. New clients can send `crew: "<key>"` or `voice: "crew:<key>"`.
-- The **dialect lives in the words.** Crew Talk rewrites already keep the full meaning and are written in each character's voice. The engine sets timbre, pace and energy. It does no accent imitation, no impressions of real people and no caricature.
-- Output is **MP3 (or WAV)**, as before, so the app's playback, cache, Copy/Share and clip export need no change. The fp32 model is deterministic: the same line always gives the same audio. That means `X-Beckify-TTS-Cacheable: 1` holds, and draft PR #446's cache idea now works for free.
-- **Fallbacks:**
-  - If the engine is down, the route returns 503 and the app plays its on-device Apple voice. This path already existed.
-  - ElevenLabs remains only as an **optional, paid, off-by-default** provider for rollback: `CREW_VOICE_PROVIDER=elevenlabs`, or `CREW_VOICE_FALLBACK=elevenlabs` to retry a failed engine call. Removing it would not break anything. It is kept only so a bad deploy can be reverted with one env var.
-- The **Spanish Translator presets** (California, Cuban/South American, Deep South) stay on OpenAI by default, so their behavior is unchanged. `TRANSLATOR_VOICE_PROVIDER=kokoro` moves English and Spanish to the free engine. Japanese stays on OpenAI.
+- **Old app builds would work unchanged.** Shipped iOS builds send the ElevenLabs voice ids and `model: eleven_v3`. With the engine on, those ids just pick the character. New clients can send `crew: "<key>"` or `voice: "crew:<key>"`.
+- The **dialect lives in the words.** The engine sets timbre, pace and energy. It does no accent imitation, no impressions of real people and no caricature.
+- Output is **MP3 (or WAV)**, as before. The fp32 model is deterministic, so identical lines give identical audio.
+- **Fallbacks with the engine on:**
+  - If the engine is down, the route returns 503 and the app plays its on-device Apple voice.
+  - `CREW_VOICE_FALLBACK=elevenlabs` retries a failed engine call on ElevenLabs.
+- `TRANSLATOR_VOICE_PROVIDER=kokoro` would move the translator's English and Spanish presets to the engine. Japanese stays on OpenAI.
 
 ## Options considered
 
 | Option | License | Fits dynamic text? | Verdict |
 |---|---|---|---|
-| **Kokoro-82M** via kokoro-onnx | Weights and voices Apache-2.0; kokoro-onnx MIT; onnxruntime MIT; phonemes via espeak-ng (GPL-3.0, used server-side only, not shipped in the app) | Yes, about 0.5x real time on 1 CPU | **Chosen.** Best quality for its size, 54 voices (EN-US, EN-GB, ES and more), and style blending gives distinct characters. |
+| **Kokoro-82M** via kokoro-onnx | Weights and voices Apache-2.0; kokoro-onnx MIT; onnxruntime MIT; phonemes via espeak-ng (GPL-3.0, used server-side only, not shipped in the app) | Yes, about 0.5x real time on 1 CPU | **Tried; failed the listening test vs ElevenLabs.** Best quality for its size, 54 voices (EN-US, EN-GB, ES and more), and style blending gives distinct characters. |
 | Piper (`piper-tts` 1.8 = piper1-gpl) | Engine GPL-3.0. Voices vary: `en_US-ryan` is CC BY-NC-SA (non-commercial, rejected); `en_US-lessac` uses the Blizzard 2013 research license (rejected); `es_MX-ald` Unlicense; `es_MX-claude` says Apache-2.0 but its dataset source is unclear | Yes, very fast (about 0.02x real time) | Runner-up. Fast and small, but few commercially clean voices, flatter prosody and no blending. Good for a Spanish backup voice if Kokoro's Spanish disappoints. |
 | StyleTTS 2 | Code MIT; the pretrained model's terms require telling listeners the audio is synthetic unless you have voice permission | Yes, heavier than Kokoro | Not chosen. Kokoro is a smaller, faster derivative of this family. |
 | F5-TTS | Code MIT; pretrained weights CC-BY-NC-4.0 | Needs GPU for speed | **Rejected** (non-commercial weights). |
@@ -68,27 +74,16 @@ Known gaps compared with the old voices:
 - **No true rasp or vocal fry.** Bodie's and Tito's roughness comes from blend and pitch only.
 - **Kokoro has fewer Spanish voices** (1 female, 2 male) than English ones.
 
-## Turning it on (Trevor)
+## Turning it on (not recommended; failed the listening test)
 
-Nothing is deployed. Today production still runs the old build.
+Nothing is deployed, and a normal `fly deploy` of main keeps ElevenLabs. To try the engine anyway:
 
-1. Give the API machine enough memory. The engine needs about 700 MB more than the current 256 MB VM. Change `[[vm]] memory = '1gb'` in `fly.toml`, or run `fly scale memory 1024`.
-   - **Cost** (Fly list price, `iad`): `shared-cpu-1x` 1 GB is **$6.70 per 30 days** if always on, versus $2.19 for 256 MB. That is up to **+$4.51/month**.
-   - With `auto_stop_machines` it is billed per second while running, so it is usually less.
-   - A stopped machine's rootfs is $0.15/GB/month, and the image grows by roughly 0.5 GB.
-   - Two vCPUs (`shared-cpu-2x`, 2 GB) would halve latency for **$13.39 per 30 days** always-on.
-   - This is new spend, so it is **Trevor's call**.
-2. `fly secrets set VOICE_ENGINE_LOCAL=1` (not a secret, but it keeps env in one place). Or add it under `[env]`.
-3. `fly deploy` from `artifacts/api-server`. The image downloads the pinned model files (checksummed) at build time.
-4. Smoke test: `POST /api/speak {"text":"Kill the power.","crew":"bodieHale","language":"en"}`. Expect `X-Beckify-TTS-Provider: kokoro`.
-5. Once happy, the `ELEVENLABS_API_KEY` secret can be removed. Its absence breaks nothing.
-
-**If you deploy without step 1 or 2,** Crew Talk speak returns 503 and the app falls back to Apple voices. Nothing crashes, but voices sound plainer. To keep the old voices temporarily, set `CREW_VOICE_PROVIDER=elevenlabs` (paid).
-
-A $0 hosting alternative is running the engine on any always-on free CPU host and pointing `VOICE_ENGINE_URL` and `VOICE_ENGINE_TOKEN` at it. Free hosts sleep and cold-start slowly, so it is not recommended for live chat.
+1. Build the `voice-runtime` target. Set `[build] build-target = 'voice-runtime'` in `fly.toml`.
+2. Give the machine **1 GB** of memory (`[[vm]] memory = '1gb'`). That is up to +$4.51 per 30 days always-on at Fly's list price, so it is new spend.
+3. Set `VOICE_ENGINE_LOCAL=1` and `CREW_VOICE_PROVIDER=kokoro`.
 
 ## Follow-ups (not done here)
 
-- **iOS copy.** `ios/docs/APP_STORE.md`, `ios/docs/PRIVACY.md`, `ios/README.md` and some Swift comments still say "ElevenLabs / eleven_v3". Update them **after** the deploy so they stay true. Less data now goes to third parties. No App Store privacy label changes are needed: Crew Talk speech text was already disclosed as leaving the device for `api.beckify.com`.
+- **iOS copy** that says "ElevenLabs / eleven_v3" stays accurate, because ElevenLabs remains the default.
 - **iOS cleanup** (optional): send `crew` instead of the legacy id. Crew Talk Conversation's Apple fallback (`CrewTalkSpeechOutput`) could pick the best installed voice and apply `applePitchMultiplier` the way the main Crew Talk screen already does.
 - Phase 2: Kokoro on device for fully offline, $0, private playback.

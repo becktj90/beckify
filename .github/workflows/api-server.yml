@@ -59,6 +59,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Python 3.11 (matches the Debian bookworm runtime image)
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -88,12 +89,23 @@ jobs:
             http://127.0.0.1:8090/synthesize
           test "$(stat -c %s /tmp/line.wav)" -gt 50000
 
-      - name: Build the API image (not pushed, not deployed)
-        run: docker build -t beckify-api-ci artifacts/api-server
-
-      - name: Container end to end (Crew Talk speak on the free engine)
+      - name: Default image matches the pre-engine image (no Python, no model, same size)
         run: |
-          docker run -d --name api -e VOICE_ENGINE_LOCAL=1 -p 8080:8080 beckify-api-ci
+          docker build -t beckify-api-default artifacts/api-server
+          git show 10b638c:artifacts/api-server/Dockerfile > /tmp/Dockerfile.pre-engine
+          docker build -t beckify-api-pre-engine -f /tmp/Dockerfile.pre-engine artifacts/api-server
+          ! docker run --rm --entrypoint sh beckify-api-default -c 'command -v python3 || test -e /opt/voice || test -e /app/voice-engine'
+          docker image ls --format '{{.Repository}} {{.Size}}' | grep -E 'beckify-api-(default|pre-engine)'
+          a=$(docker image inspect -f '{{.Size}}' beckify-api-default); b=$(docker image inspect -f '{{.Size}}' beckify-api-pre-engine)
+          echo "default=$a pre-engine=$b"
+          test $(( a > b ? a - b : b - a )) -lt 1048576
+
+      - name: Build the optional voice-engine image (not pushed, not deployed)
+        run: docker build --target voice-runtime -t beckify-api-ci artifacts/api-server
+
+      - name: Opt-in container end to end (Crew Talk speak on the free engine)
+        run: |
+          docker run -d --name api -e VOICE_ENGINE_LOCAL=1 -e CREW_VOICE_PROVIDER=kokoro -p 8080:8080 beckify-api-ci
           for i in $(seq 90); do curl -fsS http://127.0.0.1:8080/api/healthz >/dev/null && break; sleep 2; done
           # The engine loads after the API; retry until it answers.
           for i in $(seq 60); do
