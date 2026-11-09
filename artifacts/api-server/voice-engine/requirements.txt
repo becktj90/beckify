@@ -1,0 +1,5 @@
+# Beckify voice engine. All free and commercially usable; see LICENSES.md.
+kokoro-onnx==0.6.1
+onnxruntime==1.31.1
+numpy>=2.2,<3
+lameenc==1.9.0
