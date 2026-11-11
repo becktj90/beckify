@@ -149,6 +149,11 @@ export const PAGE_SEO = {
     description:
       "Play Kestrel Heavy in the browser: launch from Pier 7 on KID, CADET, or PAD RAT difficulty, recover on barge Haven, and keep a local personal best. No install.",
   },
+  "/games/kestrel-heavy/privacy": {
+    title: "Kestrel Heavy privacy policy — Data Not Collected",
+    description:
+      "Kestrel Heavy privacy policy: the iPhone and iPad rocket game collects no data. No accounts, ads, analytics or Game Center; saves stay on your device; voices are pre-recorded.",
+  },
   "/games/number-blocks": {
     title: "Play Cube Squad — kids' math game",
     description:
@@ -178,6 +183,7 @@ export const STATIC_ROUTE_PATHS = [
   "control-systems",
   "games",
   "games/kestrel-heavy",
+  "games/kestrel-heavy/privacy",
   "games/number-blocks",
   "games/number-blocks/privacy",
   "games/new-glenn-runner",
