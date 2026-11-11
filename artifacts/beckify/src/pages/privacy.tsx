@@ -229,13 +229,17 @@ export default function PrivacyPage() {
             <p className="text-base leading-relaxed">
               The standalone <strong>Kestrel Heavy</strong> app (bundle ID{" "}
               <code className="font-mono text-[0.9em]">com.beckify.kestrelheavy</code>) is a separate App Store
-              product from Beckify Toolbox. It plays the Phaser 4 Pier 7 arcade from a local bundle inside a
-              native SwiftUI shell. v1 does not collect, upload, or track play data. Scores and settings stay
-              on the device. It does not load beckify.com in the web view. The website game at{" "}
+              product from Beckify Toolbox. It is a Unity rocket game that plays offline and collects no data:
+              progress and settings stay on the device, and it has no accounts, ads, analytics, or Game Center.
+              Its own policy is at{" "}
+              <a className="text-[var(--accent)] underline-offset-4 hover:underline" href="/games/kestrel-heavy/privacy/">
+                beckify.com/games/kestrel-heavy/privacy
+              </a>
+              . A browser build is playable at{" "}
               <a className="text-[var(--accent)] underline-offset-4 hover:underline" href="/games/kestrel-heavy/">
                 /games/kestrel-heavy
               </a>{" "}
-              remains a browser title and is not part of the Toolbox catalog.
+              and is not part of the Toolbox catalog.
             </p>
           </section>
 
