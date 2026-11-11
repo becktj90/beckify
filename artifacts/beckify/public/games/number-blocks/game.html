@@ -183,6 +183,27 @@
   .tf-gone::before{transform:translate(-50%,-50%) rotate(45deg);} .tf-gone::after{transform:translate(-50%,-50%) rotate(-45deg);}
   .group-box.tf-key-a{border-color:#f97316;box-shadow:inset 0 -5px 0 #fdba74;} .group-box.tf-key-b{border-color:#0ea5e9;box-shadow:inset 0 -5px 0 #7dd3fc;}
   .tf-num{font-family:Fredoka,sans-serif;font-size:40px;line-height:1;}
+  /* Number bonds (roadmap item 11, "parts of a number"): on a win in Balance and in Starter Add with a whole of 10 or less, the fact is
+     drawn as the classic part-whole diagram: the whole on top, its two parts below, joined by lines, each a numeral and plain cubes in a
+     frame of ten (the same cubes and fill as the ten-frames above: first part orange, second part blue). Picture only (no buttons);
+     VoiceOver reads one label for the whole diagram ("3 and 2 make 5"). A soft pop-in, none under reduced motion. */
+  .bond{display:flex;flex-direction:column;align-items:center;margin:var(--sp-8) auto 0;padding:6px 10px 8px;background:#fff;border:3px solid #86efac;border-radius:var(--r-16);box-shadow:var(--elev-1);animation:bondIn .45s ease-out 1;max-width:100%;box-sizing:border-box;}
+  .bond-node{display:flex;align-items:center;gap:6px;padding:4px 6px;border:3px solid #64748b;border-radius:var(--r-14);background:#f8fbff;}
+  .bond-whole{border-color:#15803d;background:#f0fdf4;}
+  .bond-node.bond-a{border-color:#f97316;} .bond-node.bond-b{border-color:#0ea5e9;}
+  .bond-n{font:700 30px/1 Fredoka,sans-serif;color:#1e293b;min-width:24px;text-align:center;}
+  .bond-lines{display:block;width:180px;height:16px;}
+  .bond-parts{display:flex;gap:12px;justify-content:center;}
+  .bond .tf-frame{gap:3px;padding:3px;border-radius:9px;box-shadow:none;}
+  .bond .tf-cell{width:15px;height:15px;border-radius:5px;}
+  .bond .tf-cube{border-width:1.5px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15);}
+  .bond .tf-slot{border-width:1.5px;}
+  .bond-say{margin-top:4px;font:700 20px/1.1 Fredoka,sans-serif;color:#15803d;}
+  .bond-say .bond-a{color:#c2410c;} .bond-say .bond-b{color:#0369a1;}
+  @keyframes bondIn{from{opacity:0;scale:.85}}
+  @media(prefers-reduced-motion:reduce){.bond{animation:none;}}
+  @media(max-width:520px) and (max-height:759px){.bond{margin-top:var(--sp-4);padding:4px 8px 6px;} .bond .tf-cell{width:13px;height:13px;} .bond-n{font-size:26px;} .bond-lines{height:12px;} .bond-say{font-size:18px;margin-top:2px;}}
+  .bl-tray.bl-gone{display:none;}
   .counter-line{font-family:Fredoka,sans-serif;font-size:22px;background:#fff;border:var(--bdw) solid var(--ink);border-radius:var(--r-pill);padding:6px 18px;box-shadow:var(--sh-3px);}
 
   /* Place value */
@@ -1314,9 +1335,9 @@
           <p class="gu-say">Things to say:</p><ul><li>&ldquo;How many tens did you use? How many ones?&rdquo;</li><li>&ldquo;Can you make the same number another way?&rdquo;</li></ul>
           <p><span class="gu-tag ev">Research-backed idea</span> <span class="gu-why">Putting numbers together and taking them apart is a core strand of early-math learning paths (Clements &amp; Sarama).</span></p></li>
         <li class="gu-game" data-gu="add"><h4>Add</h4>
-          <p><b>What this teaches:</b> Putting two groups together and finding how many in all. On Starter the two groups also fill frames of ten (two rows of five) in two colors, so a child can see the parts, and fives and tens, inside the total.</p>
+          <p><b>What this teaches:</b> Putting two groups together and finding how many in all. On Starter the two groups also fill frames of ten (two rows of five) in two colors, so a child can see the parts, and fives and tens, inside the total. After a right answer with a total of 10 or less, the frames turn into a number bond: the whole on top, the two parts below, and &ldquo;3 and 2 make 5&rdquo;.</p>
           <p class="gu-say">Things to say:</p><ul><li>&ldquo;How many altogether? How do you know?&rdquo;</li><li>&ldquo;Can you start at the bigger group and count on?&rdquo;</li></ul>
-          <p><span class="gu-tag ev">Research-backed idea</span> <span class="gu-why">Early adding grows step by step from counting (Clements &amp; Sarama; IES practice guide <i>Teaching Math to Young Children</i>, Frye et al., 2013). Seeing a number as parts and in fives and tens (spatial structuring, composing and decomposing) is a core strand of Clements &amp; Sarama&rsquo;s learning paths; that is the principle behind the frames, not a measured result for them or for this app.</span></p></li>
+          <p><span class="gu-tag ev">Research-backed idea</span> <span class="gu-why">Early adding grows step by step from counting (Clements &amp; Sarama; IES practice guide <i>Teaching Math to Young Children</i>, Frye et al., 2013). Seeing a number as parts and in fives and tens (spatial structuring, composing and decomposing) is a core strand of Clements &amp; Sarama&rsquo;s learning paths; that is the principle behind the frames, not a measured result for them or for this app. The number bond after a win shows the same part-whole idea (composing and decomposing numbers); no measured result is claimed for it.</span></p></li>
         <li class="gu-game" data-gu="sub"><h4>Take Away</h4>
           <p><b>What this teaches:</b> Taking some away and finding how many are left. On Starter the starting amount sits in frames of ten and the ones taken away fade out, so what is left is easy to see.</p>
           <p class="gu-say">Things to say:</p><ul><li>&ldquo;How many were there at the start?&rdquo;</li><li>&ldquo;How many are left? How do you know?&rdquo;</li></ul>
@@ -1362,9 +1383,9 @@
           <p class="gu-say">Things to say:</p><ul><li>&ldquo;Sun starts with sss. What else starts with sss?&rdquo;</li><li>&ldquo;What sound do you hear first in map?&rdquo;</li></ul>
           <p><span class="gu-tag ev">Research-backed idea</span> <span class="gu-why">Knowing letters and hearing the sounds in words are among the strongest early signs of later reading (National Early Literacy Panel, 2008), and sound practice works better with letters (National Reading Panel, 2000). Starting with first sounds is the usual order (International Dyslexia Association).</span></p></li>
         <li class="gu-game" data-gu="balance"><h4>Balance</h4>
-          <p><b>What this teaches:</b> Finding the missing number that makes both sides equal, like 3 and how many make 5.</p>
+          <p><b>What this teaches:</b> Finding the missing number that makes both sides equal, like 3 and how many make 5. When the scale is level, a number bond shows the whole on top and its two parts below, as cubes in frames of ten, with &ldquo;3 and 2 make 5&rdquo; (and the voice says &ldquo;3 plus 2 equals 5&rdquo;).</p>
           <p class="gu-say">Things to say:</p><ul><li>&ldquo;How many more to make it even?&rdquo;</li><li>&ldquo;How do you know it&rsquo;s balanced now?&rdquo;</li></ul>
-          <p><span class="gu-tag ev">Partly research-backed</span> <span class="gu-why">Knowing the parts of a number (3 and 2 make 5) is a core step in early math (Clements &amp; Sarama). The balance scale itself is just a good idea.</span></p></li>
+          <p><span class="gu-tag ev">Partly research-backed</span> <span class="gu-why">Knowing the parts of a number (3 and 2 make 5) is a core step in early math (Clements &amp; Sarama). The number bond picture is a standard way to show parts and a whole; that is the principle behind it, not a measured result for it or for this app. The balance scale itself is just a good idea.</span></p></li>
         <li class="gu-game" data-gu="coins"><h4>Coins</h4>
           <p><b>What this teaches:</b> Sorting and naming coins, counting by 1s, 5s and 10s, then adding coins to pay a price.</p>
           <p class="gu-say">Things to say:</p><ul><li>&ldquo;Which coin is worth the most? Is it the biggest one?&rdquo;</li><li>&ldquo;Let&rsquo;s count these nickels by 5s together.&rdquo;</li></ul>
@@ -2650,6 +2671,15 @@
   }
 
   function winRound(lead, praiseClip){
+    /* roadmap 11: a Starter Add win with a whole of 10 or less shows the number bond in place of the frames and says "a plus b equals c" */
+    var bond = (state.mode==="add" && state.bond && state.answer===state.bond.a+state.bond.b) ? state.bond : null;
+    if(bond){
+      lead = bondClips(bond.a, bond.b); celebAfterVoice = true;
+      var tfOld = $("tfSet"), bw = document.createElement("div"); bw.innerHTML = bondHTML(bond.a, bond.b);
+      if(tfOld) tfOld.replaceWith(bw.firstChild); else visual.appendChild(bw.firstChild);
+      var qBox = visual.querySelector(".eq-q"); if(qBox) qBox.textContent = state.answer; /* the "?" is filled in too */
+    }
+    clearTimeout(questionTimer); /* a win in the first 250 ms of a round: the question that had not started yet must not cut off the win line */
     rampNote();
     state.stars++;
     updateHUD(); goodSound(); confetti(26);
@@ -2663,7 +2693,7 @@
     else speakClips([praise]);
     var chars=visual.querySelectorAll(".nb, .buddy");
     chars.forEach(function(c){ c.classList.add("dance"); });
-    if(state.mode!=="build" && state.mode!=="count" && state.answer>=1 && state.answer<=20){
+    if(!bond && state.mode!=="build" && state.mode!=="count" && state.answer>=1 && state.answer<=20){ /* the bond already shows the whole */
       var rb=document.createElement("div");
       rb.className="result-buddy dance";
       rb.innerHTML='<div style="font-family:Fredoka,sans-serif;font-weight:700;font-size:20px;color:#15803d">= '+state.answer+'</div>'
@@ -3169,6 +3199,33 @@
     return '<div class="group-box'+(key ? ' tf-key-'+key : '')+'">'+(n<=10 ? '<small>'+n+'</small>'+buddyHTML(n, size) : '<div class="tf-num">'+n+'</div>')+'</div>';
   }
 
+  /* ==BOND-PLAN-BEGIN== roadmap 11: number bonds ("parts of a number") up to 10. Pure (no DOM), so smoke checks every fact outside the page.
+     bondShow: Balance (every level: its wholes are 2 to 10) and Starter Add when the whole is 10 or less (a, b >= 1); never Take Away,
+     Explorer / Master Add or a whole over 10. bondCells: three frames of 10 cells, filled left to right, top row first: the whole (part one
+     "a" then part two "b"), then each part on its own. bondLabel: one VoiceOver label, "3 and 2 make 5". bondClips: the win line, all
+     bundled clips ("three plus two equals five"; no new audio). Evidence-based principle: part-whole / composing and decomposing numbers
+     (Clements & Sarama's learning trajectories); no effect size is claimed for this display or this app. */
+  function bondShow(mode, level, a, b){ return (mode==="balance" || (mode==="add" && level===1)) && a>=1 && b>=1 && a+b<=10; }
+  function bondCells(a, b){
+    var whole=[], pa=[], pb=[], i;
+    for(i=0;i<10;i++){ whole.push(i<a ? "a" : (i<a+b ? "b" : "")); pa.push(i<a ? "a" : ""); pb.push(i<b ? "b" : ""); }
+    return { whole:whole, a:pa, b:pb };
+  }
+  function bondLabel(a, b){ return a+" and "+b+" make "+(a+b); }
+  function bondClips(a, b){ return ["n"+a, "plus", "n"+b, "equals", "n"+(a+b)]; }
+  /* ==BOND-PLAN-END== */
+  function bondHTML(a, b, swap){ /* plain cubes only (never buddy art); one role=img label, the parts hidden from VoiceOver.
+       swap: Balance's pans show the cubes already there in blue and the ones the child added in orange, so its bond swaps the two colours */
+    var c = bondCells(a, b), K = swap ? {a:"b", b:"a"} : {a:"a", b:"b"};
+    var fr = function(cells){ var h='<span class="tf-frame">'; cells.forEach(function(x){ h += '<span class="tf-cell '+(x ? 'tf-cube tf-'+K[x] : 'tf-slot')+'"></span>'; }); return h+'</span>'; };
+    return '<div class="bond" id="bondSet" role="img" data-a="'+a+'" data-b="'+b+'" aria-label="'+bondLabel(a, b)+'">'
+      + '<div class="bond-node bond-whole" aria-hidden="true"><b class="bond-n">'+(a+b)+'</b>'+fr(c.whole)+'</div>'
+      + '<svg class="bond-lines" viewBox="0 0 180 16" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M90 0L45 16M90 0L135 16" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round"/></svg>'
+      + '<div class="bond-parts" aria-hidden="true"><div class="bond-node bond-'+K.a+'"><b class="bond-n">'+a+'</b>'+fr(c.a)+'</div><div class="bond-node bond-'+K.b+'"><b class="bond-n">'+b+'</b>'+fr(c.b)+'</div></div>'
+      + '<div class="bond-say" aria-hidden="true"><span class="bond-'+K.a+'">'+a+'</span> and <span class="bond-'+K.b+'">'+b+'</span> make '+(a+b)+'</div>'
+      + '</div>';
+  }
+
   function roundAdd(){
     var a,b;
     if(state.level===1){
@@ -3181,6 +3238,7 @@
     else if(state.level===2){ a=rand(12,70); b=rand(8, 99-a>8?99-a:8); if(a+b>100){ b=100-a- rand(0,5); if(b<1)b=1; } }
     else { a=rand(120,780); b=rand(45, 999-a); }
     var ans=a+b;
+    state.bond = bondShow("add", state.level, a, b) ? {a:a, b:b} : null; /* roadmap 11: drawn on the win (winRound) */
     setQuestion(a+' <span style="color:#15803d">+</span> '+b+' = ?', numClips(a).concat(["plus"], numClips(b), ["equals"]));
     if(tfShow(state.level, "add", a, b)){
       /* roadmap 8: the two parts as buddies (a big numeral for a part over 10), then the same parts in one ten-frame set, two colours */
@@ -5158,6 +5216,10 @@
         answerArea.querySelectorAll(".bl-src").forEach(function(b){ b.disabled = true; b.setAttribute("aria-disabled","true"); });
         my.root.classList.add("bl-win");
         var box = $("blEqBox"); if(box){ box.textContent = p.gap; box.classList.add("lit"); }
+        if(bondShow("balance", state.level, p.a, p.gap)){ /* roadmap 11: the bond takes the (spent) tray's place; the win line already says it */
+          var tr = $("blTray"); if(tr) tr.classList.add("bl-gone");
+          answerArea.insertAdjacentHTML("beforeend", bondHTML(p.a, p.gap, true));
+        }
         celebAfterVoice = true;
         winRound(["n"+p.a, "plus", "n"+p.gap, "equals", "n"+p.total], rand(0,3)===0 ? "ch-smart" : "praise"+rand(8,17));
       }, 900);
