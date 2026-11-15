@@ -142,12 +142,12 @@ export const PAGE_SEO = {
   "/games": {
     title: "Beckify browser games — Kestrel Heavy and Cube Squad",
     description:
-      "Play Beckify's on-site browser games: Kestrel Heavy, the Pier 7 launch arcade, and Cube Squad, a talking cube math game for kids. Keyboard or touch, no ads, no install.",
+      "Play Beckify's on-site browser games: the Kestrel Heavy browser demo and Cube Squad, a talking cube math game for kids. Keyboard or touch, no ads, no install.",
   },
   "/games/kestrel-heavy": {
-    title: "Play Kestrel Heavy — Pier 7 launch arcade",
+    title: "Kestrel Heavy browser demo",
     description:
-      "Play Kestrel Heavy in the browser: launch from Pier 7 on KID, CADET, or PAD RAT difficulty, recover on barge Haven, and keep a local personal best. No install.",
+      "Browser demo of Kestrel Heavy. This page is not the App Store app. The iPhone and iPad game is a separate build; its privacy policy is at /games/kestrel-heavy/privacy.",
   },
   "/games/kestrel-heavy/privacy": {
     title: "Kestrel Heavy privacy policy — Data Not Collected",

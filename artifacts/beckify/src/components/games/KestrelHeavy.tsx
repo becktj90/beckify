@@ -72,7 +72,7 @@ export function KestrelHeavy() {
 
   return (
     <section className="fixed inset-0 z-[60] h-[100dvh] w-full bg-[#05050d]" aria-labelledby="kestrel-heavy-title">
-      <h1 id="kestrel-heavy-title" className="sr-only">Kestrel Heavy</h1>
+      <h1 id="kestrel-heavy-title" className="sr-only">Kestrel Heavy browser demo</h1>
       <div
         ref={stageRef}
         className={`game-stage relative overflow-hidden bg-[#05050d] ${immersive ? "fixed inset-0 z-[80] is-immersive rounded-none border-0" : "h-full w-full min-w-0"}`}
@@ -80,7 +80,7 @@ export function KestrelHeavy() {
         <iframe
           ref={iframeRef}
           src={RUNNER_SRC}
-          title="Kestrel Heavy"
+          title="Kestrel Heavy browser demo"
           className="absolute inset-0 block h-full w-full border-0 bg-black"
           allow="fullscreen; gamepad; autoplay"
           allowFullScreen
@@ -94,6 +94,11 @@ export function KestrelHeavy() {
           >
             &larr; BECKIFY
           </a>
+        )}
+        {!immersive && (
+          <p className="pointer-events-none absolute bottom-[max(0.25rem,env(safe-area-inset-bottom))] left-28 z-10 hidden h-9 items-center text-[11px] font-semibold tracking-wide text-white/70 sm:flex">
+            Browser demo. The App Store game is separate.
+          </p>
         )}
         {!runnerHasChrome && (
           <button

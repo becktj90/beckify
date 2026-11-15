@@ -39,7 +39,7 @@ const PAGES: { href: string; label: string; description: string; icon: typeof Te
   { href: "/projects/", label: "Projects", description: "Vespa EV conversion, Sniffmaster, and other builds.", icon: Rocket, hue: HUES.yellow },
   { href: "/projects/vespa-p200e/", label: "Vespa P200E EV Conversion", description: "A first-person 72V electric Vespa build log.", icon: Rocket, hue: HUES.orange },
   { href: "/projects/honda-xr650r/", label: "Honda XR650R Electric Conversion", description: "Build in progress — 76 V XR650R mid-drive conversion workshop journal.", icon: Rocket, hue: HUES.red },
-  { href: "/games/", label: "Games", description: "Kestrel Heavy — a Pier 7 launch arcade.", icon: Gamepad2, hue: HUES.magenta },
+  { href: "/games/", label: "Games", description: "Kestrel Heavy browser demo and Cube Squad.", icon: Gamepad2, hue: HUES.magenta },
 ];
 
 /**
