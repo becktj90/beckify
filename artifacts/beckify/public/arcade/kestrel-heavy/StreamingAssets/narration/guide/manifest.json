@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-15",
+ "generatedAt": "2026-11-14",
  "model": "eleven_multilingual_v2",
  "voice": "Junie Pell v2",
  "voiceId": "m2X69O7Xomk9219qo0Gy",
@@ -1338,6 +1338,23 @@
    "truePeakDb": -3.07,
    "hash": "9bb7eaaf76dc",
    "sha256": "640bdc19b014db4c7c9767ad600dc4beacfff36c16151702aa57f848d8a6e252"
+  },
+  {
+   "id": "first.close.c1",
+   "beat": "first.close",
+   "trigger": "guide.first",
+   "text": "Your first rocket is ready. Shall we roll it out?",
+   "spokenText": "Your first rocket is ready. Shall we roll it out?",
+   "tokenFree": true,
+   "voice": "Junie Pell v2",
+   "voiceId": "m2X69O7Xomk9219qo0Gy",
+   "model": "eleven_multilingual_v2",
+   "file": "guide/first.close.c1.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.45,
+   "truePeakDb": -3.33,
+   "hash": "829eab4f30fd",
+   "sha256": "c1f32b2a62dd4667b62e67f33a0903762718ce2742dd79aab35c92061a7ee357"
   }
  ]
 }
