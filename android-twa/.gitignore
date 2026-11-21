@@ -1,0 +1,4 @@
+# Upload keystore + credentials are NEVER committed. Back them up privately.
+beckify-upload.keystore
+keystore-credentials.txt
+beckify-1.0.6-release.aab

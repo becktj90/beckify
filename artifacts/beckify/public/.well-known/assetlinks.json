@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.beckify.toolbox",
+      "sha256_cert_fingerprints": [
+        "45:22:4F:2F:A8:22:8F:5F:B3:31:B9:DB:F1:4E:40:67:58:DD:E0:4E:EA:AA:89:DE:11:F8:F9:B6:F3:E5:39:51"
+      ]
+    }
+  }
+]

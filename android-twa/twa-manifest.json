@@ -1,0 +1,51 @@
+{
+  "packageId": "com.beckify.toolbox",
+  "host": "beckify.com",
+  "name": "Beckify",
+  "launcherName": "Beckify",
+  "display": "standalone",
+  "themeColor": "#40BAD6",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#060B12",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://beckify.com/icon-512.png",
+  "maskableIconUrl": "https://beckify.com/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./beckify-upload.keystore",
+    "alias": "beckify-upload"
+  },
+  "appVersionName": "1.0.6",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://beckify.com/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://beckify.com/",
+  "minSdkVersion": 21,
+  "orientation": "any",
+  "fingerprints": [
+    {
+      "value": "45:22:4F:2F:A8:22:8F:5F:B3:31:B9:DB:F1:4E:40:67:58:DD:E0:4E:EA:AA:89:DE:11:F8:F9:B6:F3:E5:39:51"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1.0.6"
+}
