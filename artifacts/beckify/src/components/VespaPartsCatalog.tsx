@@ -2,6 +2,16 @@ import { ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FadeIn } from "@/components/FadeIn";
 
+const AMAZON_ASSOCIATE_TAG = "beckify-20";
+
+/** Build a canonical Amazon Special Link from an ASIN in one auditable place. */
+export function amazonAffiliateUrl(asin: string) {
+  if (!/^[A-Z0-9]{10}$/.test(asin)) {
+    throw new Error(`Invalid Amazon ASIN: ${asin}`);
+  }
+  return `https://www.amazon.com/dp/${asin}?tag=${AMAZON_ASSOCIATE_TAG}`;
+}
+
 /** Stable anchor id so the build narrative can link to a part by name. */
 export function partSlug(name: string) {
   return name
@@ -88,7 +98,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 2,
-    href: "https://www.amazon.com/dp/B08CT3XXY6?tag=beckify-20",
+    href: amazonAffiliateUrl("B08CT3XXY6"),
     image: `${project}/cell-layout.jpg`,
     alt: "Black cell spacers laid out for an 18650 battery pack",
     caption: "Spacers maintain cell position and working clearance.",
@@ -99,7 +109,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$8.88",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B07H6TF58L?tag=beckify-20",
+    href: amazonAffiliateUrl("B07H6TF58L"),
     caption: "Positive-terminal insulation is a small but essential detail.",
   },
   {
@@ -108,7 +118,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$17.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B07P3ZCJXT?tag=beckify-20",
+    href: amazonAffiliateUrl("B07P3ZCJXT"),
     image: `${project}/journal/nickel-busbars.jpg`,
     alt: "Nickel strip busbars spot welded across battery cells",
     caption: "0.2 × 8mm pure nickel interconnects the cell groups.",
@@ -119,18 +129,18 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$58.00",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B07R33QHD4?tag=beckify-20",
+    href: amazonAffiliateUrl("B07R33QHD4"),
     caption:
       "A 20S charger must terminate at the pack's chemistry-correct voltage.",
   },
   {
     category: "Electrical",
-    name: "DZ47-125 2P circuit breaker",
-    supplier: "Amazon",
+    name: "DZ47-125 2P circuit breaker — DC suitability unverified",
+    supplier: "Installed part; listing withheld",
     price: "$25.29",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B07QWWPXLZ?tag=beckify-20",
-    caption: "A serviceable breaker makes isolation and troubleshooting safer.",
+    caption:
+      "Historical build record only. The former listing was removed because an AC rating does not establish suitability for interrupting this 72V nominal / 84V maximum DC battery pack. Verify the installed device's DC voltage, interrupting rating, polarity requirements, and fault-current coordination before use.",
   },
   {
     category: "Electrical",
@@ -138,7 +148,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$32.69",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B08JB5NQ4B?tag=beckify-20",
+    href: amazonAffiliateUrl("B08JB5NQ4B"),
     caption: "Use a meter to observe pack voltage and current during testing.",
   },
   {
@@ -147,7 +157,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B01KHQR0K4?tag=beckify-20",
+    href: amazonAffiliateUrl("B01KHQR0K4"),
     caption:
       "The main connector provides a positive, serviceable pack disconnect.",
   },
@@ -157,7 +167,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$8.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B074T77LPQ?tag=beckify-20",
+    href: amazonAffiliateUrl("B074T77LPQ"),
     caption:
       "Relay logic keeps accessory switching separate from high-voltage power.",
   },
@@ -167,7 +177,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$68.90",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B01N9I5TL9?tag=beckify-20",
+    href: amazonAffiliateUrl("B01N9I5TL9"),
     image: `${project}/studio/rear-hub-detail.jpg`,
     alt: "Rear wheel and tire fitted around the hub motor and disc brake",
     caption: "Street tire fitted to the motorized rear wheel.",
@@ -241,7 +251,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$14.28",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B01N760BZN?tag=beckify-20",
+    href: amazonAffiliateUrl("B01N760BZN"),
     caption:
       "Pairs of compliant bushings used in the rear-wheel mounting work.",
   },
@@ -251,7 +261,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$7.88",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B081RPF2G3?tag=beckify-20",
+    href: amazonAffiliateUrl("B081RPF2G3"),
     caption: "Re-wrap material for individual cylindrical cells.",
   },
   {
@@ -260,7 +270,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$5.79",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B08CXN9Q83?tag=beckify-20",
+    href: amazonAffiliateUrl("B08CXN9Q83"),
     caption:
       "Angled valves make pressure checks practical on the 10-inch wheel.",
   },
@@ -270,7 +280,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$7.88",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B081RNT8M2?tag=beckify-20",
+    href: amazonAffiliateUrl("B081RNT8M2"),
     caption: "Additional wrap material for repaired or protected cells.",
   },
   {
@@ -279,7 +289,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$32.65",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B007WLWPM6?tag=beckify-20",
+    href: amazonAffiliateUrl("B007WLWPM6"),
     caption: "Structural stock for the fabricated rear swingarm.",
   },
   {
@@ -288,7 +298,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$34.98",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B007WLWQDE?tag=beckify-20",
+    href: amazonAffiliateUrl("B007WLWQDE"),
     caption: "Secondary structural stock for the rear mounting structure.",
   },
   {
@@ -297,7 +307,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$28.00",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B08PT3PXSB?tag=beckify-20",
+    href: amazonAffiliateUrl("B08PT3PXSB"),
     caption:
       "Distributes and individually protects low-voltage accessory circuits.",
   },
@@ -307,7 +317,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$58.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B091BY3L6L?tag=beckify-20",
+    href: amazonAffiliateUrl("B091BY3L6L"),
     caption:
       "Joins nickel strip to cell terminals without heating the cell body like soldering.",
   },
@@ -317,7 +327,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$18.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B07FXWMQJP?tag=beckify-20",
+    href: amazonAffiliateUrl("B07FXWMQJP"),
     caption:
       "Final outer insulation and abrasion layer for the completed pack.",
   },
@@ -327,7 +337,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B01MY4T4BU?tag=beckify-20",
+    href: amazonAffiliateUrl("B01MY4T4BU"),
     caption: "Red LED replacement lamps for the rear running and brake light.",
   },
   {
@@ -336,7 +346,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$16.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B0739RCR3J?tag=beckify-20",
+    href: amazonAffiliateUrl("B0739RCR3J"),
     caption: "Amber LED replacements for the turn signals.",
   },
   {
@@ -345,7 +355,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$13.04",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B00JXLHE8S?tag=beckify-20",
+    href: amazonAffiliateUrl("B00JXLHE8S"),
     caption:
       "Keeps indicator cadence correct after the LED lighting conversion.",
   },
@@ -355,7 +365,7 @@ const catalog: readonly CatalogPart[] = [
     supplier: "Amazon",
     price: "$8.99",
     quantity: 1,
-    href: "https://www.amazon.com/dp/B072QBNTSM?tag=beckify-20",
+    href: amazonAffiliateUrl("B072QBNTSM"),
     caption: "Provides a compact 12V audible warning device.",
   },
   {
@@ -497,6 +507,13 @@ export function VespaPartsCatalog() {
           buttons are paid Amazon links; others go to the parts supplier
           directly.
         </p>
+        <p className="affiliate-note" style={{ borderColor: "#f0a54a" }}>
+          <strong>Battery protection note:</strong> the original DZ47-125
+          Amazon listing has been removed. Its published AC rating does not by
+          itself establish that it can safely interrupt this battery pack's DC
+          fault current. Treat the row as a historical build record until the
+          installed device's DC ratings are verified.
+        </p>
         <div className="part-filter" aria-label="Filter parts by system">
           {categories.map((category) => (
             <button
@@ -518,7 +535,7 @@ export function VespaPartsCatalog() {
                 <th>Part</th>
                 <th>Used for</th>
                 <th>Qty</th>
-                <th>Price</th>
+                <th>Build cost (historical)</th>
                 <th>
                   <span className="sr-only">Link</span>
                 </th>
@@ -533,7 +550,13 @@ export function VespaPartsCatalog() {
                   </td>
                   <td>{part.caption}</td>
                   <td>{part.quantity}</td>
-                  <td>{part.price}</td>
+                  <td>
+                    {part.supplier === "Amazon" ? (
+                      <span className="unavailable">See retailer</span>
+                    ) : (
+                      part.price
+                    )}
+                  </td>
                   <td>
                     {part.href ? (
                       <a
@@ -541,7 +564,9 @@ export function VespaPartsCatalog() {
                         target="_blank"
                         rel={part.href.includes("amazon.com") ? "sponsored noopener noreferrer" : "noopener noreferrer"}
                       >
-                        View{" "}
+                        {part.href.includes("amazon.com")
+                          ? "Amazon (paid link)"
+                          : "View supplier"}{" "}
                         <ExternalLink size={14} aria-hidden="true" />
                       </a>
                     ) : (
@@ -554,8 +579,9 @@ export function VespaPartsCatalog() {
           </table>
         </div>
         <p className="photo-caption" style={{ marginTop: "1.25rem" }}>
-          Supplier links are retained for the original purchase record; confirm
-          the live listing, fit, voltage, and current ratings before ordering.
+          Non-Amazon amounts are historical build costs, not current price
+          quotes. Amazon prices are intentionally shown only by Amazon. Confirm
+          every live listing, fit, voltage, and current rating before ordering.
         </p>
       </section>
     </FadeIn>

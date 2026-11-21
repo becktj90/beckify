@@ -57,13 +57,19 @@ ok("lookbook data and GearCard are gone", !fs.existsSync(path.join(root, "src/da
 ok("shop and store open the external storefront", ["shop", "shop/", "store", "store/"].every((slug) => appSrc.includes(`<Route path="/${slug}" component={StoreRedirect} />`)) && ["shop", "store"].every((slug) => staticRoutes.includes(`["${slug}", SHOP_ORIGIN]`)));
 
 console.log("\n--- Vespa BOM ---");
-const amazonHrefs = [...vespaSrc.matchAll(/href:\s*"(https:\/\/www\.amazon\.com[^"]+)"/g)].map((m) => m[1]);
-ok("vespa has Amazon product links", amazonHrefs.length >= 20, String(amazonHrefs.length));
-ok("every Amazon URL uses tag=beckify-20", amazonHrefs.every((url) => url.includes("tag=beckify-20")));
-ok("Amazon URLs are clean /dp/ paths", amazonHrefs.every((url) => /amazon\.com\/dp\/[A-Z0-9]{10}\?tag=beckify-20$/.test(url)), amazonHrefs.filter((u) => !/amazon\.com\/dp\/[A-Z0-9]{10}\?tag=beckify-20$/.test(u)).join("\n"));
+const amazonAsins = [...vespaSrc.matchAll(/amazonAffiliateUrl\("([A-Z0-9]{10})"\)/g)].map((m) => m[1]);
+ok("vespa has contextual Amazon product links", amazonAsins.length >= 20, String(amazonAsins.length));
+ok("Amazon URL construction is centralized", vespaSrc.includes('const AMAZON_ASSOCIATE_TAG = "beckify-20"') && vespaSrc.includes("https://www.amazon.com/dp/${asin}?tag=${AMAZON_ASSOCIATE_TAG}"));
+ok("all affiliate ASINs use the validated helper", !/href:\s*"https:\/\/www\.amazon\.com/.test(vespaSrc));
+ok("affiliate ASINs are unique", new Set(amazonAsins).size === amazonAsins.length);
 ok("order-history ref params removed", !/ppx_od|ppx_yo|gp\/product/.test(vespaSrc));
 ok("BOM disclosure sits above the parts table", vespaSrc.indexOf("As an Amazon Associate") < vespaSrc.indexOf("Bill of materials table"));
 ok("Amazon table links keep rel=sponsored", vespaSrc.includes('part.href.includes("amazon.com") ? "sponsored noopener noreferrer"'));
+ok("Amazon actions disclose paid links inline", vespaSrc.includes('"Amazon (paid link)"'));
+ok("Amazon prices are not rendered from stale catalog data", vespaSrc.includes('part.supplier === "Amazon"') && vespaSrc.includes("See retailer"));
+ok("price column is explicitly historical", vespaSrc.includes("Build cost (historical)"));
+ok("unverified DZ47 listing is withheld", !amazonAsins.includes("B07QWWPXLZ") && /DZ47-125 2P circuit breaker — DC suitability unverified[\s\S]{0,220}Installed part; listing withheld/.test(vespaSrc));
+ok("DC breaker warning covers the required checks", ["DC voltage", "interrupting rating", "polarity requirements", "fault-current coordination"].every((term) => vespaSrc.includes(term)));
 ok("QS motor row is linked", vespaSrc.includes("qs-motor.com/product/10inch-4000w-v3-type-e-scooter-hub-motor"));
 ok("VOTOL controller row is linked", vespaSrc.includes("qsmotor.com/product/votol-controller-em-100"));
 ok("Daly BMS row is linked to manufacturer", vespaSrc.includes("dalybms.com"));
