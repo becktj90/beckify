@@ -268,7 +268,7 @@
   .build-btn b{font-size:26px;display:block;} .build-btn small{font-weight:900;font-size:14px;text-transform:uppercase;letter-spacing:.05em;}
   .build-btn:active{transform:translateY(3px);box-shadow:var(--sh-2px);}
   .build-actions{display:flex;gap:var(--sp-10);justify-content:center;flex-wrap:wrap;margin-top:var(--sp-14);}
-  .big-btn{border:var(--bdw) solid var(--ink);border-radius:var(--r-pill);padding:14px 28px;font-family:Fredoka,sans-serif;font-size:21px;font-weight:700;box-shadow:var(--sh-5px);background:#fff;}
+  .big-btn{border:var(--bdw) solid var(--ink);border-radius:var(--r-pill);padding:14px 28px;font-family:Fredoka,sans-serif;font-size:21px;font-weight:700;box-shadow:var(--sh-5px);background:#fff;min-width:64px;min-height:64px;}
   .big-btn.primary{background:#178741;color:#fff;}
   .big-btn:active{transform:translateY(3px);box-shadow:var(--sh-2px);}
   .build-btn:disabled,.big-btn:disabled{opacity:.45;box-shadow:var(--sh-2px);}
@@ -304,7 +304,7 @@
   @media (prefers-reduced-motion: reduce){.build-bin{transition:none;}}
   .drag-hint{font-weight:900;color:#475569;font-size:15px;text-align:center;}
   .feedback.good{color:#15803d;} .feedback.try{color:#b45309;}
-  .next-row{display:flex;justify-content:center;margin-top:var(--sp-6);min-height:58px;}
+  .next-row{display:flex;justify-content:center;margin-top:var(--sp-6);min-height:64px;}
 
   /* Friends strip */
   /* Sticker page (session-only: nothing is stored, it starts empty on every load) */
@@ -414,7 +414,7 @@
     .fbrow.has-next{padding-bottom:72px}
     /* QA #39: while the fixed Next button is up, My Stickers sits under it on short pages; hide it so a tap there cannot start the next round by surprise (it is back on the next round) */
     body.next-up #stickerOpen{visibility:hidden}
-    .big-btn{padding:10px 24px;font-size:20px;box-shadow:var(--sh-4px)}
+    .big-btn{padding:10px 24px;font-size:20px;box-shadow:var(--sh-4px);min-height:64px}
     .pv{gap:var(--sp-6)} .pv-col{min-width:0;flex:1 1 0;gap:var(--sp-5)} .pv-col h4{font-size:14px;padding:3px 7px;white-space:nowrap}
     .pv-stack{max-width:100%;gap:var(--sp-4);min-height:44px}
     .build-total .target,.build-total .mine{font-size:24px;padding:6px 14px}
@@ -2660,12 +2660,11 @@
       winRound(numeralClips(val));
     } else {
       btn.classList.add("wrong"); btn.disabled=true;
-      noteMiss();
+      noteMiss(numeralClips(val));
       var pals=visual.querySelectorAll(".buddy, .nb");
       pals.forEach(function(p){ p.classList.remove("surprised"); void p.offsetWidth; p.classList.add("surprised"); });
       setTimeout(function(){ pals.forEach(function(p){ p.classList.remove("surprised"); }); }, 500);
       feedbackEl.textContent="💪"; feedbackEl.className="feedback try";
-      speakClips(numeralClips(val).concat(["tryagain"]));
       setTimeout(function(){ btn.classList.remove("wrong"); },380);
     }
   }
@@ -2736,11 +2735,17 @@
 
   function updateHUD(){ $("stars").textContent=state.stars; $("stickers").textContent=state.stickers; $("stickerOpenCnt").textContent=state.stickers; $("stickerOpen").setAttribute("aria-label","My stickers, "+state.stickers+" collected"); }
   /* after two misses on one question, softly glow the right answer so the child can succeed */
-  function noteMiss(){
+  function noteMiss(lead, extraUnnamed){
     state.misses++;
-    /* A known name hears their name on a miss; everyone else gets the generic try sound. */
+    /* One speakClips only: a later speakClips would cut off a name retry. A known name hears the
+       number (if any) and then their name; everyone else gets the number and a kind try line or sound.
+       The flagged tryagain clip is never used. */
     var nmk = nameKey();
-    if(nmk) speakClips(["nm-"+nmk+"-retry"]); else trySound();
+    lead = lead || [];
+    extraUnnamed = extraUnnamed || [];
+    if(nmk) speakClips(lead.concat(["nm-"+nmk+"-retry"]));
+    else if(extraUnnamed.length) speakClips(lead.concat(extraUnnamed));
+    else { if(lead.length) speakClips(lead); trySound(); }
     if(state.misses>=2 && state.answer!==null && state.answer!==undefined){
       var good=answerArea.querySelector('.choice[data-val="'+state.answer+'"]');
       if(good){ good.classList.add("softhint"); hintSound(); }
@@ -4157,9 +4162,8 @@
   function qlPickChoice(r, val, btn){
     if(state.locked || r.done) return;
     if(val===r.n) return qlWin(r, val, btn);
-    btn.classList.add("wrong"); btn.disabled = true; noteMiss();
+    btn.classList.add("wrong"); btn.disabled = true; noteMiss(numeralClips(val), [["retry7","retry5"][rand(0,1)]]);
     feedbackEl.textContent = "💪"; feedbackEl.className = "feedback try";
-    speakClips(numeralClips(val).concat([["retry7","retry5"][rand(0,1)]]));
     setTimeout(function(){ btn.classList.remove("wrong"); }, 380);
     /* a second look: the dots come back lit one by one, then rest again (unless they are already staying) */
     clearTimeout(r.timer); r.showing = true; qlShow(r, true);
@@ -5795,9 +5799,8 @@
           winRound(numeralClips(p.q), "praise"+rand(8,17));
         } else {
           btn.classList.add("wrong"); btn.disabled = true;
-          noteMiss();
+          noteMiss(numeralClips(val));
           feedbackEl.textContent = "💪"; feedbackEl.className = "feedback try";
-          speakClips(numeralClips(val));
           setTimeout(function(){ btn.classList.remove("wrong"); }, 380);
         }
       });
@@ -5921,8 +5924,10 @@
   }, {once:true});
   /* Resume the music after the app was backgrounded or interrupted (call, Siri, lock) */
   document.addEventListener("visibilitychange", function(){
-    if(document.hidden){ pauseBgMusic(); }
-    else if(started && state.sound){ startBgMusic(); }
+    if(document.hidden){
+      pauseBgMusic();
+      voiceToken++; try{ if(voiceAudio) voiceAudio.pause(); }catch(e){} duckBg(false); /* voice must stop too, or a clip keeps talking over the lock screen / a hidden tab */
+    } else if(started && state.sound){ startBgMusic(); }
     if(!document.hidden && actx && actx.state!=="running" && actx.state!=="closed"){ try{ actx.resume(); }catch(e){} } /* after a call, Siri or lock */
   });
   /* Any fresh press clears a stale drag-suppression, so only the click that
