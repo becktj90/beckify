@@ -2669,6 +2669,15 @@
     }
   }
 
+  /* When a known name is playing, use a named cheer (nm-<name>-c1..c10) in place of a
+     generic praise1-17 line. Game-specific cheers (ch-look, ch-hop, ch-smart, ...) stay
+     as the game picked them. The welcome clip stays unwired (it says the retired working
+     name). retry6 stays unused (flagged as mildly negative). */
+  function pickPraise(explicit){
+    var nk = nameKey();
+    if(nk && (!explicit || /^praise\d+$/.test(explicit))) return "nm-"+nk+"-c"+rand(1,10);
+    return explicit || "praise"+rand(1,7);
+  }
   function winRound(lead, praiseClip){
     /* roadmap 11: a Starter Add win with a whole of 10 or less shows the number bond in place of the frames and says "a plus b equals c" */
     var bond = (state.mode==="add" && state.bond && state.answer===state.bond.a+state.bond.b) ? state.bond : null;
@@ -2682,7 +2691,7 @@
     rampNote();
     state.stars++;
     updateHUD(); goodSound(); confetti(26);
-    var praise=praiseClip||"praise"+rand(1,7); /* praiseClip: a game that picks its own praise (Quick Look: ch-look / praise8-17) */
+    var praise=pickPraise(praiseClip); /* named c1-c10 when a known name is playing; otherwise praiseClip or praise1-7 */
     feedbackEl.textContent = playerName ? "🎉 Way to go, "+playerName+"! ⭐" : "🎉 ⭐ 🎉"; feedbackEl.className="feedback good";
     if(praiseClip) speakClips((lead||[]).concat([praise]));
     else if(state.answer!==null && state.answer!==undefined)
@@ -2790,7 +2799,12 @@
     $("celebrate").classList.add("show"); setBackgroundInert(true); try{ $("celebBtn").focus(); }catch(e){} confetti(60);
     celebrateSound();
     var cnk = nameKey();
-    speakClips(cnk ? [master ? "mathmaster" : "superstar", "nm-"+cnk+"-sticker"] : [master ? "mathmaster" : "superstar"]);
+    var clips = [master ? "mathmaster" : "superstar"];
+    if(cnk){
+      clips.push("nm-"+cnk+"-sticker");
+      clips.push("nm-"+cnk+"-bye"); /* named goodbye at the shared 5-star stop card (roadmap 16) */
+    }
+    speakClips(clips);
   }
   $("celebBtn").addEventListener("click", function(){ $("celebrate").classList.remove("show"); setBackgroundInert(false); newRound(); });
 
