@@ -360,7 +360,7 @@
 
   /* Start screen: name entry (session-only, never stored) */
   .startscreen{z-index:80;}
-  .name-input{width:100%;box-sizing:border-box;font-family:Fredoka,sans-serif;font-size:26px;font-weight:700;text-align:center;color:var(--ink);padding:14px 16px;border:var(--bdw) solid var(--ink);border-radius:var(--r-18);margin:2px 0 18px;background:#fffbeb;}
+  .name-input{width:100%;box-sizing:border-box;font-family:Fredoka,sans-serif;font-size:26px;font-weight:700;text-align:center;color:var(--ink);padding:14px 16px;border:var(--bdw) solid var(--ink);border-radius:var(--r-18);margin:2px 0 18px;background:#fffbeb;min-height:64px;}
   .name-input:focus{outline:4px solid #1d4ed8;outline-offset:2px;}
   .start-btns{display:flex;gap:var(--sp-12);justify-content:center;align-items:center;flex-wrap:wrap;}
   .confetti-bit{position:fixed;width:12px;height:18px;z-index:60;pointer-events:none;border-radius:3px;}
@@ -374,7 +374,7 @@
   .name-opt{border-top:3px dashed #cbd5e1;padding-top:14px;}
   .name-opt .opt-label{margin:0 0 8px;font-size:15px;font-weight:900;color:var(--muted);}
   .name-opt .name-row{display:flex;gap:var(--sp-10);align-items:center;justify-content:center;}
-  .name-opt .name-input{margin:0;font-size:22px;padding:10px 12px;min-width:0;flex:1;}
+  .name-opt .name-input{margin:0;font-size:22px;padding:10px 12px;min-width:0;min-height:64px;flex:1;}
   /* Phone layout: the first screen holds the header, level, modes, question AND the answers
      with no scrolling (375x667 and 390x844). Taller phones get the roomier sizes back below. */
   @media(max-width:520px){
@@ -902,7 +902,7 @@
   @media(prefers-reduced-motion:reduce){.sh-c.sh-new,.sh-box.sh-glow,.sh-wrap.sh-uneven .sh-boxes{animation:none;} .sh-c.sh-held{translate:none;}}
   /* ==== END GAME: share-it (CSS) ==== */
   /* ==== GROWN-UPS (CSS) ==== Roadmap item 18: a small hold-to-open button and a notes panel for grown-ups. Session-only: nothing is stored. */
-  .gu-open{display:flex;align-items:center;gap:var(--sp-8);margin:22px auto 8px;min-height:48px;padding:6px 16px 6px 8px;border:2px solid #94a3b8;border-radius:var(--r-pill);background:rgba(255,255,255,.55);color:#334155;font-family:Nunito,sans-serif;font-weight:800;font-size:15px;
+  .gu-open{display:flex;align-items:center;gap:var(--sp-8);margin:22px auto 8px;min-height:64px;padding:6px 16px 6px 8px;border:2px solid #94a3b8;border-radius:var(--r-pill);background:rgba(255,255,255,.55);color:#334155;font-family:Nunito,sans-serif;font-weight:800;font-size:15px;
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;cursor:pointer;}
   .gu-open:focus-visible{outline:3px solid #1d4ed8;outline-offset:3px;}
   .gu-ring{width:36px;height:36px;flex:0 0 36px;display:block;}
